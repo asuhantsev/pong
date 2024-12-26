@@ -1,0 +1,36 @@
+.game-board {
+  /* Base styling */
+  width: 800px;
+  height: 600px;
+  border: 2px solid #fff;
+  position: relative;
+  margin-top: 20px;
+  
+  /* Cool grid background */
+  background-color: #000000;
+  background-image: 
+    linear-gradient(#353535 1.2px, transparent 1.2px),
+    linear-gradient(90deg, #353535 1.2px, transparent 1.2px),
+    linear-gradient(#353535 0.6px, transparent 0.6px),
+    linear-gradient(90deg, #353535 0.6px, #000000 0.6px);
+  background-size: 30px 30px, 30px 30px, 6px 6px, 6px 6px;
+  background-position: 
+    -1.2px -1.2px,
+    -1.2px -1.2px,
+    -0.6px -0.6px,
+    -0.6px -0.6px;
+}
+
+/* Add a subtle fade animation when game starts */
+.game-board {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+} 

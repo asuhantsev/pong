@@ -1,0 +1,229 @@
+/* Paddle styling */
+.paddle {
+  width: 20px;
+  height: 100px;
+  background-color: white;
+  position: absolute;
+  top: 250px; /* Centered vertically: (600px - 100px) / 2 */
+}
+
+.paddle-left {
+  left: 20px;
+}
+
+.paddle-right {
+  right: 20px;
+}
+
+/* Ball styling */
+.ball {
+  width: 15px;
+  height: 15px;
+  background-color: white;
+  border-radius: 50%;
+  position: absolute;
+  /* Center the ball initially */
+  left: calc(50% - 7.5px);
+  top: calc(50% - 7.5px);
+}
+
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score-board {
+  display: flex;
+  justify-content: center;
+  gap: 100px;
+  margin-bottom: 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+.player-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.player-name {
+  color: #888;
+  font-size: 24px;
+}
+
+.score {
+  color: white;
+  font-size: 48px;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: center;
+}
+
+.start-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px;
+  background-color: #000;
+  border: 2px solid #fff;
+  border-radius: 10px;
+}
+
+.start-menu h2 {
+  color: white;
+  font-family: 'Arial', sans-serif;
+  font-size: 32px;
+  margin: 0;
+  text-align: center;
+}
+
+.start-button {
+  padding: 15px 40px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #000;
+  background-color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.start-button:hover {
+  transform: scale(1.05);
+}
+
+.start-button:active {
+  transform: scale(0.95);
+}
+
+.player-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.input-group label {
+  color: #888;
+  font-size: 16px;
+  font-family: 'Arial', sans-serif;
+}
+
+.input-group input {
+  padding: 8px 12px;
+  font-size: 16px;
+  border: 2px solid #444;
+  border-radius: 4px;
+  background-color: #111;
+  color: white;
+  width: 100%;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #666;
+}
+
+.input-group input::placeholder {
+  color: #555;
+}
+
+.button-group {
+  display: flex;
+  gap: 15px;
+}
+
+.back-button {
+  padding: 15px 40px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+  background-color: transparent;
+  border: 2px solid #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.back-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.back-button:active {
+  transform: scale(0.95);
+}
+
+.pause-menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.9);
+  padding: 40px;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  min-width: 300px;
+  min-height: 200px;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 1000;
+}
+
+.pause-menu h2 {
+  color: white;
+  font-family: 'Arial', sans-serif;
+  font-size: 32px;
+  margin: 0;
+  text-align: center;
+}
+
+.countdown {
+  font-size: 120px;
+  font-weight: bold;
+  color: white;
+  animation: countdownPulse 1s ease-in-out infinite;
+}
+
+@keyframes countdownPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Add a full-screen overlay to catch all clicks */
+.pause-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  z-index: 999;
+} 
