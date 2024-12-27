@@ -392,19 +392,45 @@ function GameBoard() {
     // Send pause update to server
     socket.emit('pauseGame', {
       isPaused: newPauseState,
-      countdownValue: newPauseState ? 3 : null
+      countdownValue: newPauseState ? null : 3 // Start countdown when unpausing
     });
   }, [isPaused, isGameStarted, socket]);
 
   const handleResume = useCallback(() => {
-    if (role === 'host') {
-      setIsPaused(false);
-      socket?.emit('pauseGame', {
-        isPaused: false,
-        countdownValue: 3
-      });
-    }
-  }, [role, socket]);
+    // Allow both players to resume
+    if (!socket?.connected) return;
+    
+    // Start countdown
+    let count = 3;
+    setCountdown(count);
+    
+    // Send initial countdown state
+    socket.emit('pauseGame', {
+      isPaused: true, // Keep paused during countdown
+      countdownValue: count
+    });
+    
+    const countdownInterval = setInterval(() => {
+      count--;
+      if (count > 0) {
+        setCountdown(count);
+        socket.emit('pauseGame', {
+          isPaused: true,
+          countdownValue: count
+        });
+      } else {
+        clearInterval(countdownInterval);
+        setCountdown(null);
+        setIsPaused(false);
+        socket.emit('pauseGame', {
+          isPaused: false,
+          countdownValue: null
+        });
+      }
+    }, 1000);
+
+    countdownIntervalRef.current = countdownInterval;
+  }, [socket]);
 
   // Update game loop to include paddle interpolation
   useEffect(() => {
@@ -688,6 +714,19 @@ function GameBoard() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handlePause]);
+
+  // Update the pause menu render to allow both players to resume
+  const renderPauseMenu = () => {
+    if (!isPaused) return null;
+    
+    return (
+      <div className="pause-menu" onClick={handlePauseMenuClick}>
+        <h2>Game Paused</h2>
+        <button onClick={handleResume}>Resume</button>
+        <button onClick={handleExit}>Exit</button>
+      </div>
+    );
+  };
 
   return (
     <div className="game-container">
