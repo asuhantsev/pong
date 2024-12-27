@@ -17,40 +17,33 @@ const allowedOrigins = [
 
 // Configure CORS for Express
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      return callback(new Error('CORS not allowed'));
-    }
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'my-custom-header']
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
-// Basic route for testing
+// Health check endpoint
 app.get('/', (req, res) => {
   res.send('Pong server is running');
 });
 
 const httpServer = createServer(app);
 
-// Configure Socket.IO with CORS
+// Configure Socket.IO
 const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
-    credentials: true,
-    allowedHeaders: ["my-custom-header"]
+    credentials: true
   },
-  transports: ['websocket', 'polling'],
+  transports: ['polling', 'websocket'], // Try polling first
+  allowEIO3: true, // Allow Engine.IO 3
   pingTimeout: 60000,
   pingInterval: 25000,
   upgradeTimeout: 30000,
-  maxHttpBufferSize: 1e8
+  maxHttpBufferSize: 1e8,
+  path: '/socket.io/' // Explicitly set the path
 });
 
 // Add debug logging for CORS issues

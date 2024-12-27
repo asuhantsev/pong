@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: pong-server
+    env: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && node index.js
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+    headers:
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: https://asuhantsev.github.io
+      - path: /*
+        name: Access-Control-Allow-Methods
+        value: GET,POST,OPTIONS
+      - path: /*
+        name: Access-Control-Allow-Headers
+        value: Content-Type,Authorization
+      - path: /*
+        name: Access-Control-Allow-Credentials
+        value: "true" 

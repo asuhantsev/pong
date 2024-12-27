@@ -59,10 +59,11 @@ export function useMultiplayer({
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       timeout: 20000,
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       withCredentials: true,
       autoConnect: true,
       forceNew: true,
+      path: '/socket.io/',
       extraHeaders: {
         "my-custom-header": "abcd"
       }
