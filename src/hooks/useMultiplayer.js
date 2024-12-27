@@ -64,8 +64,11 @@ export function useMultiplayer({
       autoConnect: true,
       forceNew: true,
       path: '/socket.io/',
+      upgrade: true,
+      rememberUpgrade: true,
       extraHeaders: {
-        "my-custom-header": "abcd"
+        "Connection": "Upgrade",
+        "Upgrade": "websocket"
       }
     });
     
@@ -94,6 +97,15 @@ export function useMultiplayer({
       console.error('Failed to reconnect');
       setError('Failed to reconnect to server');
       onLoadingChange(false);
+    });
+
+    // Add transport logging
+    newSocket.on('connect', () => {
+      console.log('Connected with transport:', newSocket.io.engine.transport.name);
+    });
+
+    newSocket.on('upgrade', (transport) => {
+      console.log('Transport upgraded to:', transport);
     });
 
     return () => {

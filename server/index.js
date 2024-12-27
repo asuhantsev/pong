@@ -8,6 +8,9 @@ dotenv.config();
 
 const app = express();
 
+// Enable trust proxy for Render
+app.set('trust proxy', 1);
+
 // Define allowed origins
 const allowedOrigins = [
   "http://localhost:5173",
@@ -19,13 +22,29 @@ const allowedOrigins = [
 app.use(cors({
   origin: allowedOrigins,
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Connection', 'Upgrade'],
   credentials: true
 }));
+
+// Add WebSocket upgrade handling
+app.use((req, res, next) => {
+  res.setHeader('Upgrade', 'websocket');
+  next();
+});
 
 // Health check endpoint
 app.get('/', (req, res) => {
   res.send('Pong server is running');
+});
+
+// Add detailed health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: Date.now(),
+    connections: io.engine.clientsCount,
+    transport: io.engine.transport?.name || 'none'
+  });
 });
 
 const httpServer = createServer(app);
@@ -37,40 +56,24 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST"],
     credentials: true
   },
-  transports: ['polling', 'websocket'], // Try polling first
-  allowEIO3: true, // Allow Engine.IO 3
+  transports: ['polling', 'websocket'],
+  allowEIO3: true,
+  path: '/socket.io/',
   pingTimeout: 60000,
   pingInterval: 25000,
   upgradeTimeout: 30000,
   maxHttpBufferSize: 1e8,
-  path: '/socket.io/' // Explicitly set the path
+  allowUpgrades: true,
+  perMessageDeflate: false
 });
 
-// Add debug logging for CORS issues
-io.engine.on("headers", (headers, req) => {
-  console.log("CORS Headers:", headers);
-  console.log("Request Origin:", req.headers.origin);
-});
-
-// Store active rooms with their state
-const rooms = new Map();
-const playerSessions = new Map();
-
-// Add room cleanup interval
-setInterval(() => {
-  for (const [roomId, room] of rooms.entries()) {
-    if (room.players.length === 0) {
-      rooms.delete(roomId);
-      console.log(`Cleaned up empty room: ${roomId}`);
-    }
-  }
-}, 60000); // Clean every minute
-
+// Add connection logging
 io.on('connection', (socket) => {
   console.log('New connection:', {
     id: socket.id,
     origin: socket.handshake.headers.origin,
-    transport: socket.conn.transport.name
+    transport: socket.conn.transport.name,
+    headers: socket.handshake.headers
   });
 
   socket.on('error', (error) => {
