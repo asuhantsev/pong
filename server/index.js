@@ -7,13 +7,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
 
-// Define allowed origins - make sure to include your GitHub Pages URL
+// Define allowed origins
 const allowedOrigins = [
   "http://localhost:5173",
   "https://asuhantsev.github.io",
-  "https://asuhantsev.github.io/pong",
-  // Add any other domains that need access
+  "https://asuhantsev.github.io/pong"
 ];
 
 // Configure CORS for Express
@@ -70,8 +70,6 @@ app.set('trust proxy', true);
 app.get('/', (req, res) => {
   res.send('Pong server is running');
 });
-
-const httpServer = createServer(app);
 
 // Store rooms and sessions
 const rooms = new Map();
