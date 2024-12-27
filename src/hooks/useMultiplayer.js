@@ -60,14 +60,11 @@ export function useMultiplayer({
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       timeout: 10000,
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
       withCredentials: true,
       autoConnect: true,
       forceNew: true,
-      path: '/socket.io/',
-      extraHeaders: {
-        'Access-Control-Allow-Origin': '*'
-      }
+      path: '/socket.io/'
     });
     
     socketRef.current = newSocket;

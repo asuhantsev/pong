@@ -16,55 +16,33 @@ const allowedOrigins = [
   "https://asuhantsev.github.io/pong"
 ];
 
-// Configure CORS for Express
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      return callback(new Error('CORS policy violation'), false);
-    }
-    return callback(null, true);
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Basic middleware
+app.use(express.json());
+app.set('trust proxy', true);
 
-// Configure Socket.IO with CORS
+// Simple CORS middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', '*');
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  next();
+});
+
+// Configure Socket.IO
 const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["*"],
+    credentials: true
   },
-  transports: ['polling', 'websocket'],
-  path: '/socket.io/',
-  pingInterval: 10000,
-  pingTimeout: 5000,
-  cookie: false
+  transports: ['websocket', 'polling'],
+  path: '/socket.io/'
 });
-
-// Add CORS preflight handler
-app.options('*', cors());
-
-// Add headers middleware
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', true);
-  next();
-});
-
-// Basic middleware
-app.use(express.json());
-app.set('trust proxy', true);
 
 // Health check endpoint
 app.get('/', (req, res) => {
