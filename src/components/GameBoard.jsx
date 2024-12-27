@@ -384,18 +384,26 @@ function GameBoard() {
   }, [isGameStarted, roomId, socket]);
 
   const handlePause = useCallback(() => {
-    if (!isGameStarted || !roomId) return;
+    if (!isMultiplayer || role !== 'host') return;
+
+    const newPausedState = !isPaused;
+    setIsPaused(newPausedState);
     
-    setIsPaused(prev => {
-      const newPauseState = !prev;
-      socket?.emit('pauseGame', { roomId, isPaused: newPauseState });
-      return newPauseState;
+    socket?.emit('pauseGame', {
+      isPaused: newPausedState,
+      countdownValue: newPausedState ? null : 3
     });
-  }, [isGameStarted, roomId, socket]);
+  }, [isMultiplayer, role, isPaused, socket]);
 
   const handleResume = useCallback(() => {
-    handlePauseChange(false);
-  }, [handlePauseChange]);
+    if (role === 'host') {
+      setIsPaused(false);
+      socket?.emit('pauseGame', {
+        isPaused: false,
+        countdownValue: 3
+      });
+    }
+  }, [role, socket]);
 
   // Update game loop to include paddle interpolation
   useEffect(() => {
@@ -549,14 +557,17 @@ function GameBoard() {
     e.stopPropagation();
   };
 
-  const handleExit = () => {
+  const handleExit = useCallback(() => {
+    if (role === 'host') {
+      socket?.emit('pauseGame', {
+        isPaused: false,
+        countdownValue: null
+      });
+    }
     setIsGameStarted(false);
     setIsPaused(false);
-    clearCountdown();
-    if (isMultiplayer) {
-      disconnect();
-    }
-  };
+    clearSession();
+  }, [role, socket, clearSession]);
 
   const renderStartMenu = () => {
     if (winner) {
@@ -624,6 +635,41 @@ function GameBoard() {
       />
     );
   };
+
+  const updateGameState = useCallback((timestamp) => {
+    if (!isGameStarted || isPaused) return;
+
+    // Update ball position
+    const newBallPos = {
+      x: ballPos.x + ballVelocity.x,
+      y: ballPos.y + ballVelocity.y
+    };
+
+    // Ball collision with top and bottom
+    if (newBallPos.y <= 0 || newBallPos.y >= BOARD_HEIGHT - BALL_SIZE) {
+      ballVelocity.y = -ballVelocity.y;
+    }
+
+    // If we're the host, handle ball physics and send updates
+    if (role === 'host') {
+      setBallPos(newBallPos);
+      sendBallMove(newBallPos, ballVelocity);
+    }
+
+    // ... rest of your game state update code ...
+  }, [isGameStarted, isPaused, ballPos, ballVelocity, role, sendBallMove]);
+
+  // Add keydown handler for pause
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'p') {
+        handlePause();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handlePause]);
 
   return (
     <div className="game-container">

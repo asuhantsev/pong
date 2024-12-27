@@ -246,6 +246,43 @@ io.on('connection', (socket) => {
     socket.emit('pong');
   });
 
+  // Handle ball movement
+  socket.on('ballMove', ({ position, velocity }) => {
+    const roomId = socket.roomId;
+    if (!roomId) return;
+
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    // Only allow host to send ball updates
+    if (playerSessions.get(socket.id)?.role !== 'host') return;
+
+    // Broadcast ball update to other players
+    socket.to(roomId).emit('ballUpdate', {
+      position,
+      velocity,
+      timestamp: Date.now()
+    });
+  });
+
+  // Handle pause state
+  socket.on('pauseGame', ({ isPaused, countdownValue }) => {
+    const roomId = socket.roomId;
+    if (!roomId) return;
+
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    console.log('Pause update received:', { isPaused, countdownValue, roomId });
+
+    // Broadcast pause state to all players in the room
+    io.to(roomId).emit('pauseUpdate', {
+      isPaused,
+      countdownValue,
+      timestamp: Date.now()
+    });
+  });
+
   // ... similar updates for other event handlers ...
 });
 

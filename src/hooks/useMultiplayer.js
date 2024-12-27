@@ -265,11 +265,13 @@ export function useMultiplayer({
       },
 
       ballUpdate: ({ position, velocity, timestamp }) => {
-        if (role === 'host') return;
+        if (role === 'host') return; // Host manages its own ball
         
         console.log('Received ball update:', { position, velocity, timestamp });
-        setBallPos(position);
-        setBallVelocity(velocity);
+        requestAnimationFrame(() => {
+          setBallPos(position);
+          setBallVelocity(velocity);
+        });
       },
 
       scoreUpdate: ({ score, scorer }) => {
@@ -277,10 +279,12 @@ export function useMultiplayer({
         setScore(score);
       },
 
-      pauseUpdate: ({ isPaused, countdownValue }) => {
-        console.log('Received pause update:', { isPaused, countdownValue });
-        if (typeof isPaused === 'boolean') onPauseUpdate(isPaused);
-        if (typeof countdownValue === 'number') onCountdownUpdate(countdownValue);
+      pauseUpdate: ({ isPaused, countdownValue, timestamp }) => {
+        console.log('Received pause update:', { isPaused, countdownValue, timestamp });
+        requestAnimationFrame(() => {
+          if (typeof isPaused === 'boolean') onPauseUpdate(isPaused);
+          if (typeof countdownValue === 'number') onCountdownUpdate(countdownValue);
+        });
       },
 
       winnerUpdate: (winner) => {
