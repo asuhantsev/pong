@@ -234,6 +234,8 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Comment out ball position logging
+    /*
     console.log('Server broadcasting ball update:', {
       roomId,
       from: socket.id,
@@ -241,6 +243,7 @@ io.on('connection', (socket) => {
       position,
       velocity
     });
+    */
 
     // Broadcast ball position to other players in the room
     socket.to(roomId).emit('ballUpdate', {
