@@ -55,13 +55,22 @@ function MultiplayerMenu({
     });
   }, [roomId, role, mySocketId, playersReady]);
 
+  const handleCreateRoom = () => {
+    console.log('Create room button clicked', {
+      isCreatingRoom,
+      socketId: mySocketId,
+      currentRoomId: roomId
+    });
+    onCreateRoom();
+  };
+
   return (
     <div className="multiplayer-menu">
       {!roomId ? (
         <div className="multiplayer-options">
           <button 
             className="start-button" 
-            onClick={onCreateRoom}
+            onClick={handleCreateRoom}
             disabled={isCreatingRoom || isJoiningRoom}
           >
             {isCreatingRoom ? 'Creating Room...' : 'Create Room'}

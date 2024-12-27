@@ -59,7 +59,39 @@ io.on('connection', (socket) => {
     transport: socket.conn.transport.name
   });
 
-  // Rest of your socket handlers...
+  // Add room creation handler
+  socket.on('createRoom', () => {
+    console.log('Create room request from:', socket.id);
+    
+    const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const sessionId = Math.random().toString(36).substring(2, 15);
+    
+    const room = {
+      id: roomId,
+      players: [socket.id],
+      readyState: new Map([[socket.id, false]])
+    };
+    
+    rooms.set(roomId, room);
+    socket.join(roomId);
+    
+    console.log('Room created:', {
+      roomId,
+      sessionId,
+      playerId: socket.id
+    });
+    
+    socket.emit('roomCreated', {
+      roomId,
+      sessionId,
+      role: 'host',
+      readyState: Array.from(room.readyState.entries())
+    });
+  });
+
+  socket.on('error', (error) => {
+    console.error('Socket error for client:', socket.id, error);
+  });
 });
 
 const PORT = process.env.PORT || 3001;

@@ -136,17 +136,27 @@ export function useMultiplayer({
 
   // Use useCallback for room actions
   const createRoom = useCallback(() => {
+    console.log('Creating room...', {
+      socketConnected: socketRef.current?.connected,
+      socketId: socketRef.current?.id
+    });
+
     if (!socketRef.current?.connected) {
+      console.error('Cannot create room: Socket not connected');
       setError('Not connected to server');
       return;
     }
+
     setIsCreatingRoom(true);
     setError(null);
+    
+    console.log('Emitting createRoom event');
     socketRef.current.emit('createRoom');
 
     // Add timeout for room creation
     const timeout = setTimeout(() => {
       if (isCreatingRoom) {
+        console.error('Room creation timed out');
         setError('Room creation timed out');
         setIsCreatingRoom(false);
       }
@@ -240,7 +250,11 @@ export function useMultiplayer({
 
     const handlers = {
       connect: () => {
-        console.log('Socket connected:', { id: socket.id, roomId, role });
+        console.log('Socket connected:', { 
+          id: socket.id, 
+          transport: socket.io.engine.transport.name,
+          connected: socket.connected
+        });
         setError(null);
         onLoadingChange(false);
       },
@@ -329,7 +343,12 @@ export function useMultiplayer({
       },
 
       roomCreated: ({ roomId, sessionId, role: assignedRole, readyState }) => {
-        console.log('Room created:', { roomId, readyState });
+        console.log('Room created event received:', { 
+          roomId, 
+          sessionId, 
+          role: assignedRole, 
+          readyState 
+        });
         setRoomId(roomId);
         setSessionId(sessionId);
         setRole(assignedRole);
