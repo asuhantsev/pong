@@ -55,57 +55,38 @@ export function useMultiplayer({
     if (socketRef.current) return;
     
     const newSocket = io(SOCKET_SERVER, {
-      reconnectionAttempts: 10,
+      reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
+      timeout: 10000,
       transports: ['polling', 'websocket'],
       withCredentials: true,
       autoConnect: true,
       forceNew: true,
-      path: '/socket.io/',
-      upgrade: true,
-      rememberUpgrade: true,
-      extraHeaders: {
-        "Connection": "Upgrade",
-        "Upgrade": "websocket"
-      }
+      path: '/socket.io/'
     });
     
     socketRef.current = newSocket;
     setSocket(newSocket);
 
-    // Add more detailed error handling
+    // Add better error handling and logging
     newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      console.error('Connection error:', error);
       setError(`Connection failed: ${error.message}`);
       onLoadingChange(false);
     });
 
-    newSocket.on('reconnect_attempt', (attemptNumber) => {
-      console.log(`Reconnection attempt ${attemptNumber}`);
-      onLoadingChange(true);
-    });
-
-    newSocket.on('reconnect', () => {
-      console.log('Reconnected successfully');
-      onLoadingChange(false);
-      setError(null);
-    });
-
-    newSocket.on('reconnect_failed', () => {
-      console.error('Failed to reconnect');
-      setError('Failed to reconnect to server');
-      onLoadingChange(false);
-    });
-
-    // Add transport logging
     newSocket.on('connect', () => {
-      console.log('Connected with transport:', newSocket.io.engine.transport.name);
+      console.log('Connected successfully with transport:', newSocket.io.engine.transport.name);
+      setError(null);
+      onLoadingChange(false);
     });
 
-    newSocket.on('upgrade', (transport) => {
-      console.log('Transport upgraded to:', transport);
+    newSocket.on('disconnect', (reason) => {
+      console.log('Disconnected:', reason);
+      if (reason === 'io server disconnect') {
+        // Reconnect manually if server disconnected
+        newSocket.connect();
+      }
     });
 
     return () => {
