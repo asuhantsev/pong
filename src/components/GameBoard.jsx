@@ -6,22 +6,21 @@ import MultiplayerMenu from './MultiplayerMenu'
 import { useMultiplayer } from '../hooks/useMultiplayer'
 import ConnectionError from './ConnectionError'
 import NetworkStatus from './NetworkStatus'
+import { 
+  PADDLE_SPEED,
+  BALL_SIZE,
+  BOARD_WIDTH,
+  BOARD_HEIGHT,
+  PADDLE_WIDTH,
+  PADDLE_HEIGHT,
+  PADDLE_OFFSET,
+  WINNING_SCORE,
+  PHYSICS_STEP,
+  INTERPOLATION_STEP,
+  BALL_SPEED
+} from '../constants/gameConstants';
 
 // Group all constants at the top
-const PADDLE_SPEED = 10;
-const BALL_SIZE = 15;
-const BOARD_WIDTH = 800;
-const BOARD_HEIGHT = 600;
-const PADDLE_WIDTH = 20;
-const PADDLE_HEIGHT = 100;
-const PADDLE_OFFSET = 20;
-const WINNING_SCORE = 10;
-const PHYSICS_STEP = 1000 / 60;
-const INTERPOLATION_STEP = 1000 / 120;
-const BALL_SPEED = {
-  x: 3,
-  y: 3
-};
 const PADDLE_BOUNDARIES = {
   top: 0,
   bottom: BOARD_HEIGHT - PADDLE_HEIGHT
@@ -293,17 +292,16 @@ function GameBoard() {
     const currentPos = side === 'left' ? leftPaddlePos : rightPaddlePos;
     const setPosition = side === 'left' ? setLeftPaddlePos : setRightPaddlePos;
 
-    const newPosition = Math.max(
-      PADDLE_BOUNDARIES.top,
-      Math.min(
-        PADDLE_BOUNDARIES.bottom,
-        currentPos + (isMovingDown ? moveAmount : -moveAmount)
-      )
-    );
+    // Calculate new position
+    let newPosition = currentPos + (isMovingDown ? moveAmount : -moveAmount);
+    
+    // Clamp position to boundaries
+    newPosition = Math.max(0, Math.min(BOARD_HEIGHT - PADDLE_HEIGHT, newPosition));
 
-    if (Math.abs(newPosition - currentPos) > 0.1) {
+    // Only update if position has changed significantly
+    if (Math.abs(newPosition - currentPos) > 0.5) {
       setPosition(newPosition);
-      sendPaddleMove(newPosition, side, performance.now());
+      sendPaddleMove(newPosition, side);
     }
   }, [keysPressed, leftPaddlePos, rightPaddlePos, sendPaddleMove]);
 
@@ -313,32 +311,48 @@ function GameBoard() {
     
     if (buffer.length < 2) return;
 
-    const [prev, next] = buffer.slice(0, 2); // Take only the first two entries
-    const currentTime = timestamp + serverTimeOffset;
+    const [prev, next] = buffer.slice(-2);  // Get the last two positions
+    const currentTime = performance.now();
     
-    // Ensure we have valid timestamps
-    if (!prev.timestamp || !next.timestamp) return;
+    if (!prev?.timestamp || !next?.timestamp) return;
     
+    // Ensure timestamps are in correct order
+    if (prev.timestamp >= next.timestamp) return;
+    
+    const timeDiff = next.timestamp - prev.timestamp;
     const progress = Math.min(1, Math.max(0, 
-      (currentTime - prev.timestamp) / (next.timestamp - prev.timestamp)
+      (currentTime - prev.timestamp) / timeDiff
     ));
-        
-    if (progress <= 1) {
-      const interpolatedPosition = prev.position + 
-                                 (next.position - prev.position) * progress;
-      
+
+    // Only interpolate if we haven't reached the target
+    if (progress < 1) {
+      const interpolatedPosition = Math.max(
+        0,
+        Math.min(
+          BOARD_HEIGHT - PADDLE_HEIGHT,
+          prev.position + (next.position - prev.position) * progress
+        )
+      );
+
       if (side === 'left') {
         setLeftPaddlePos(interpolatedPosition);
       } else {
         setRightPaddlePos(interpolatedPosition);
       }
+    } else {
+      // If we've reached the target, just set to the final position
+      if (side === 'left') {
+        setLeftPaddlePos(next.position);
+      } else {
+        setRightPaddlePos(next.position);
+      }
     }
 
     // Clean up old positions
-    while (buffer.length > 2 && buffer[0].timestamp < currentTime - 100) {
+    if (buffer.length > 2 && currentTime - buffer[0].timestamp > 1000) {
       buffer.shift();
     }
-  }, [role, paddleBuffer, serverTimeOffset]);
+  }, [role, paddleBuffer]);
 
   // 8. Pause/resume handlers
   const handlePauseChange = useCallback((shouldPause) => {

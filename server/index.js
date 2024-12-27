@@ -133,20 +133,27 @@ io.on('connection', (socket) => {
   });
 
   // Update paddle movement handling
-  socket.on('paddleMove', ({ position, paddleSide, timestamp }) => {
+  socket.on('paddleMove', ({ position, paddleSide }) => {
     const roomId = socket.roomId;
     if (!roomId) return;
 
     const room = rooms.get(roomId);
     if (!room) return;
     
-    // Use server timestamp for consistency
-    const serverTimestamp = Date.now();
+    // Validate position
+    const boundedPosition = Math.max(
+      0,
+      Math.min(
+        600 - 100, // BOARD_HEIGHT - PADDLE_HEIGHT
+        position
+      )
+    );
     
+    // Send update with current server time
     socket.to(roomId).emit('paddleUpdate', {
-      position,
+      position: boundedPosition,
       paddleSide,
-      timestamp: serverTimestamp
+      timestamp: Date.now()
     });
   });
 

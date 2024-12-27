@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
+import { BOARD_HEIGHT, PADDLE_HEIGHT } from '../constants/gameConstants';
 
 const SOCKET_SERVER = 'http://localhost:3001';
 const STORAGE_KEY = 'pong_session';
@@ -226,19 +227,23 @@ export function useMultiplayer({
           return;
         }
 
-        console.log('Received paddle update:', { position, paddleSide, timestamp });
-        
-        // Add server time offset to sync timestamps
-        const adjustedTimestamp = timestamp + serverTimeOffset;
-        
-        // Add to appropriate buffer
+        // Ensure position is within boundaries
+        const boundedPosition = Math.max(
+          0,
+          Math.min(
+            BOARD_HEIGHT - PADDLE_HEIGHT,
+            position
+          )
+        );
+
+        // Add to appropriate buffer with server timestamp
         paddleBufferRef.current[paddleSide].push({
-          position,
-          timestamp: adjustedTimestamp
+          position: boundedPosition,
+          timestamp: timestamp
         });
 
-        // Keep buffer size reasonable
-        while (paddleBufferRef.current[paddleSide].length > 3) {
+        // Keep only last few positions
+        if (paddleBufferRef.current[paddleSide].length > 3) {
           paddleBufferRef.current[paddleSide].shift();
         }
       },
