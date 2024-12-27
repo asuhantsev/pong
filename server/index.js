@@ -133,6 +133,9 @@ io.on('connection', (socket) => {
         playerId: socket.id,
         readyState: Array.from(room.readyState.entries())
       });
+
+      // Store the room ID on the socket for easy access
+      socket.roomId = roomId;
     } catch (error) {
       console.error('Error joining room:', error);
       socket.emit('roomError', 'Failed to join room');
@@ -209,18 +212,15 @@ io.on('connection', (socket) => {
 
     const room = rooms.get(roomId);
     if (!room || room.players[0] !== socket.id) {
-      console.log('Not authorized to send ball updates');
+      console.log('Not authorized to send ball updates:', {
+        roomId,
+        socketId: socket.id,
+        isHost: room?.players[0] === socket.id
+      });
       return;
     }
 
-    console.log('Ball move:', {
-      roomId,
-      position,
-      velocity,
-      timestamp
-    });
-
-    // Broadcast ball position to other players
+    // Broadcast ball position to other players in the room
     socket.to(roomId).emit('ballUpdate', {
       position,
       velocity,

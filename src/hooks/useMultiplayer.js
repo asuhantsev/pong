@@ -313,6 +313,8 @@ export function useMultiplayer({
         if (role === 'host') return; // Host manages its own ball
         
         console.log('Received ball update:', { position, velocity, timestamp });
+        
+        // Use requestAnimationFrame for smooth updates
         requestAnimationFrame(() => {
           setBallPos(position);
           setBallVelocity(velocity);

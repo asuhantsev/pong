@@ -646,8 +646,15 @@ function GameBoard() {
         y: ballPos.y + ballVelocity.y
       };
 
-      // Ball collision logic...
-      
+      // Ball collision with top and bottom
+      if (newBallPos.y <= 0 || newBallPos.y >= BOARD_HEIGHT - BALL_SIZE) {
+        setBallVelocity(prev => ({
+          ...prev,
+          y: -prev.y
+        }));
+        newBallPos.y = newBallPos.y <= 0 ? 0 : BOARD_HEIGHT - BALL_SIZE;
+      }
+
       setBallPos(newBallPos);
       sendBallMove(newBallPos, ballVelocity);
     }
