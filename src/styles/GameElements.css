@@ -1,3 +1,13 @@
+body {
+  background-color: #000000;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 /* Paddle styling */
 .paddle {
   width: 20px;
@@ -501,12 +511,12 @@
   top: 20px;
   right: 20px;
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid white;
+  background: #ff0000;  /* Bright red for testing */
+  border: 2px solid white;
   color: white;
   border-radius: 4px;
   cursor: pointer;
-  z-index: 1000;
+  z-index: 9999;  /* Very high z-index */
   font-size: 16px;
   min-width: 80px;
 }

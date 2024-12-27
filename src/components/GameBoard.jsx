@@ -727,13 +727,25 @@ function GameBoard() {
 
   // Add pause button UI
   const renderPauseButton = () => {
-    if (!isGameStarted || winner) return null;
+    console.log('Render pause button:', {
+      isGameStarted,
+      winner,
+      isPaused
+    });
+
+    if (!isGameStarted || winner) {
+      console.log('Not rendering pause button - game not started or has winner');
+      return null;
+    }
     
     return (
       <button 
         className="pause-button"
         onClick={handlePause}
-        style={{ display: 'block' }}
+        style={{ 
+          display: 'block',
+          background: '#ff0000' // Bright red for testing
+        }}
       >
         {isPaused ? 'Resume' : 'Pause'}
       </button>
@@ -752,7 +764,7 @@ function GameBoard() {
   };
 
   return (
-    <div className="game-container">
+    <div className="game-container" style={{ backgroundColor: '#000000' }}>
       {renderPauseButton()}
       {connectionError && (
         <ConnectionError 
