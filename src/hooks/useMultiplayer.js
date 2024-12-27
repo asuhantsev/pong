@@ -272,8 +272,10 @@ export function useMultiplayer({
 
     let lastPingSent = 0;
     const pingInterval = setInterval(() => {
-      lastPingSent = Date.now();
-      socket.emit('ping');
+      if (socket.connected) {
+        lastPingSent = Date.now();
+        socket.emit('ping');
+      }
     }, 1000);
 
     const handlers = {
@@ -293,7 +295,9 @@ export function useMultiplayer({
       },
 
       pong: () => {
-        const latency = Date.now() - lastPingSent;
+        const latency = Math.round((Date.now() - lastPingSent) / 2); // Round-trip time divided by 2
+        console.log('Received pong, latency:', latency);
+        
         const newStats = {
           latency,
           quality: latency < 50 ? 'good' : latency < 100 ? 'medium' : 'poor'

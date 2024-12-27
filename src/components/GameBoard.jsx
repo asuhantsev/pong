@@ -727,14 +727,15 @@ function GameBoard() {
 
   // Add pause button UI
   const renderPauseButton = () => {
-    if (!isGameStarted || winner || !isMultiplayer) return null;
+    if (!isGameStarted || winner) return null;
     
     return (
       <button 
         className="pause-button"
         onClick={handlePause}
+        style={{ display: 'block' }}
       >
-        {isPaused ? 'Paused' : 'Pause'}
+        {isPaused ? 'Resume' : 'Pause'}
       </button>
     );
   };
@@ -752,6 +753,7 @@ function GameBoard() {
 
   return (
     <div className="game-container">
+      {renderPauseButton()}
       {connectionError && (
         <ConnectionError 
           error={connectionError}
@@ -819,7 +821,6 @@ function GameBoard() {
           <p>Loading...</p>
         </div>
       )}
-      {renderPauseButton()}
       {renderPauseMenu()}
       {renderCountdown()}
     </div>
