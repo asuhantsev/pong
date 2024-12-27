@@ -177,6 +177,84 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Add game state handlers
+  socket.on('paddleMove', ({ position, paddleSide, timestamp }) => {
+    const roomId = socket.roomId;
+    if (!roomId) {
+      console.log('No room found for paddle move');
+      return;
+    }
+
+    console.log('Paddle move:', {
+      roomId,
+      paddleSide,
+      position,
+      timestamp
+    });
+
+    // Broadcast paddle position to other players in the same room
+    socket.to(roomId).emit('paddleUpdate', {
+      position,
+      paddleSide,
+      timestamp
+    });
+  });
+
+  socket.on('ballMove', ({ position, velocity, timestamp }) => {
+    const roomId = socket.roomId;
+    if (!roomId) {
+      console.log('No room found for ball move');
+      return;
+    }
+
+    const room = rooms.get(roomId);
+    if (!room || room.players[0] !== socket.id) {
+      console.log('Not authorized to send ball updates');
+      return;
+    }
+
+    console.log('Ball move:', {
+      roomId,
+      position,
+      velocity,
+      timestamp
+    });
+
+    // Broadcast ball position to other players
+    socket.to(roomId).emit('ballUpdate', {
+      position,
+      velocity,
+      timestamp
+    });
+  });
+
+  socket.on('score', ({ score, scorer }) => {
+    const roomId = socket.roomId;
+    if (!roomId) {
+      console.log('No room found for score update');
+      return;
+    }
+
+    const room = rooms.get(roomId);
+    if (!room || room.players[0] !== socket.id) {
+      console.log('Not authorized to update score');
+      return;
+    }
+
+    console.log('Score update:', {
+      roomId,
+      score,
+      scorer
+    });
+
+    // Broadcast score to all players in the room
+    io.to(roomId).emit('scoreUpdate', {
+      score,
+      scorer,
+      timestamp: Date.now()
+    });
+  });
+
   socket.on('error', (error) => {
     console.error('Socket error for client:', socket.id, error);
   });

@@ -200,32 +200,39 @@ export function useMultiplayer({
   
   // Throttled paddle movement sender
   const sendPaddleMove = useCallback((position, paddleSide) => {
-    if (!socket || !roomId) return;
+    if (!socketRef.current?.connected || !roomId) {
+      return;
+    }
 
     const now = Date.now();
     if (now - lastPaddleUpdate >= THROTTLE_MS) {
-      socket.emit('paddleMove', {
+      console.log('Sending paddle update:', { position, paddleSide });
+      socketRef.current.emit('paddleMove', {
         position,
         paddleSide,
         timestamp: now
       });
       lastPaddleUpdate = now;
     }
-  }, [socket, roomId]);
+  }, [socketRef, roomId]);
 
   // Ball movement sender (using the same lastBallUpdate variable)
   const sendBallMove = useCallback((position, velocity) => {
-    if (!socket || !roomId || role !== 'host') return;
+    if (!socketRef.current?.connected || !roomId || role !== 'host') {
+      return;
+    }
     
     const now = Date.now();
     if (now - lastBallUpdate >= THROTTLE_MS) {
-      socket.emit('ballMove', { 
+      console.log('Sending ball update:', { position, velocity });
+      socketRef.current.emit('ballMove', { 
         position, 
-        velocity
+        velocity,
+        timestamp: now
       });
       lastBallUpdate = now;
     }
-  }, [socket, roomId, role]);
+  }, [socketRef, roomId, role]);
 
   // Update score handling to prevent double counting
   const sendScore = (score, scorer) => {
@@ -290,31 +297,16 @@ export function useMultiplayer({
       },
 
       paddleUpdate: ({ position, paddleSide, timestamp }) => {
-        // Don't process updates for the paddle we control
-        if ((role === 'host' && paddleSide === 'left') || 
-            (role === 'client' && paddleSide === 'right')) {
-          return;
-        }
-
-        // Ensure position is within boundaries
-        const boundedPosition = Math.max(
-          0,
-          Math.min(
-            BOARD_HEIGHT - PADDLE_HEIGHT,
-            position
-          )
-        );
-
-        // Add to appropriate buffer with server timestamp
-        paddleBufferRef.current[paddleSide].push({
-          position: boundedPosition,
-          timestamp: timestamp
+        console.log('Received paddle update:', { position, paddleSide, timestamp });
+        
+        // Update the appropriate paddle position
+        requestAnimationFrame(() => {
+          if (paddleSide === 'left') {
+            setLeftPaddlePos(position);
+          } else {
+            setRightPaddlePos(position);
+          }
         });
-
-        // Keep only last few positions
-        if (paddleBufferRef.current[paddleSide].length > 3) {
-          paddleBufferRef.current[paddleSide].shift();
-        }
       },
 
       ballUpdate: ({ position, velocity, timestamp }) => {
@@ -327,8 +319,8 @@ export function useMultiplayer({
         });
       },
 
-      scoreUpdate: ({ score, scorer }) => {
-        console.log('Received score update:', { score, scorer });
+      scoreUpdate: ({ score, scorer, timestamp }) => {
+        console.log('Received score update:', { score, scorer, timestamp });
         setScore(score);
       },
 

@@ -639,25 +639,32 @@ function GameBoard() {
   const updateGameState = useCallback((timestamp) => {
     if (!isGameStarted || isPaused) return;
 
-    // Update ball position
-    const newBallPos = {
-      x: ballPos.x + ballVelocity.x,
-      y: ballPos.y + ballVelocity.y
-    };
-
-    // Ball collision with top and bottom
-    if (newBallPos.y <= 0 || newBallPos.y >= BOARD_HEIGHT - BALL_SIZE) {
-      ballVelocity.y = -ballVelocity.y;
-    }
-
-    // If we're the host, handle ball physics and send updates
+    // Update ball position (only if host)
     if (role === 'host') {
+      const newBallPos = {
+        x: ballPos.x + ballVelocity.x,
+        y: ballPos.y + ballVelocity.y
+      };
+
+      // Ball collision logic...
+      
       setBallPos(newBallPos);
       sendBallMove(newBallPos, ballVelocity);
     }
 
-    // ... rest of your game state update code ...
-  }, [isGameStarted, isPaused, ballPos, ballVelocity, role, sendBallMove]);
+    // Update paddle positions
+    if (keysPressed.has('w') || keysPressed.has('ArrowUp')) {
+      const newPos = Math.max(0, (role === 'host' ? leftPaddlePos : rightPaddlePos) - PADDLE_SPEED);
+      if (role === 'host') {
+        setLeftPaddlePos(newPos);
+        sendPaddleMove(newPos, 'left');
+      } else {
+        setRightPaddlePos(newPos);
+        sendPaddleMove(newPos, 'right');
+      }
+    }
+    // ... similar for other paddle movements
+  }, [isGameStarted, isPaused, ballPos, ballVelocity, role, sendBallMove, keysPressed, leftPaddlePos, rightPaddlePos, sendPaddleMove]);
 
   // Add keydown handler for pause
   useEffect(() => {
