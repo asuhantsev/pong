@@ -233,21 +233,20 @@ export function useMultiplayer({
     socket?.emit('score', { roomId, score, scorer });
   };
 
-  const toggleReady = () => {
-    if (!socket || !roomId) {
-      console.log('❌ Cannot toggle ready: No socket or room');
+  const toggleReady = useCallback((roomId) => {
+    console.log('Toggling ready state:', {
+      roomId,
+      socketId: socketRef.current?.id,
+      currentReadyState: playersReady.get(socketRef.current?.id)
+    });
+
+    if (!socketRef.current?.connected || !roomId) {
+      console.error('Cannot toggle ready: not connected or no room');
       return;
     }
-    
-    console.log('=== Toggle Ready Request ===', {
-      socketId: socket.id,
-      roomId,
-      role,
-      currentReadyState: Array.from(playersReady.entries())
-    });
-    
-    socket.emit('toggleReady', roomId);
-  };
+
+    socketRef.current.emit('toggleReady', { roomId });
+  }, [playersReady]);
 
   const sendWinner = (winner) => {
     if (role !== 'host') return;
@@ -389,8 +388,17 @@ export function useMultiplayer({
       },
 
       readyStateUpdate: ({ readyState }) => {
-        console.log('Ready state update:', readyState);
-        setPlayersReady(new Map(readyState));
+        console.log('Ready state update received:', readyState);
+        const newReadyState = new Map(readyState);
+        setPlayersReady(newReadyState);
+        
+        // Check if all players are ready
+        const allReady = Array.from(newReadyState.values()).every(ready => ready);
+        if (allReady && newReadyState.size === 2) {
+          console.log('All players ready, starting game...');
+          setIsReady(true);
+          onGameStart();
+        }
       },
 
       roomError: (error) => {

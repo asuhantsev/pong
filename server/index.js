@@ -141,13 +141,28 @@ io.on('connection', (socket) => {
 
   // Add ready state handler
   socket.on('toggleReady', ({ roomId }) => {
-    console.log('Toggle ready:', { roomId, socketId: socket.id });
+    console.log('Toggle ready request:', { 
+      roomId, 
+      socketId: socket.id 
+    });
     
     const room = rooms.get(roomId);
-    if (!room) return;
+    if (!room) {
+      console.log('Room not found:', roomId);
+      return;
+    }
 
+    // Toggle ready state for this player
     const currentState = room.readyState.get(socket.id) || false;
-    room.readyState.set(socket.id, !currentState);
+    const newState = !currentState;
+    room.readyState.set(socket.id, newState);
+
+    console.log('Ready state updated:', {
+      roomId,
+      socketId: socket.id,
+      newState,
+      allStates: Array.from(room.readyState.entries())
+    });
 
     // Broadcast ready state to all players in the room
     io.to(roomId).emit('readyStateUpdate', {
@@ -157,6 +172,7 @@ io.on('connection', (socket) => {
     // Check if all players are ready
     const allReady = Array.from(room.readyState.values()).every(ready => ready);
     if (allReady && room.players.length === 2) {
+      console.log('All players ready, starting game in room:', roomId);
       io.to(roomId).emit('gameReady');
     }
   });
