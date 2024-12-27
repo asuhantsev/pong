@@ -35,6 +35,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .score-board {
@@ -507,18 +509,17 @@ body {
 }
 
 .pause-button {
-  position: absolute;
-  top: -40px;  /* Position above the game board */
-  right: 0;
-  padding: 8px 16px;
-  background: #ff0000;
-  border: 2px solid white;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  z-index: 9999;
-  font-size: 16px;
-  min-width: 80px;
+  position: fixed !important; /* Force fixed positioning */
+  top: 20px !important;
+  right: 20px !important;
+  padding: 10px 20px !important;
+  background-color: #ff0000 !important;
+  color: white !important;
+  border: 2px solid white !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  z-index: 9999 !important;
+  min-width: 80px !important;
 }
 
 .pause-button:hover {

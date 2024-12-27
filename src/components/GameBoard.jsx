@@ -727,45 +727,38 @@ function GameBoard() {
 
   // Add pause button UI
   const renderPauseButton = () => {
-    const shouldRender = isGameStarted && !winner;
-    console.log('Pause button debug:', {
-      shouldRender,
+    console.log('renderPauseButton called:', {
       isGameStarted,
       winner,
+      isPaused,
       isMultiplayer,
       role,
-      gameboardWrapperExists: document.querySelector('.game-board-wrapper') !== null,
-      buttonStyle: {
-        position: 'absolute',
-        top: '-40px',
-        right: '0',
-        background: '#ff0000',
-        zIndex: 9999
+      domCheck: {
+        gameBoard: document.querySelector('.game-board'),
+        gameBoardWrapper: document.querySelector('.game-board-wrapper'),
+        container: document.querySelector('.game-container')
       }
     });
-
-    if (!shouldRender) return null;
     
     return (
       <button 
-        id="pause-button"  // Add ID for easier debugging
+        id="pause-button"
         className="pause-button"
         onClick={handlePause}
         style={{ 
-          position: 'absolute',
-          top: '-40px',
-          right: '0',
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
           background: '#ff0000',
           padding: '10px 20px',
           color: 'white',
           border: '2px solid white',
           fontSize: '16px',
           cursor: 'pointer',
-          zIndex: 9999,
-          minWidth: '80px'
+          zIndex: 9999
         }}
       >
-        {isPaused ? 'Resume' : 'Pause'}
+        PAUSE TEST
       </button>
     );
   };
@@ -781,10 +774,21 @@ function GameBoard() {
     );
   };
 
+  useEffect(() => {
+    console.log('GameBoard state:', {
+      isGameStarted,
+      winner,
+      isPaused,
+      isMultiplayer,
+      role
+    });
+  }, [isGameStarted, winner, isPaused, isMultiplayer, role]);
+
   return (
     <div className="game-container">
       {isGameStarted ? (
         <>
+          {renderPauseButton()}
           <div className="score-board">
             <div className="player-score">
               <div className="player-name">{playerNames.left}</div>
@@ -796,7 +800,6 @@ function GameBoard() {
             </div>
           </div>
           <div className="game-board-wrapper" style={{ position: 'relative' }}>
-            {renderPauseButton()}
             <div className="game-board">
               <Paddle position="left" top={leftPaddlePos} />
               <Paddle position="right" top={rightPaddlePos} />
