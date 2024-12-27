@@ -351,20 +351,15 @@ export function useMultiplayer({
         setScore(score);
       },
 
-      pauseUpdate: ({ isPaused, countdownValue, timestamp }) => {
+      pauseUpdate: ({ isPaused, countdownValue }) => {
         console.log('Received pause update:', { isPaused, countdownValue });
         
-        // Always update pause state
+        // Update pause state
         onPauseUpdate(isPaused);
         
-        // Always update countdown value
-        onCountdownUpdate(countdownValue);
-        
-        // Clear local countdown interval if we receive a null countdown
-        if (countdownValue === null && !isPaused) {
-          // Game is being unpaused
-          onPauseUpdate(false);
-          onCountdownUpdate(null);
+        // Update countdown
+        if (typeof countdownValue === 'number' || countdownValue === null) {
+          onCountdownUpdate(countdownValue);
         }
       },
 

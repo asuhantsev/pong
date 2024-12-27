@@ -397,31 +397,27 @@ function GameBoard() {
   }, [isPaused, isGameStarted, socket]);
 
   const handleResume = useCallback(() => {
-    // Allow both players to resume
     if (!socket?.connected) return;
     
     // Start countdown
     let count = 3;
-    setCountdown(count);
     
     // Send initial countdown state
     socket.emit('pauseGame', {
-      isPaused: true, // Keep paused during countdown
+      isPaused: true,
       countdownValue: count
     });
     
     const countdownInterval = setInterval(() => {
       count--;
+      
       if (count > 0) {
-        setCountdown(count);
         socket.emit('pauseGame', {
           isPaused: true,
           countdownValue: count
         });
       } else {
         clearInterval(countdownInterval);
-        setCountdown(null);
-        setIsPaused(false);
         socket.emit('pauseGame', {
           isPaused: false,
           countdownValue: null
@@ -429,6 +425,7 @@ function GameBoard() {
       }
     }, 1000);
 
+    // Store interval reference for cleanup
     countdownIntervalRef.current = countdownInterval;
   }, [socket]);
 
@@ -728,6 +725,31 @@ function GameBoard() {
     );
   };
 
+  // Add pause button UI
+  const renderPauseButton = () => {
+    if (!isGameStarted || winner || !isMultiplayer) return null;
+    
+    return (
+      <button 
+        className="pause-button"
+        onClick={handlePause}
+      >
+        {isPaused ? 'Paused' : 'Pause'}
+      </button>
+    );
+  };
+
+  // Add countdown display
+  const renderCountdown = () => {
+    if (!countdown) return null;
+    
+    return (
+      <div className="countdown">
+        {countdown}
+      </div>
+    );
+  };
+
   return (
     <div className="game-container">
       {connectionError && (
@@ -797,6 +819,9 @@ function GameBoard() {
           <p>Loading...</p>
         </div>
       )}
+      {renderPauseButton()}
+      {renderPauseMenu()}
+      {renderCountdown()}
     </div>
   )
 }
