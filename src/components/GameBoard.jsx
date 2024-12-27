@@ -727,24 +727,33 @@ function GameBoard() {
 
   // Add pause button UI
   const renderPauseButton = () => {
-    console.log('Render pause button:', {
+    const shouldRender = isGameStarted && !winner;
+    console.log('Pause button render conditions:', {
       isGameStarted,
       winner,
-      isPaused
+      shouldRender,
+      isMultiplayer,
+      role
     });
 
-    if (!isGameStarted || winner) {
-      console.log('Not rendering pause button - game not started or has winner');
-      return null;
-    }
+    if (!shouldRender) return null;
     
     return (
       <button 
         className="pause-button"
         onClick={handlePause}
         style={{ 
-          display: 'block',
-          background: '#ff0000' // Bright red for testing
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          background: '#ff0000',
+          padding: '10px 20px',
+          color: 'white',
+          border: '2px solid white',
+          fontSize: '16px',
+          cursor: 'pointer',
+          zIndex: 9999,
+          minWidth: '80px'
         }}
       >
         {isPaused ? 'Resume' : 'Pause'}
@@ -764,21 +773,7 @@ function GameBoard() {
   };
 
   return (
-    <div className="game-container" style={{ backgroundColor: '#000000' }}>
-      {renderPauseButton()}
-      {connectionError && (
-        <ConnectionError 
-          error={connectionError}
-          onRetry={handleRetryConnection}
-          onExit={handleExitMultiplayer}
-        />
-      )}
-      {isMultiplayer && isGameStarted && (
-        <NetworkStatus 
-          latency={networkStats.latency}
-          quality={networkStats.quality}
-        />
-      )}
+    <div className="game-container">
       {isGameStarted ? (
         <>
           <div className="score-board">
@@ -791,50 +786,20 @@ function GameBoard() {
               <div className="score">{score.right}</div>
             </div>
           </div>
-          <div className="game-board">
-            <Paddle position="left" top={leftPaddlePos} />
-            <Paddle position="right" top={rightPaddlePos} />
-            <Ball position={ballPos} />
-            {(isPaused || countdown) && (
-              <div className="pause-overlay">
-                <div 
-                  className="pause-menu"
-                  onClick={handlePauseMenuClick}
-                >
-                  {countdown ? (
-                    <div className="countdown">{countdown}</div>
-                  ) : (
-                    <>
-                      <h2>Game Paused</h2>
-                      <div className="button-group">
-                        <button className="start-button" onClick={handleResume}>
-                          Resume
-                        </button>
-                        <button className="back-button" onClick={handleExit}>
-                          Exit
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
+          <div className="game-board-wrapper" style={{ position: 'relative' }}>
+            {renderPauseButton()}
+            <div className="game-board">
+              <Paddle position="left" top={leftPaddlePos} />
+              <Paddle position="right" top={rightPaddlePos} />
+              <Ball position={ballPos} />
+            </div>
           </div>
-          {renderReconnectingOverlay()}
         </>
       ) : (
         <div className="start-menu">
           {renderStartMenu()}
         </div>
       )}
-      {isLoading && (
-        <div className="loading-overlay">
-          <div className="spinner"></div>
-          <p>Loading...</p>
-        </div>
-      )}
-      {renderPauseMenu()}
-      {renderCountdown()}
     </div>
   )
 }

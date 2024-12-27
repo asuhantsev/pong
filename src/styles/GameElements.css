@@ -507,22 +507,22 @@ body {
 }
 
 .pause-button {
-  position: fixed;
-  top: 20px;
-  right: 20px;
+  position: absolute;
+  top: -40px;  /* Position above the game board */
+  right: 0;
   padding: 8px 16px;
-  background: #ff0000;  /* Bright red for testing */
+  background: #ff0000;
   border: 2px solid white;
   color: white;
   border-radius: 4px;
   cursor: pointer;
-  z-index: 9999;  /* Very high z-index */
+  z-index: 9999;
   font-size: 16px;
   min-width: 80px;
 }
 
 .pause-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #ff3333;
 }
 
 .countdown {
@@ -533,4 +533,19 @@ body {
   font-size: 72px;
   color: white;
   z-index: 100;
+}
+
+.game-board-wrapper {
+  width: 800px;  /* Match your game board width */
+  height: 600px; /* Match your game board height */
+  border: 1px solid white;
+  margin: 20px auto;
+  position: relative;
+  background: #000;
+}
+
+.game-board {
+  width: 100%;
+  height: 100%;
+  position: relative;
 } 
