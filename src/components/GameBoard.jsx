@@ -1,15 +1,53 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import '../styles/GameElements.css'
 import Paddle from './Paddle'
 import Ball from './Ball'
+import MultiplayerMenu from './MultiplayerMenu'
+import { useMultiplayer } from '../hooks/useMultiplayer'
+import ConnectionError from './ConnectionError'
+import NetworkStatus from './NetworkStatus'
+
+// Group all constants at the top
+const PADDLE_SPEED = 10;
+const BALL_SIZE = 15;
+const BOARD_WIDTH = 800;
+const BOARD_HEIGHT = 600;
+const PADDLE_WIDTH = 20;
+const PADDLE_HEIGHT = 100;
+const PADDLE_OFFSET = 20;
+const WINNING_SCORE = 10;
+const PHYSICS_STEP = 1000 / 60;
+const INTERPOLATION_STEP = 1000 / 120;
+const BALL_SPEED = {
+  x: 3,
+  y: 3
+};
+const PADDLE_BOUNDARIES = {
+  top: 0,
+  bottom: BOARD_HEIGHT - PADDLE_HEIGHT
+};
 
 function GameBoard() {
+  // Move these state declarations to the top with other state
+  const [isLoading, setIsLoading] = useState(false);
+  const [networkStats, setNetworkStats] = useState({
+    latency: 0,
+    quality: 'good'
+  });
+  const [connectionError, setConnectionError] = useState(null);
+
+  // Group ALL refs together at the top
+  const frameIdRef = useRef(null);
+  const ballBufferRef = useRef([]);
+  const scoreProcessedRef = useRef(false);
+  const countdownIntervalRef = useRef(null);
+
   // State for paddle positions
   const [leftPaddlePos, setLeftPaddlePos] = useState(250)
   const [rightPaddlePos, setRightPaddlePos] = useState(250)
   
   // State to track which keys are currently pressed
-  const [keysPressed, setKeysPressed] = useState(new Set())
+  const [keysPressed, setKeysPressed] = useState(new Set());
   
   // Add ball state
   const [ballPos, setBallPos] = useState({
@@ -17,32 +55,11 @@ function GameBoard() {
     y: 300  // Center of board (600/2)
   })
 
-  // Constants for paddle movement
-  const PADDLE_SPEED = 10
-  const PADDLE_BOUNDARY = {
-    top: 0,
-    bottom: 500
-  }
-  const BALL_SIZE = 15
-  const BOARD_WIDTH = 800
-  const BOARD_HEIGHT = 600
-
-  // Add paddle constants
-  const PADDLE_WIDTH = 20
-  const PADDLE_HEIGHT = 100
-  const PADDLE_OFFSET = 20  // Distance from edge of board
-
   // Add score state
   const [score, setScore] = useState({
     left: 0,
     right: 0
   })
-
-  // Add constants for ball speed
-  const BALL_SPEED = {
-    x: 3,  // Horizontal speed
-    y: 3   // Initial vertical speed
-  }
 
   // Update initial ball velocity state
   const [ballVelocity, setBallVelocity] = useState({
@@ -58,7 +75,6 @@ function GameBoard() {
 
   // Add winning state
   const [winner, setWinner] = useState(null)
-  const WINNING_SCORE = 10
 
   // Add player names state
   const [playerNames, setPlayerNames] = useState({
@@ -72,10 +88,70 @@ function GameBoard() {
   // Add countdown state
   const [countdown, setCountdown] = useState(null)
 
-  // Add ref to store interval ID
-  const countdownIntervalRef = useRef(null)
+  // Add multiplayer state
+  const [isMultiplayer, setIsMultiplayer] = useState(false)
+  const { 
+    socket, 
+    roomId, 
+    error: socketError, 
+    isReady, 
+    createRoom, 
+    joinRoom,
+    role,
+    sendPaddleMove,
+    sendBallMove,
+    sendScore,
+    playersReady,
+    toggleReady,
+    isReconnecting,
+    disconnect,
+    clearSession,
+    sendWinner,
+    serverTimeOffset,
+    networkStats: currentNetworkStats,
+    isConnected,
+    paddleBuffer,
+    isCreatingRoom,
+    isJoiningRoom
+  } = useMultiplayer({
+    setBallPos,
+    setBallVelocity,
+    setLeftPaddlePos,
+    setRightPaddlePos,
+    setScore,
+    onPauseUpdate: setIsPaused,
+    onCountdownUpdate: setCountdown,
+    onGameStart: () => setIsGameStarted(true),
+    onGameEnd: () => setIsGameStarted(false),
+    onWinnerUpdate: setWinner,
+    onLoadingChange: setIsLoading,
+    onNetworkStatsUpdate: setNetworkStats
+  });
 
-  // Add function to clear countdown
+  // Add connection error handler
+  useEffect(() => {
+    if (socketError) {
+      setConnectionError(socketError);
+    }
+  }, [socketError]);
+
+  // Add retry handler
+  const handleRetryConnection = () => {
+    setConnectionError(null);
+    if (roomId) {
+      // Attempt to rejoin the room
+      joinRoom(roomId);
+    }
+  };
+
+  // Add exit handler
+  const handleExitMultiplayer = () => {
+    setConnectionError(null);
+    setIsMultiplayer(false);
+    disconnect();
+  };
+
+  // 1. Basic utility functions that don't depend on other functions
   const clearCountdown = () => {
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current)
@@ -84,9 +160,7 @@ function GameBoard() {
     setCountdown(null)
   }
 
-  // Update input handling to allow spaces
   const handleNameChange = (player, value) => {
-    // Only use trim() when checking for empty string
     const trimmedValue = value.trim()
     setPlayerNames(prev => ({
       ...prev,
@@ -94,292 +168,464 @@ function GameBoard() {
     }))
   }
 
-  // Helper function to reset ball with delay
+  // 2. Collision detection (used by updateBallPhysics)
+  const checkCollision = useCallback((ballPos, paddlePos, isLeftPaddle) => {
+    const paddleX = isLeftPaddle ? PADDLE_OFFSET : BOARD_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH;
+    return (
+      ballPos.x < paddleX + PADDLE_WIDTH &&
+      ballPos.x + BALL_SIZE > paddleX &&
+      ballPos.y < paddlePos + PADDLE_HEIGHT &&
+      ballPos.y + BALL_SIZE > paddlePos
+    );
+  }, []);
+
+  // 3. Ball reset (used by handleScoring)
   const resetBallWithDelay = (direction) => {
     setIsScoreDelay(true)
+    const totalScore = score.left + score.right;
+    const goalSpeedIncrease = Math.min(totalScore * 0.15, 0.5);
+    const currentSpeed = BALL_SPEED.x * (1 + goalSpeedIncrease);
     
-    // Wait for 1 second before resetting ball
     setTimeout(() => {
       setBallPos({
         x: BOARD_WIDTH / 2,
         y: BOARD_HEIGHT / 2
       })
       setBallVelocity({
-        x: direction * BALL_SPEED.x,
+        x: direction * currentSpeed,
         y: Math.random() * BALL_SPEED.y * 2 - BALL_SPEED.y
       })
       setIsScoreDelay(false)
     }, 1000)
   }
 
-  // Update paddle collision handler
-  const checkPaddleCollision = (ballX, ballY) => {
-    // Left paddle collision
-    if (
-      ballX <= PADDLE_OFFSET + PADDLE_WIDTH &&
-      ballX >= PADDLE_OFFSET &&
-      ballY + BALL_SIZE >= leftPaddlePos &&
-      ballY <= leftPaddlePos + PADDLE_HEIGHT
-    ) {
-      const relativeIntersectY = (leftPaddlePos + (PADDLE_HEIGHT / 2)) - (ballY + (BALL_SIZE / 2))
-      const normalizedIntersectY = relativeIntersectY / (PADDLE_HEIGHT / 2)
-      const bounceAngle = normalizedIntersectY * 0.75
-      
-      return {
-        x: BALL_SPEED.x,  // Use constant speed
-        y: -Math.sin(bounceAngle) * BALL_SPEED.y
-      }
-    }
+  // 4. Scoring handler (used by updateBallPhysics)
+  const handleScoring = useCallback((scorer) => {
+    if (scoreProcessedRef.current) return;
+    scoreProcessedRef.current = true;
     
-    // Right paddle collision
-    if (
-      ballX + BALL_SIZE >= BOARD_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH &&
-      ballX + BALL_SIZE <= BOARD_WIDTH - PADDLE_OFFSET &&
-      ballY + BALL_SIZE >= rightPaddlePos &&
-      ballY <= rightPaddlePos + PADDLE_HEIGHT
-    ) {
-      const relativeIntersectY = (rightPaddlePos + (PADDLE_HEIGHT / 2)) - (ballY + (BALL_SIZE / 2))
-      const normalizedIntersectY = relativeIntersectY / (PADDLE_HEIGHT / 2)
-      const bounceAngle = normalizedIntersectY * 0.75
-      
-      return {
-        x: -BALL_SPEED.x,  // Use constant speed
-        y: -Math.sin(bounceAngle) * BALL_SPEED.y
-      }
-    }
-    
-    return null
-  }
+    setScore(prev => ({
+      ...prev,
+      [scorer]: prev[scorer] + 1
+    }));
 
-  // Update pause change handler
-  const handlePauseChange = (shouldPause) => {
+    const newScore = {
+      ...score,
+      [scorer]: score[scorer] + 1
+    };
+
+    if (newScore[scorer] >= WINNING_SCORE) {
+      setWinner(playerNames[scorer]);
+      setIsGameStarted(false);
+      if (isMultiplayer) {
+        sendWinner(playerNames[scorer]);
+      }
+      return;
+    }
+
+    resetBallWithDelay(scorer === 'left' ? 1 : -1);
+    
+    if (isMultiplayer) {
+      sendScore(newScore, scorer);
+    }
+
+    setTimeout(() => {
+      scoreProcessedRef.current = false;
+    }, 1000);
+  }, [score, playerNames, isMultiplayer, sendScore, sendWinner]);
+
+  // 5. Ball interpolation (used in game loop)
+  const interpolateBall = useCallback((timestamp) => {
+    const buffer = ballBufferRef.current;
+    if (buffer.length < 2) return;
+
+    const currentTime = timestamp + serverTimeOffset;
+    const [prev, next] = buffer;
+    
+    const progress = (currentTime - prev.timestamp) / 
+                    (next.timestamp - prev.timestamp);
+    
+    if (progress <= 1) {
+      setBallPos({
+        x: prev.pos.x + (next.pos.x - prev.pos.x) * progress,
+        y: prev.pos.y + (next.pos.y - prev.pos.y) * progress
+      });
+    }
+
+    while (buffer.length > 2 && buffer[0].timestamp < currentTime - 100) {
+      buffer.shift();
+    }
+  }, [serverTimeOffset]);
+
+  // 6. Ball physics (uses handleScoring and checkCollision)
+  const updateBallPhysics = useCallback((deltaTime) => {
+      const newBallPos = {
+        x: ballPos.x + ballVelocity.x,
+        y: ballPos.y + ballVelocity.y
+      };
+
+      if (newBallPos.x <= 0 || newBallPos.x >= BOARD_WIDTH) {
+      handleScoring(newBallPos.x <= 0 ? 'right' : 'left');
+        return;
+      }
+
+      if (newBallPos.y <= 0 || newBallPos.y >= BOARD_HEIGHT - BALL_SIZE) {
+        setBallVelocity(prev => ({ ...prev, y: -prev.y }));
+      return;
+      }
+
+      if (checkCollision(newBallPos, leftPaddlePos, true) || 
+          checkCollision(newBallPos, rightPaddlePos, false)) {
+        setBallVelocity(prev => ({ ...prev, x: -prev.x }));
+      return;
+      }
+
+      setBallPos(newBallPos);
+      sendBallMove(newBallPos, ballVelocity);
+  }, [ballPos, ballVelocity, leftPaddlePos, rightPaddlePos, sendBallMove, handleScoring, checkCollision]);
+
+  // 7. Paddle movement and interpolation functions
+  const updateLocalPaddle = useCallback((deltaTime, side, [upKey, downKey]) => {
+    if (!keysPressed.has(upKey) && !keysPressed.has(downKey)) return;
+
+    const moveAmount = (PADDLE_SPEED * deltaTime) / PHYSICS_STEP;
+    const isMovingDown = keysPressed.has(downKey);
+    const currentPos = side === 'left' ? leftPaddlePos : rightPaddlePos;
+    const setPosition = side === 'left' ? setLeftPaddlePos : setRightPaddlePos;
+
+    const newPosition = Math.max(
+      PADDLE_BOUNDARIES.top,
+      Math.min(
+        PADDLE_BOUNDARIES.bottom,
+        currentPos + (isMovingDown ? moveAmount : -moveAmount)
+      )
+    );
+
+    if (Math.abs(newPosition - currentPos) > 0.1) {
+      setPosition(newPosition);
+      sendPaddleMove(newPosition, side, performance.now());
+    }
+  }, [keysPressed, leftPaddlePos, rightPaddlePos, sendPaddleMove]);
+
+  const interpolateOpponentPaddle = useCallback((timestamp) => {
+    const side = role === 'host' ? 'right' : 'left';
+    const buffer = paddleBuffer[side];
+    
+    if (buffer.length < 2) return;
+
+    const [prev, next] = buffer.slice(0, 2); // Take only the first two entries
+    const currentTime = timestamp + serverTimeOffset;
+    
+    // Ensure we have valid timestamps
+    if (!prev.timestamp || !next.timestamp) return;
+    
+    const progress = Math.min(1, Math.max(0, 
+      (currentTime - prev.timestamp) / (next.timestamp - prev.timestamp)
+    ));
+        
+    if (progress <= 1) {
+      const interpolatedPosition = prev.position + 
+                                 (next.position - prev.position) * progress;
+      
+      if (side === 'left') {
+        setLeftPaddlePos(interpolatedPosition);
+      } else {
+        setRightPaddlePos(interpolatedPosition);
+      }
+    }
+
+    // Clean up old positions
+    while (buffer.length > 2 && buffer[0].timestamp < currentTime - 100) {
+      buffer.shift();
+    }
+  }, [role, paddleBuffer, serverTimeOffset]);
+
+  // 8. Pause/resume handlers
+  const handlePauseChange = useCallback((shouldPause) => {
+    if (!isGameStarted || !roomId) return;
+    
     if (shouldPause) {
-      clearCountdown()
-      setIsPaused(true)
+      setIsPaused(true);
+      socket?.emit('pauseGame', { roomId, isPaused: true });
     } else {
-      setCountdown(3)
-      countdownIntervalRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearCountdown()
-            setIsPaused(false)
-            return null
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }
-  }
+      // Start countdown
+      let count = 3;
+      setCountdown(count);
 
-  // Update keyboard event handler
-  useEffect(() => {
-    const preventDefaultKeys = new Set(['ArrowUp', 'ArrowDown', ' ', 'w', 's'])
+      const countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          setCountdown(count);
+          socket?.emit('countdown', { roomId, count });
+        } else {
+          clearInterval(countdownInterval);
+    setCountdown(null);
+          setIsPaused(false);
+          socket?.emit('pauseGame', { roomId, isPaused: false });
+        }
+      }, 1000);
+
+      countdownIntervalRef.current = countdownInterval;
+    }
+  }, [isGameStarted, roomId, socket]);
+
+  const handlePause = useCallback(() => {
+    if (!isGameStarted || !roomId) return;
     
-    function handleKeyDown(e) {
-      // Don't prevent default if we're typing in an input
-      const isTyping = e.target.tagName.toLowerCase() === 'input'
+    setIsPaused(prev => {
+      const newPauseState = !prev;
+      socket?.emit('pauseGame', { roomId, isPaused: newPauseState });
+      return newPauseState;
+    });
+  }, [isGameStarted, roomId, socket]);
+
+  const handleResume = useCallback(() => {
+    handlePauseChange(false);
+  }, [handlePauseChange]);
+
+  // Update game loop to include paddle interpolation
+  useEffect(() => {
+    if (!isGameStarted || !roomId || isPaused || countdown) {
+      // Clean up any existing animation frame
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+        frameIdRef.current = null;
+      }
+      return;
+    }
+
+    let lastFrameTime = performance.now();
+    console.log(`Setting up game loop for ${role}`);
+
+    const gameLoop = (timestamp) => {
+      if (!isGameStarted || isPaused) {
+        // Exit the loop if game is no longer active
+        return;
+      }
+
+      const deltaTime = timestamp - lastFrameTime;
       
-      if (preventDefaultKeys.has(e.key) && !isTyping) {
-        e.preventDefault()
-        setKeysPressed(prev => new Set([...prev, e.key]))
+      if (deltaTime >= PHYSICS_STEP) {
+        if (role === 'host') {
+          // Host: Update ball physics and left paddle
+          updateBallPhysics(deltaTime);
+          updateLocalPaddle(deltaTime, 'left', ['w', 's']);
+          interpolateOpponentPaddle(timestamp); // Interpolate right paddle
+        } else {
+          // Client: Interpolate ball and update right paddle
+          interpolateBall(timestamp);
+          updateLocalPaddle(deltaTime, 'right', ['ArrowUp', 'ArrowDown']);
+          interpolateOpponentPaddle(timestamp); // Interpolate left paddle
+        }
+
+        lastFrameTime = timestamp;
+      }
+
+      frameIdRef.current = requestAnimationFrame(gameLoop);
+    };
+
+    frameIdRef.current = requestAnimationFrame(gameLoop);
+
+    return () => {
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+        frameIdRef.current = null;
+      }
+    };
+  }, [
+    isGameStarted,
+    roomId,
+    isPaused,
+    countdown,
+    role,
+    updateBallPhysics,
+    updateLocalPaddle,
+    interpolateBall,
+    interpolateOpponentPaddle
+  ]);
+
+  // Single cleanup effect for all animations and intervals
+  useEffect(() => {
+    return () => {
+      // Clean up the single animation frame
+      if (frameIdRef.current) {
+        cancelAnimationFrame(frameIdRef.current);
+        frameIdRef.current = null;
       }
       
-      // Handle ESC key
-      if (e.key === 'Escape' && isGameStarted) {
+      // Clear intervals
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      
+      // Reset game state
+      setIsGameStarted(false);
+      setIsPaused(false);
+      setCountdown(null);
+      
+      // Clear buffers
+      ballBufferRef.current = [];
+    };
+  }, []);
+
+  // Single keyboard handling effect
+  useEffect(() => {
+    const validKeys = new Set(['w', 's', 'ArrowUp', 'ArrowDown', 'Escape']);
+    
+    const handleKeyDown = (e) => {
+      // Ignore if typing in an input field
+      if (e.target.tagName.toLowerCase() === 'input') return;
+      
+      const key = e.key;
+      if (!validKeys.has(key)) return;
+      
+      e.preventDefault();
+      setKeysPressed(prev => new Set([...prev, key]));
+
+      // Handle pause/resume with Escape
+      if (key === 'Escape' && isGameStarted) {
         if (countdown) {
-          clearCountdown()
-          setIsPaused(true)
+          clearInterval(countdownIntervalRef.current);
+          setCountdown(null);
+          handlePauseChange(true);
         } else {
-          handlePauseChange(!isPaused)
+          handlePauseChange(!isPaused);
         }
       }
-    }
+    };
 
-    function handleKeyUp(e) {
-      setKeysPressed(prev => {
-        const newKeys = new Set([...prev])
-        newKeys.delete(e.key)
-        return newKeys
-      })
-    }
+    const handleKeyUp = (e) => {
+      const key = e.key;
+      if (validKeys.has(key)) {
+        setKeysPressed(prev => {
+          const newKeys = new Set([...prev]);
+          newKeys.delete(key);
+          return newKeys;
+        });
+      }
+    };
 
     // Add event listeners
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
     // Cleanup
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-    }
-  }, [isGameStarted, isPaused, countdown])
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isGameStarted, isPaused, countdown, handlePauseChange]);
 
-  // Update paddle movement effect
-  useEffect(() => {
-    // Don't move paddles if game is paused or counting down
-    if (isPaused || countdown) return
+  // 9. Render functions
+  const renderReconnectingOverlay = () => {
+    if (!isReconnecting) return null;
     
-    let frameId
-    
-    const updatePaddles = () => {
-      keysPressed.forEach(key => {
-        switch(key) {
-          case 'w':
-            setLeftPaddlePos(prev => 
-              Math.max(PADDLE_BOUNDARY.top, prev - PADDLE_SPEED)
-            )
-            break
-          case 's':
-            setLeftPaddlePos(prev => 
-              Math.min(PADDLE_BOUNDARY.bottom, prev + PADDLE_SPEED)
-            )
-            break
-          case 'ArrowUp':
-            setRightPaddlePos(prev => 
-              Math.max(PADDLE_BOUNDARY.top, prev - PADDLE_SPEED)
-            )
-            break
-          case 'ArrowDown':
-            setRightPaddlePos(prev => 
-              Math.min(PADDLE_BOUNDARY.bottom, prev + PADDLE_SPEED)
-            )
-            break
-        }
-      })
+    return (
+      <div className="reconnecting-overlay">
+        <div className="reconnecting-message">
+          Reconnecting...
+        </div>
+      </div>
+    );
+  };
 
-      frameId = requestAnimationFrame(updatePaddles)
-    }
-
-    frameId = requestAnimationFrame(updatePaddles)
-    return () => cancelAnimationFrame(frameId)
-  }, [keysPressed, isPaused, countdown])
-
-  // Update scoring logic to check for winner
-  const handleScoring = (scoringPlayer) => {
-    setScore(prev => {
-      const newScore = {
-        ...prev,
-        [scoringPlayer]: prev[scoringPlayer] + 1
-      }
-      
-      if (newScore[scoringPlayer] >= WINNING_SCORE) {
-        setWinner(playerNames[scoringPlayer])
-        setIsGameStarted(false)
-        return newScore
-      }
-      
-      resetBallWithDelay(scoringPlayer === 'left' ? -1 : 1)
-      return newScore
-    })
-  }
-
-  // Update game logic useEffect to use handleScoring
-  useEffect(() => {
-    if (!isGameStarted || isScoreDelay || isPaused) return
-    
-    let frameId
-    const updateGame = () => {
-      setBallPos(prevPos => {
-        const newPos = {
-          x: prevPos.x + ballVelocity.x,
-          y: prevPos.y + ballVelocity.y
-        }
-
-        // Check paddle collisions
-        const newVelocity = checkPaddleCollision(newPos.x, newPos.y)
-        if (newVelocity) {
-          setBallVelocity(newVelocity)
-        }
-
-        // Handle wall collisions
-        if (newPos.y <= 0) {
-          newPos.y = 0
-          setBallVelocity(prev => ({
-            ...prev,
-            y: Math.abs(prev.y)
-          }))
-        } else if (newPos.y >= BOARD_HEIGHT - BALL_SIZE) {
-          newPos.y = BOARD_HEIGHT - BALL_SIZE
-          setBallVelocity(prev => ({
-            ...prev,
-            y: -Math.abs(prev.y)
-          }))
-        }
-
-        // Update scoring logic
-        if (newPos.x <= 0) {
-          handleScoring('right')
-          return prevPos
-        } else if (newPos.x >= BOARD_WIDTH - BALL_SIZE) {
-          handleScoring('left')
-          return prevPos
-        }
-
-        return newPos
-      })
-
-      frameId = requestAnimationFrame(updateGame)
-    }
-
-    frameId = requestAnimationFrame(updateGame)
-    return () => cancelAnimationFrame(frameId)
-  }, [ballVelocity, leftPaddlePos, rightPaddlePos, isGameStarted, isScoreDelay, isPaused])
-
-  // Update handleStartGame to reset winner
-  const handleStartGame = () => {
-    setBallPos({
-      x: BOARD_WIDTH / 2,
-      y: BOARD_HEIGHT / 2
-    })
-    setBallVelocity({
-      x: BALL_SPEED.x,
-      y: BALL_SPEED.y
-    })
-    setScore({ left: 0, right: 0 })
-    setWinner(null)
-    setIsGameStarted(true)
-  }
-
-  // Add handler for back button
-  const handleBackToTitle = () => {
-    setWinner(null)
-  }
-
-  // Update resume handler to use handlePauseChange
-  const handleResume = () => {
-    handlePauseChange(false)
-  }
-
-  // Update exit handler
-  const handleExit = () => {
-    clearCountdown()
-    setIsPaused(false)
-    setIsGameStarted(false)
-    setScore({ left: 0, right: 0 })
-    setBallPos({
-      x: BOARD_WIDTH / 2,
-      y: BOARD_HEIGHT / 2
-    })
-    setBallVelocity({
-      x: BALL_SPEED.x,
-      y: BALL_SPEED.y
-    })
-  }
-
-  // Update click handler for pause menu
   const handlePauseMenuClick = (e) => {
-    // Prevent click from propagating to game board
-    e.stopPropagation()
-    
-    if (countdown) {
-      // If counting down and clicked within pause menu, cancel countdown
-      clearCountdown()
-      setIsPaused(true)
+    // Prevent clicks from bubbling up
+    e.stopPropagation();
+  };
+
+  const handleExit = () => {
+    setIsGameStarted(false);
+    setIsPaused(false);
+    clearCountdown();
+    if (isMultiplayer) {
+      disconnect();
     }
-  }
+  };
+
+  const renderStartMenu = () => {
+    if (winner) {
+      return (
+        <div className="winner-screen">
+          <h2>{winner} Wins!</h2>
+          <button 
+            className="start-button"
+            onClick={() => {
+              setWinner(null);
+              setScore({ left: 0, right: 0 });
+            }}
+          >
+            Play Again
+          </button>
+        </div>
+      );
+    }
+
+    // If not in multiplayer mode, show the initial menu
+    if (!isMultiplayer) {
+      return (
+        <div className="menu-container">
+          <h1>Pong Game</h1>
+          <div className="button-group">
+            <button 
+              className="start-button"
+              onClick={() => setIsGameStarted(true)}
+            >
+              Single Player
+            </button>
+            <button 
+              className="multiplayer-button"
+              onClick={() => {
+                clearSession(); // Clear any existing session first
+                setIsMultiplayer(true);
+              }}
+            >
+              Multiplayer
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <MultiplayerMenu
+        onCreateRoom={createRoom}
+        onJoinRoom={joinRoom}
+        onToggleReady={toggleReady}
+        roomId={roomId}
+        error={socketError}
+        playersReady={playersReady}
+        role={role}
+        mySocketId={socket?.id}
+        isReconnecting={isReconnecting}
+        isCreatingRoom={isCreatingRoom}
+        isJoiningRoom={isJoiningRoom}
+        onBack={() => {
+          console.log('Back button clicked');
+          clearSession();  // Clear session first
+          disconnect();    // Then disconnect
+          setIsMultiplayer(false);  // Finally, exit multiplayer mode
+        }}
+      />
+    );
+  };
 
   return (
     <div className="game-container">
+      {connectionError && (
+        <ConnectionError 
+          error={connectionError}
+          onRetry={handleRetryConnection}
+          onExit={handleExitMultiplayer}
+        />
+      )}
+      {isMultiplayer && isGameStarted && (
+        <NetworkStatus 
+          latency={networkStats.latency}
+          quality={networkStats.quality}
+        />
+      )}
       {isGameStarted ? (
         <>
           <div className="score-board">
@@ -421,53 +667,17 @@ function GameBoard() {
               </div>
             )}
           </div>
+          {renderReconnectingOverlay()}
         </>
       ) : (
         <div className="start-menu">
-          {winner ? (
-            <>
-              <h2>{winner} wins! 🎉</h2>
-              <div className="button-group">
-                <button className="start-button" onClick={handleStartGame}>
-                  Play Again
-                </button>
-                <button className="back-button" onClick={handleBackToTitle}>
-                  Back
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h2>Welcome to Pong!</h2>
-              <div className="player-inputs">
-                <div className="input-group">
-                  <label htmlFor="player1">Left Player:</label>
-                  <input
-                    id="player1"
-                    type="text"
-                    value={playerNames.left}
-                    onChange={(e) => handleNameChange('left', e.target.value)}
-                    maxLength={12}
-                    placeholder="Player 1"
-                  />
-                </div>
-                <div className="input-group">
-                  <label htmlFor="player2">Right Player:</label>
-                  <input
-                    id="player2"
-                    type="text"
-                    value={playerNames.right}
-                    onChange={(e) => handleNameChange('right', e.target.value)}
-                    maxLength={12}
-                    placeholder="Player 2"
-                  />
-                </div>
-              </div>
-              <button className="start-button" onClick={handleStartGame}>
-                Start Game
-              </button>
-            </>
-          )}
+          {renderStartMenu()}
+        </div>
+      )}
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="spinner"></div>
+          <p>Loading...</p>
         </div>
       )}
     </div>

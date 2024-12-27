@@ -5,4 +5,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/pong/',
   plugins: [react()],
+  server: {
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost'
+    },
+    watch: {
+      usePolling: true
+    }
+  }
 })
