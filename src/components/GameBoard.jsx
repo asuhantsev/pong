@@ -727,38 +727,32 @@ function GameBoard() {
 
   // Add pause button UI
   const renderPauseButton = () => {
-    console.log('renderPauseButton called:', {
+    console.log('Rendering pause button with state:', {
       isGameStarted,
-      winner,
       isPaused,
       isMultiplayer,
-      role,
-      domCheck: {
-        gameBoard: document.querySelector('.game-board'),
-        gameBoardWrapper: document.querySelector('.game-board-wrapper'),
-        container: document.querySelector('.game-container')
-      }
+      role
     });
-    
+
+    if (!isGameStarted) return null;
+
     return (
       <button 
-        id="pause-button"
-        className="pause-button"
-        onClick={handlePause}
-        style={{ 
+        id="debug-pause-button"
+        style={{
           position: 'fixed',
-          top: '20px',
-          right: '20px',
-          background: '#ff0000',
-          padding: '10px 20px',
+          top: '10px',
+          right: '10px',
+          zIndex: 10000,
+          padding: '10px',
+          background: 'red',
           color: 'white',
           border: '2px solid white',
-          fontSize: '16px',
-          cursor: 'pointer',
-          zIndex: 9999
+          cursor: 'pointer'
         }}
+        onClick={handlePause}
       >
-        PAUSE TEST
+        {debugMode ? 'DEBUG PAUSE' : (isPaused ? 'Resume' : 'Pause')}
       </button>
     );
   };
@@ -786,9 +780,9 @@ function GameBoard() {
 
   return (
     <div className="game-container">
+      {renderPauseButton()}
       {isGameStarted ? (
         <>
-          {renderPauseButton()}
           <div className="score-board">
             <div className="player-score">
               <div className="player-name">{playerNames.left}</div>
