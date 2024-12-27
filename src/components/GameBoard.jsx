@@ -384,16 +384,17 @@ function GameBoard() {
   }, [isGameStarted, roomId, socket]);
 
   const handlePause = useCallback(() => {
-    if (!isMultiplayer || role !== 'host') return;
-
-    const newPausedState = !isPaused;
-    setIsPaused(newPausedState);
+    if (!isGameStarted || !socket?.connected) return;
     
-    socket?.emit('pauseGame', {
-      isPaused: newPausedState,
-      countdownValue: newPausedState ? null : 3
+    const newPauseState = !isPaused;
+    setIsPaused(newPauseState);
+    
+    // Send pause update to server
+    socket.emit('pauseGame', {
+      isPaused: newPauseState,
+      countdownValue: newPauseState ? 3 : null
     });
-  }, [isMultiplayer, role, isPaused, socket]);
+  }, [isPaused, isGameStarted, socket]);
 
   const handleResume = useCallback(() => {
     if (role === 'host') {

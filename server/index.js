@@ -195,6 +195,8 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Comment out paddle movement logging
+    /*
     console.log('Paddle move:', {
       roomId,
       socketId: socket.id,
@@ -202,6 +204,7 @@ io.on('connection', (socket) => {
       position,
       timestamp
     });
+    */
 
     // Broadcast paddle position to other players in the same room
     socket.to(roomId).emit('paddleUpdate', {
@@ -306,6 +309,28 @@ io.on('connection', (socket) => {
         }
       }
     }
+  });
+
+  // Add pause game handler
+  socket.on('pauseGame', ({ isPaused, countdownValue }) => {
+    const roomId = socket.roomId;
+    if (!roomId) {
+      console.log('No room found for pause update');
+      return;
+    }
+
+    const room = rooms.get(roomId);
+    if (!room) {
+      console.log('Room not found for pause update');
+      return;
+    }
+
+    // Broadcast pause state to all players in the room
+    io.to(roomId).emit('pauseUpdate', {
+      isPaused,
+      countdownValue,
+      timestamp: Date.now()
+    });
   });
 });
 
