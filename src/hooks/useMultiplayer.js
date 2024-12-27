@@ -61,6 +61,7 @@ export function useMultiplayer({
       withCredentials: true,
       autoConnect: true,
       forceNew: true,
+      timeout: 10000,
       extraHeaders: {
         "my-custom-header": "abcd"
       }
@@ -387,6 +388,27 @@ export function useMultiplayer({
     
     return () => clearInterval(interval);
   }, [socket]);
+
+  // Add new handler for room rejoining
+  useEffect(() => {
+    if (!socket || !isReconnecting || !roomId || !sessionId) return;
+
+    console.log('Attempting to rejoin room:', { roomId, sessionId });
+    socket.emit('rejoinRoom', { roomId, sessionId });
+
+    const handleRoomRejoined = ({ roomId, role: newRole, readyState }) => {
+      console.log('Successfully rejoined room:', { roomId, role: newRole });
+      setRole(newRole);
+      setPlayersReady(new Map(readyState));
+      setIsReconnecting(false);
+    };
+
+    socket.on('roomRejoined', handleRoomRejoined);
+
+    return () => {
+      socket.off('roomRejoined', handleRoomRejoined);
+    };
+  }, [socket, isReconnecting, roomId, sessionId]);
 
   return {
     socket: socketRef.current,

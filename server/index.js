@@ -59,65 +59,101 @@ io.engine.on("headers", (headers, req) => {
 const rooms = new Map();
 const playerSessions = new Map();
 
+// Add room cleanup interval
+setInterval(() => {
+  for (const [roomId, room] of rooms.entries()) {
+    if (room.players.length === 0) {
+      rooms.delete(roomId);
+      console.log(`Cleaned up empty room: ${roomId}`);
+    }
+  }
+}, 60000); // Clean every minute
+
 io.on('connection', (socket) => {
   console.log('New connection:', {
     id: socket.id,
     origin: socket.handshake.headers.origin
   });
-  
-  let currentRoom = null;
 
-  const joinRoom = (roomId) => {
-    currentRoom = roomId;
+  // Add reconnection handling
+  socket.on('rejoinRoom', ({ roomId, sessionId }) => {
+    const room = rooms.get(roomId);
+    if (!room) {
+      socket.emit('roomError', 'Room not found or expired');
+      return;
+    }
+
+    // Verify session
+    const playerSession = playerSessions.get(sessionId);
+    if (!playerSession || playerSession.roomId !== roomId) {
+      socket.emit('roomError', 'Invalid session');
+      return;
+    }
+
+    // Rejoin room
     socket.join(roomId);
     socket.roomId = roomId;
-  };
-
-  const leaveCurrentRoom = () => {
-    if (currentRoom) {
-      socket.leave(currentRoom);
-      const room = rooms.get(currentRoom);
-      if (room) {
-        room.players = room.players.filter(id => id !== socket.id);
-        if (room.players.length === 0) {
-          rooms.delete(currentRoom);
-        } else {
-          io.to(currentRoom).emit('playerDisconnected');
-        }
-      }
-      currentRoom = null;
+    
+    // Update room state
+    if (!room.players.includes(socket.id)) {
+      room.players.push(socket.id);
     }
-  };
+    
+    // Restore player role
+    const role = playerSession.role;
+    socket.emit('roomRejoined', {
+      roomId,
+      sessionId,
+      role,
+      readyState: Array.from(room.readyState.entries())
+    });
 
-  // Handle room creation
+    // Notify other players
+    socket.to(roomId).emit('playerReconnected', {
+      playerId: socket.id,
+      readyState: Array.from(room.readyState.entries())
+    });
+  });
+
+  // Update room creation
   socket.on('createRoom', () => {
-    leaveCurrentRoom();
     const roomId = generateRoomId();
     const sessionId = generateSessionId();
     
     const room = {
       id: roomId,
       players: [socket.id],
-      readyState: new Map([[socket.id, false]])
+      readyState: new Map([[socket.id, false]]),
+      createdAt: Date.now()
     };
     
     rooms.set(roomId, room);
-    joinRoom(roomId);
+    playerSessions.set(sessionId, {
+      roomId,
+      role: 'host',
+      socketId: socket.id
+    });
+
+    socket.join(roomId);
+    socket.roomId = roomId;
     
     socket.emit('roomCreated', { 
       roomId, 
       sessionId,
       role: 'host',
-      players: room.players,
       readyState: Array.from(room.readyState.entries())
     });
+
+    console.log(`Room created: ${roomId}`, room);
   });
 
-  // Handle room joining
+  // Update room joining
   socket.on('joinRoom', (roomId) => {
+    console.log(`Join room attempt: ${roomId}`);
     const room = rooms.get(roomId);
     
     if (!room) {
+      console.log(`Room not found: ${roomId}`);
       socket.emit('roomError', 'Room not found');
       return;
     }
@@ -127,27 +163,32 @@ io.on('connection', (socket) => {
       return;
     }
 
-    leaveCurrentRoom();
     const sessionId = generateSessionId();
-    
+    playerSessions.set(sessionId, {
+      roomId,
+      role: 'client',
+      socketId: socket.id
+    });
+
     room.players.push(socket.id);
     room.readyState.set(socket.id, false);
-    joinRoom(roomId);
+    
+    socket.join(roomId);
+    socket.roomId = roomId;
 
-    // Emit room joined event
     socket.emit('roomJoined', { 
       roomId, 
       sessionId,
       role: 'client',
-      players: room.players,
       readyState: Array.from(room.readyState.entries())
     });
 
-    // Notify host about new player and send current state
     socket.to(roomId).emit('playerJoined', {
       playerId: socket.id,
       readyState: Array.from(room.readyState.entries())
     });
+
+    console.log(`Player joined room: ${roomId}`, room);
   });
 
   // Handle ready state toggling
