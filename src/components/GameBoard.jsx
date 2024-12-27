@@ -34,6 +34,7 @@ function GameBoard() {
     quality: 'good'
   });
   const [connectionError, setConnectionError] = useState(null);
+  const [debugMode] = useState(true);
 
   // Group ALL refs together at the top
   const frameIdRef = useRef(null);
