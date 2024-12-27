@@ -7,32 +7,52 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
+
+// Define allowed origins
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://asuhantsev.github.io",
+  "https://asuhantsev.github.io/pong"
+];
+
+// Configure CORS for Express
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://asuhantsev.github.io",
-    "https://asuhantsev.github.io/pong"
-  ],
-  credentials: true
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('CORS not allowed'));
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'my-custom-header']
 }));
 
+// Basic route for testing
 app.get('/', (req, res) => {
   res.send('Pong server is running');
 });
 
 const httpServer = createServer(app);
+
+// Configure Socket.IO with CORS
 const io = new Server(httpServer, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://asuhantsev.github.io",
-      "https://asuhantsev.github.io/pong"
-    ],
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
-    allowedHeaders: ["my-custom-header"],
-    transports: ['websocket', 'polling']
-  }
+    allowedHeaders: ["my-custom-header"]
+  },
+  transports: ['websocket', 'polling']
+});
+
+// Add debug logging for CORS issues
+io.engine.on("headers", (headers, req) => {
+  console.log("CORS Headers:", headers);
+  console.log("Request Origin:", req.headers.origin);
 });
 
 // Store active rooms with their state
@@ -40,6 +60,11 @@ const rooms = new Map();
 const playerSessions = new Map();
 
 io.on('connection', (socket) => {
+  console.log('New connection:', {
+    id: socket.id,
+    origin: socket.handshake.headers.origin
+  });
+  
   let currentRoom = null;
 
   const joinRoom = (roomId) => {
@@ -195,11 +220,11 @@ function generateSessionId() {
 
 // Add error logging
 io.on('connect_error', (err) => {
-  console.log('Connection Error:', err);
+  console.error('Connection Error:', err);
 });
 
 io.on('error', (err) => {
-  console.log('Socket Error:', err);
+  console.error('Socket Error:', err);
 });
 
 const PORT = process.env.PORT || 3001;

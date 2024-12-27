@@ -59,6 +59,8 @@ export function useMultiplayer({
       reconnectionDelay: 1000,
       transports: ['websocket', 'polling'],
       withCredentials: true,
+      autoConnect: true,
+      forceNew: true,
       extraHeaders: {
         "my-custom-header": "abcd"
       }
@@ -66,6 +68,12 @@ export function useMultiplayer({
     
     socketRef.current = newSocket;
     setSocket(newSocket);
+
+    // Add connection error handling
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setError('Connection failed: ' + error.message);
+    });
 
     return () => {
       if (socketRef.current) {
