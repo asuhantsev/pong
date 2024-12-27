@@ -75,10 +75,14 @@ io.on('connection', (socket) => {
     rooms.set(roomId, room);
     socket.join(roomId);
     
+    // Store roomId on socket object
+    socket.roomId = roomId;
+    
     console.log('Room created:', {
       roomId,
       sessionId,
-      playerId: socket.id
+      playerId: socket.id,
+      socketRoomId: socket.roomId // Log to verify
     });
     
     socket.emit('roomCreated', {
@@ -107,35 +111,33 @@ io.on('connection', (socket) => {
     }
 
     try {
-      const sessionId = Math.random().toString(36).substring(2, 15);
+      socket.join(roomId);
       room.players.push(socket.id);
       room.readyState.set(socket.id, false);
-      
-      socket.join(roomId);
-      
+
+      // Store roomId on socket object
+      socket.roomId = roomId;
+
       console.log('Player joined room:', {
         roomId,
         playerId: socket.id,
         players: room.players,
-        readyState: Array.from(room.readyState.entries())
+        readyState: Array.from(room.readyState.entries()),
+        socketRoomId: socket.roomId // Log to verify
       });
 
-      // Notify the joining player
-      socket.emit('roomJoined', {
-        roomId,
-        sessionId,
-        role: 'client',
-        readyState: Array.from(room.readyState.entries())
-      });
-
-      // Notify other players in the room
+      // Notify other players
       socket.to(roomId).emit('playerJoined', {
         playerId: socket.id,
         readyState: Array.from(room.readyState.entries())
       });
 
-      // Store the room ID on the socket for easy access
-      socket.roomId = roomId;
+      // Send join confirmation
+      socket.emit('roomJoined', {
+        roomId,
+        role: 'client',
+        readyState: Array.from(room.readyState.entries())
+      });
     } catch (error) {
       console.error('Error joining room:', error);
       socket.emit('roomError', 'Failed to join room');
@@ -184,12 +186,17 @@ io.on('connection', (socket) => {
   socket.on('paddleMove', ({ position, paddleSide, timestamp }) => {
     const roomId = socket.roomId;
     if (!roomId) {
-      console.log('No room found for paddle move');
+      console.log('No room found for paddle move:', {
+        socketId: socket.id,
+        socketRooms: Array.from(socket.rooms),
+        socketRoomId: socket.roomId
+      });
       return;
     }
 
     console.log('Paddle move:', {
       roomId,
+      socketId: socket.id,
       paddleSide,
       position,
       timestamp
@@ -206,7 +213,11 @@ io.on('connection', (socket) => {
   socket.on('ballMove', ({ position, velocity, timestamp }) => {
     const roomId = socket.roomId;
     if (!roomId) {
-      console.log('No room found for ball move');
+      console.log('No room found for ball move:', {
+        socketId: socket.id,
+        socketRooms: Array.from(socket.rooms),
+        socketRoomId: socket.roomId
+      });
       return;
     }
 
@@ -216,7 +227,8 @@ io.on('connection', (socket) => {
         roomId,
         socketId: socket.id,
         isHost: room?.players[0] === socket.id,
-        players: room?.players
+        players: room?.players,
+        roomExists: !!room
       });
       return;
     }
@@ -224,7 +236,9 @@ io.on('connection', (socket) => {
     console.log('Server broadcasting ball update:', {
       roomId,
       from: socket.id,
-      to: room.players.filter(id => id !== socket.id)
+      to: room.players.filter(id => id !== socket.id),
+      position,
+      velocity
     });
 
     // Broadcast ball position to other players in the room

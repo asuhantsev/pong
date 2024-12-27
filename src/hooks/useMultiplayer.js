@@ -297,16 +297,25 @@ export function useMultiplayer({
       },
 
       paddleUpdate: ({ position, paddleSide, timestamp }) => {
-        console.log('Received paddle update:', { position, paddleSide, timestamp });
+        console.log('Received paddle update:', { 
+          position, 
+          paddleSide, 
+          timestamp,
+          currentRole: role,
+          roomId,
+          socketId: socketRef.current?.id
+        });
         
         // Update the appropriate paddle position based on role
         if ((role === 'host' && paddleSide === 'right') || 
             (role === 'client' && paddleSide === 'left')) {
-          if (paddleSide === 'left') {
-            setLeftPaddlePos(position);
-          } else {
-            setRightPaddlePos(position);
-          }
+          requestAnimationFrame(() => {
+            if (paddleSide === 'left') {
+              setLeftPaddlePos(position);
+            } else {
+              setRightPaddlePos(position);
+            }
+          });
         }
       },
 
@@ -317,13 +326,17 @@ export function useMultiplayer({
           position, 
           velocity, 
           timestamp,
-          currentRole: role 
+          currentRole: role,
+          roomId,
+          socketId: socketRef.current?.id
         });
         
         // Only update if we're the client
         if (role === 'client') {
-          setBallPos(position);
-          setBallVelocity(velocity);
+          requestAnimationFrame(() => {
+            setBallPos(position);
+            setBallVelocity(velocity);
+          });
         }
       },
 
