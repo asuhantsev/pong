@@ -813,7 +813,10 @@ function GameBoard() {
               <div className="score">{score.right}</div>
             </div>
           </div>
-          <div className="game-board-wrapper" style={{ position: 'relative' }}>
+          <div className="game-board-wrapper" style={{ 
+            position: 'relative',
+            background: '#333333'
+          }}>
             <div className="game-board">
               <Paddle position="left" top={leftPaddlePos} />
               <Paddle position="right" top={rightPaddlePos} />

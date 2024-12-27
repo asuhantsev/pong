@@ -1,5 +1,5 @@
 body {
-  background-color: #000000;
+  background-color: #333333;
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -537,12 +537,12 @@ body {
 }
 
 .game-board-wrapper {
-  width: 800px;  /* Match your game board width */
-  height: 600px; /* Match your game board height */
+  width: 800px;
+  height: 600px;
   border: 1px solid white;
   margin: 20px auto;
   position: relative;
-  background: #000;
+  background: #333333;
 }
 
 .game-board {
