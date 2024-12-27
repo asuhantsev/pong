@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import { BOARD_HEIGHT, PADDLE_HEIGHT } from '../constants/gameConstants';
 
 const SOCKET_SERVER = import.meta.env.PROD 
-  ? 'https://pong-322h.onrender.com'  // Replace with your actual Render URL
+  ? 'https://pong-322h.onrender.com'
   : 'http://localhost:3001';
 const STORAGE_KEY = 'pong_session';
 
@@ -54,6 +54,8 @@ export function useMultiplayer({
   useEffect(() => {
     if (socketRef.current) return;
     
+    console.log('Initializing socket connection to:', SOCKET_SERVER);
+    
     const newSocket = io(SOCKET_SERVER, {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -62,15 +64,22 @@ export function useMultiplayer({
       withCredentials: true,
       autoConnect: true,
       forceNew: true,
-      path: '/socket.io/'
+      path: '/socket.io/',
+      extraHeaders: {
+        'Access-Control-Allow-Origin': '*'
+      }
     });
     
     socketRef.current = newSocket;
     setSocket(newSocket);
 
-    // Add better error handling and logging
     newSocket.on('connect_error', (error) => {
-      console.error('Connection error:', error);
+      console.error('Connection error:', {
+        message: error.message,
+        description: error.description,
+        type: error.type,
+        server: SOCKET_SERVER
+      });
       setError(`Connection failed: ${error.message}`);
       onLoadingChange(false);
     });

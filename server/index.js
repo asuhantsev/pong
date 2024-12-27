@@ -8,24 +8,63 @@ dotenv.config();
 
 const app = express();
 
-// Define allowed origins
+// Define allowed origins - make sure to include your GitHub Pages URL
 const allowedOrigins = [
   "http://localhost:5173",
   "https://asuhantsev.github.io",
-  "https://asuhantsev.github.io/pong"
+  "https://asuhantsev.github.io/pong",
+  // Add any other domains that need access
 ];
 
-// Basic middleware
-app.use(express.json());
-app.set('trust proxy', true);
-
-// Configure CORS
+// Configure CORS for Express
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('CORS policy violation'), false);
+    }
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Configure Socket.IO with CORS
+const io = new Server(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"]
+  },
+  transports: ['polling', 'websocket'],
+  path: '/socket.io/',
+  pingInterval: 10000,
+  pingTimeout: 5000,
+  cookie: false
+});
+
+// Add CORS preflight handler
+app.options('*', cors());
+
+// Add headers middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', true);
+  next();
+});
+
+// Basic middleware
+app.use(express.json());
+app.set('trust proxy', true);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -37,20 +76,6 @@ const httpServer = createServer(app);
 // Store rooms and sessions
 const rooms = new Map();
 const playerSessions = new Map();
-
-// Configure Socket.IO
-const io = new Server(httpServer, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST"],
-    credentials: true
-  },
-  transports: ['polling', 'websocket'],
-  path: '/socket.io/',
-  pingInterval: 10000,
-  pingTimeout: 5000,
-  cookie: false
-});
 
 // Connection handling
 io.on('connection', (socket) => {
