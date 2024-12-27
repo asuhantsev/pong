@@ -6,26 +6,26 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v2
+      
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v2
         with:
           node-version: '18'
-
+          
       - name: Install Dependencies
-        run: npm install
-
+        run: npm ci
+        
       - name: Build
         run: npm run build
-
-      - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@v4
+        env:
+          VITE_SOCKET_SERVER: 'https://pong-322h.onrender.com'
+          
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          folder: dist
-          branch: gh-pages 
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist 
