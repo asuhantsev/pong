@@ -215,10 +215,17 @@ io.on('connection', (socket) => {
       console.log('Not authorized to send ball updates:', {
         roomId,
         socketId: socket.id,
-        isHost: room?.players[0] === socket.id
+        isHost: room?.players[0] === socket.id,
+        players: room?.players
       });
       return;
     }
+
+    console.log('Server broadcasting ball update:', {
+      roomId,
+      from: socket.id,
+      to: room.players.filter(id => id !== socket.id)
+    });
 
     // Broadcast ball position to other players in the room
     socket.to(roomId).emit('ballUpdate', {

@@ -655,8 +655,11 @@ function GameBoard() {
         newBallPos.y = newBallPos.y <= 0 ? 0 : BOARD_HEIGHT - BALL_SIZE;
       }
 
-      setBallPos(newBallPos);
+      // Send ball update before setting state
       sendBallMove(newBallPos, ballVelocity);
+      
+      // Update local state after sending
+      setBallPos(newBallPos);
     }
 
     // Update paddle positions

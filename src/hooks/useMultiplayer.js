@@ -224,7 +224,7 @@ export function useMultiplayer({
     
     const now = Date.now();
     if (now - lastBallUpdate >= THROTTLE_MS) {
-      console.log('Sending ball update:', { position, velocity });
+      console.log('Host sending ball update:', { position, velocity });
       socketRef.current.emit('ballMove', { 
         position, 
         velocity,
@@ -299,26 +299,32 @@ export function useMultiplayer({
       paddleUpdate: ({ position, paddleSide, timestamp }) => {
         console.log('Received paddle update:', { position, paddleSide, timestamp });
         
-        // Update the appropriate paddle position
-        requestAnimationFrame(() => {
+        // Update the appropriate paddle position based on role
+        if ((role === 'host' && paddleSide === 'right') || 
+            (role === 'client' && paddleSide === 'left')) {
           if (paddleSide === 'left') {
             setLeftPaddlePos(position);
           } else {
             setRightPaddlePos(position);
           }
-        });
+        }
       },
 
       ballUpdate: ({ position, velocity, timestamp }) => {
         if (role === 'host') return; // Host manages its own ball
         
-        console.log('Received ball update:', { position, velocity, timestamp });
+        console.log('Client received ball update:', { 
+          position, 
+          velocity, 
+          timestamp,
+          currentRole: role 
+        });
         
-        // Use requestAnimationFrame for smooth updates
-        requestAnimationFrame(() => {
+        // Only update if we're the client
+        if (role === 'client') {
           setBallPos(position);
           setBallVelocity(velocity);
-        });
+        }
       },
 
       scoreUpdate: ({ score, scorer, timestamp }) => {
