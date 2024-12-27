@@ -270,9 +270,10 @@ export function useMultiplayer({
   useEffect(() => {
     if (!socket) return;
 
-    let lastPingSent = 0;
+    let lastPingSent = Date.now();
     const pingInterval = setInterval(() => {
-      if (socket.connected) {
+      if (socket?.connected) {
+        console.log('Sending ping at:', Date.now());
         lastPingSent = Date.now();
         socket.emit('ping');
       }
@@ -295,8 +296,14 @@ export function useMultiplayer({
       },
 
       pong: () => {
-        const latency = Math.round((Date.now() - lastPingSent) / 2); // Round-trip time divided by 2
-        console.log('Received pong, latency:', latency);
+        const now = Date.now();
+        const latency = Math.round((now - lastPingSent) / 2);
+        console.log('Ping debug:', {
+          now,
+          lastPingSent,
+          timeDiff: now - lastPingSent,
+          calculatedLatency: latency
+        });
         
         const newStats = {
           latency,

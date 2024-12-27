@@ -728,24 +728,33 @@ function GameBoard() {
   // Add pause button UI
   const renderPauseButton = () => {
     const shouldRender = isGameStarted && !winner;
-    console.log('Pause button render conditions:', {
+    console.log('Pause button debug:', {
+      shouldRender,
       isGameStarted,
       winner,
-      shouldRender,
       isMultiplayer,
-      role
+      role,
+      gameboardWrapperExists: document.querySelector('.game-board-wrapper') !== null,
+      buttonStyle: {
+        position: 'absolute',
+        top: '-40px',
+        right: '0',
+        background: '#ff0000',
+        zIndex: 9999
+      }
     });
 
     if (!shouldRender) return null;
     
     return (
       <button 
+        id="pause-button"  // Add ID for easier debugging
         className="pause-button"
         onClick={handlePause}
         style={{ 
           position: 'absolute',
-          top: '20px',
-          right: '20px',
+          top: '-40px',
+          right: '0',
           background: '#ff0000',
           padding: '10px 20px',
           color: 'white',
