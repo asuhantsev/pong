@@ -7,13 +7,31 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://asuhantsev.github.io",
+    "https://asuhantsev.github.io/pong"
+  ],
+  credentials: true
+}));
+
+app.get('/', (req, res) => {
+  res.send('Pong server is running');
+});
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST"]
+    origin: [
+      "http://localhost:5173",
+      "https://asuhantsev.github.io",
+      "https://asuhantsev.github.io/pong"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true,
+    allowedHeaders: ["my-custom-header"],
+    transports: ['websocket', 'polling']
   }
 });
 
@@ -174,6 +192,15 @@ function generateRoomId() {
 function generateSessionId() {
   return Math.random().toString(36).substring(2, 15);
 }
+
+// Add error logging
+io.on('connect_error', (err) => {
+  console.log('Connection Error:', err);
+});
+
+io.on('error', (err) => {
+  console.log('Socket Error:', err);
+});
 
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {

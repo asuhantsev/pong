@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import { BOARD_HEIGHT, PADDLE_HEIGHT } from '../constants/gameConstants';
 
 const SOCKET_SERVER = import.meta.env.PROD 
-  ? 'https://your-server-url.com'  // Replace with your deployed server URL
+  ? 'https://pong-322h.onrender.com'  // Replace with your actual Render URL
   : 'http://localhost:3001';
 const STORAGE_KEY = 'pong_session';
 
@@ -57,6 +57,11 @@ export function useMultiplayer({
     const newSocket = io(SOCKET_SERVER, {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+      extraHeaders: {
+        "my-custom-header": "abcd"
+      }
     });
     
     socketRef.current = newSocket;
