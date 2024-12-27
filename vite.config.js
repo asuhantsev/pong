@@ -1,25 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
-  base: '/pong/',
   plugins: [react()],
+  base: '/pong/',
   server: {
-    hmr: {
-      protocol: 'ws',
-      host: 'localhost'
-    },
-    watch: {
-      usePolling: true
-    }
+    port: 5173,
+    strictPort: true,
   },
-  build: {
-    sourcemap: true,
-    rollupOptions: {
-      output: {
-        manualChunks: undefined
-      }
-    }
-  }
+  envPrefix: 'VITE_',
 })
