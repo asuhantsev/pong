@@ -55,13 +55,14 @@ export function useMultiplayer({
     if (socketRef.current) return;
     
     const newSocket = io(SOCKET_SERVER, {
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
       transports: ['websocket', 'polling'],
       withCredentials: true,
       autoConnect: true,
       forceNew: true,
-      timeout: 10000,
       extraHeaders: {
         "my-custom-header": "abcd"
       }
@@ -70,10 +71,28 @@ export function useMultiplayer({
     socketRef.current = newSocket;
     setSocket(newSocket);
 
-    // Add connection error handling
+    // Add more detailed error handling
     newSocket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
-      setError('Connection failed: ' + error.message);
+      setError(`Connection failed: ${error.message}`);
+      onLoadingChange(false);
+    });
+
+    newSocket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`Reconnection attempt ${attemptNumber}`);
+      onLoadingChange(true);
+    });
+
+    newSocket.on('reconnect', () => {
+      console.log('Reconnected successfully');
+      onLoadingChange(false);
+      setError(null);
+    });
+
+    newSocket.on('reconnect_failed', () => {
+      console.error('Failed to reconnect');
+      setError('Failed to reconnect to server');
+      onLoadingChange(false);
     });
 
     return () => {
@@ -123,13 +142,24 @@ export function useMultiplayer({
 
   // Use useCallback for room actions
   const createRoom = useCallback(() => {
-    if (!socketRef.current) {
-      console.log('❌ Cannot create room: Socket not connected');
+    if (!socketRef.current?.connected) {
+      setError('Not connected to server');
       return;
     }
     setIsCreatingRoom(true);
+    setError(null);
     socketRef.current.emit('createRoom');
-  }, []);
+
+    // Add timeout for room creation
+    const timeout = setTimeout(() => {
+      if (isCreatingRoom) {
+        setError('Room creation timed out');
+        setIsCreatingRoom(false);
+      }
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [isCreatingRoom]);
 
   const joinRoom = useCallback((roomId) => {
     if (!socketRef.current) {

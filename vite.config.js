@@ -13,5 +13,13 @@ export default defineConfig({
     watch: {
       usePolling: true
     }
+  },
+  build: {
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
   }
 })

@@ -46,7 +46,11 @@ const io = new Server(httpServer, {
     credentials: true,
     allowedHeaders: ["my-custom-header"]
   },
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  upgradeTimeout: 30000,
+  maxHttpBufferSize: 1e8
 });
 
 // Add debug logging for CORS issues
@@ -72,7 +76,16 @@ setInterval(() => {
 io.on('connection', (socket) => {
   console.log('New connection:', {
     id: socket.id,
-    origin: socket.handshake.headers.origin
+    origin: socket.handshake.headers.origin,
+    transport: socket.conn.transport.name
+  });
+
+  socket.on('error', (error) => {
+    console.error('Socket error:', error);
+  });
+
+  socket.conn.on('upgrade', (transport) => {
+    console.log('Transport upgraded:', transport.name);
   });
 
   // Add reconnection handling
