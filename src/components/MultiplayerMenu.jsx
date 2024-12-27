@@ -99,6 +99,7 @@ function MultiplayerMenu({
           >
             Back
           </button>
+          {error && <div className="error-message">{error}</div>}
         </div>
       ) : (
         // Room info and ready state UI
@@ -121,7 +122,6 @@ function MultiplayerMenu({
           )}
         </div>
       )}
-      {error && <div className="error-message">{error}</div>}
     </div>
   );
 }

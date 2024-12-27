@@ -166,18 +166,34 @@ export function useMultiplayer({
   }, [isCreatingRoom]);
 
   const joinRoom = useCallback((roomId) => {
-    if (!socketRef.current) {
-      console.log('❌ Cannot join room: Socket not connected');
+    console.log('Attempting to join room:', roomId);
+    if (!socketRef.current?.connected) {
+      console.error('Cannot join room: Socket not connected');
+      setError('Not connected to server');
+      setIsJoiningRoom(false);
       return;
     }
     if (!roomId) {
       setError('Room code is required');
+      setIsJoiningRoom(false);
       return;
     }
     setIsJoiningRoom(true);
-    console.log('Joining room:', roomId);
+    setError(null);
+    console.log('Emitting joinRoom event:', roomId);
     socketRef.current.emit('joinRoom', roomId);
-  }, []);
+
+    // Add timeout for join attempt
+    const timeout = setTimeout(() => {
+      if (isJoiningRoom) {
+        console.error('Room join timed out');
+        setError('Room join timed out');
+        setIsJoiningRoom(false);
+      }
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [isJoiningRoom]);
 
   // Add throttling for paddle updates
   const THROTTLE_MS = 16; // roughly 60fps
