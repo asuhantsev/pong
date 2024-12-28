@@ -281,12 +281,22 @@ export function useMultiplayer({
 
     let lastPingSent = Date.now();
     const pingInterval = setInterval(() => {
-      if (socket?.connected) {
-        console.log('Sending ping at:', Date.now());
-        lastPingSent = Date.now();
-        socket.emit('ping');
-      }
+      const now = Date.now();
+      lastPingSent = now;
+      socket.emit('ping', now);
     }, 1000);
+
+    socket.on('pong', (serverTime) => {
+      const now = Date.now();
+      const latency = now - lastPingSent;
+      
+      const newStats = {
+        latency,
+        quality: latency < 50 ? 'good' : latency < 100 ? 'medium' : 'poor'
+      };
+      setNetworkStats(newStats);
+      onNetworkStatsUpdate(newStats);
+    });
 
     const handlers = {
       connect: () => {
