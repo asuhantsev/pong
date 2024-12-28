@@ -322,10 +322,12 @@ io.on('connection', (socket) => {
     console.log('Processing pause update:', {
       roomId,
       isPaused: data.isPaused,
-      countdownValue: data.countdownValue
+      countdownValue: data.countdownValue,
+      from: socket.id
     });
 
-    io.to(roomId).emit('pauseUpdate', {
+    // Broadcast to all clients including sender
+    io.in(roomId).emit('pauseUpdate', {
       isPaused: data.isPaused,
       countdownValue: data.countdownValue
     });

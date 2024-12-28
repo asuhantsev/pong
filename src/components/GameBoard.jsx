@@ -385,20 +385,18 @@ function GameBoard() {
 
   const handlePause = useCallback(() => {
     if (!isGameStarted) return;
+    
     // Check socket connection before sending
     if (!socket?.connected) {
-      console.log('Socket not connected, reconnecting...');
-      socket?.connect();
+      console.log('Socket not connected, cannot pause');
       return;
     }
     
-    if (socket?.connected) {
-      socket.emit('pauseGame', {
-        isPaused: !isPaused,
-        countdownValue: !isPaused ? 3 : null // Start countdown when resuming
-      });
-    }
-    setIsPaused(!isPaused);
+    const newPauseState = !isPaused;
+    socket.emit('pauseGame', {
+      isPaused: newPauseState,
+      countdownValue: newPauseState ? null : 3  // Start countdown when resuming
+    });
   }, [isGameStarted, isPaused, socket]);
 
   const handleResume = useCallback(() => {

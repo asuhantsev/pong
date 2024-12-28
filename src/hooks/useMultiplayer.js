@@ -459,35 +459,6 @@ export function useMultiplayer({
         setError(error);
         setIsCreatingRoom(false);
         setIsJoiningRoom(false);
-      },
-
-      pauseUpdate: (data) => {
-        console.log('Received pause update:', data);
-        // Ensure socket is connected
-        if (!socketRef.current?.connected) {
-          console.log('Socket disconnected during pause, reconnecting...');
-          socketRef.current?.connect();
-          return;
-        }
-
-        if (data.countdownValue !== null) {
-          let count = data.countdownValue;
-          onCountdownUpdate(count);
-          
-          const countdownInterval = setInterval(() => {
-            count--;
-            if (count > 0) {
-              onCountdownUpdate(count);
-            } else {
-              clearInterval(countdownInterval);
-              onCountdownUpdate(null);
-              onPauseUpdate(false);
-            }
-          }, 1000);
-        } else {
-          onPauseUpdate(data.isPaused);
-          onCountdownUpdate(null);
-        }
       }
     };
 
