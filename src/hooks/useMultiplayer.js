@@ -31,7 +31,6 @@ export function useMultiplayer({
   const [role, setRole] = useState(null);
   const [playersReady, setPlayersReady] = useState(new Map());
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const [winner, setWinner] = useState(null);
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
   const [networkStats, setNetworkStats] = useState({
     latency: 0,
@@ -400,10 +399,10 @@ export function useMultiplayer({
 
       winnerUpdate: ({ winner, score }) => {
         console.log('Received winner update:', { winner, score });
-        onWinnerUpdate(winner);
         setScore(score);
         setWinner(winner);
         setIsGameStarted(false);
+        onWinnerUpdate(winner);
       },
 
       gameReady: () => {
