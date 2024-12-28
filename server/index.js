@@ -153,9 +153,9 @@ io.on('connection', (socket) => {
   });
 
   // Add toggleReady handler
-  socket.on('toggleReady', ({ roomId, playerId }) => {
+  socket.on('toggleReady', ({ roomId, playerId, nickname }) => {
     try {
-      console.log('Toggle ready request:', { roomId, playerId });
+      console.log('Toggle ready request:', { roomId, playerId, nickname });
       
       const room = rooms.get(roomId);
       if (!room) {
@@ -166,6 +166,12 @@ io.on('connection', (socket) => {
         throw new Error('Player not in room');
       }
 
+      // Initialize nicknames Map if it doesn't exist
+      room.nicknames = room.nicknames || new Map();
+      if (nickname) {
+        room.nicknames.set(socket.id, nickname);
+      }
+
       // Toggle ready state
       const currentState = room.readyState.get(socket.id) || false;
       room.readyState.set(socket.id, !currentState);
@@ -173,12 +179,14 @@ io.on('connection', (socket) => {
       console.log('Ready state updated:', {
         roomId,
         playerId: socket.id,
-        readyState: Array.from(room.readyState.entries())
+        readyState: Array.from(room.readyState.entries()),
+        nicknames: Array.from(room.nicknames.entries())
       });
 
-      // Broadcast new ready state to all players in room
+      // Broadcast new ready state and nicknames to all players in room
       io.to(roomId).emit('readyStateUpdate', {
-        readyState: Array.from(room.readyState.entries())
+        readyState: Array.from(room.readyState.entries()),
+        nicknames: Array.from(room.nicknames.entries())
       });
 
     } catch (error) {

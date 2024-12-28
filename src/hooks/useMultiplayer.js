@@ -58,6 +58,7 @@ export function useMultiplayer({
   const [isJoiningRoom, setIsJoiningRoom] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isSocketReady, setIsSocketReady] = useState(false);
+  const [playerNicknames, setPlayerNicknames] = useState(new Map());
 
   // Keep only necessary refs
   const socketRef = useRef(null);
@@ -277,12 +278,12 @@ export function useMultiplayer({
       return;
     }
 
-    // Emit toggleReady event
     socket.emit('toggleReady', { 
       roomId,
-      playerId: socket.id 
+      playerId: socket.id,
+      nickname: myNickname
     });
-  }, [socket, playersReady]);
+  }, [socket, playersReady, myNickname]);
 
   const sendWinner = (winner) => {
     if (role !== 'host') return;
@@ -442,21 +443,19 @@ export function useMultiplayer({
         saveSession(roomId, sessionId);
       },
 
-      playerJoined: ({ playerId, readyState }) => {
-        console.log('Player joined:', { playerId, readyState });
+      playerJoined: ({ playerId, readyState, nickname }) => {
+        console.log('Player joined:', { playerId, readyState, nickname });
         setPlayersReady(new Map(readyState));
+        if (nickname) {
+          setPlayerNicknames(prev => new Map(prev).set(playerId, nickname));
+        }
       },
 
-      readyStateUpdate: ({ readyState }) => {
-        console.log('Ready state update received:', readyState);
-        const newReadyState = new Map(readyState);
-        setPlayersReady(newReadyState);
-        
-        // Check if all players are ready
-        const allReady = Array.from(newReadyState.values()).every(ready => ready);
-        if (allReady && newReadyState.size === 2) {
-          console.log('All players ready, starting game...');
-          onGameStart();
+      readyStateUpdate: ({ readyState, nicknames }) => {
+        console.log('Ready state update received:', { readyState, nicknames });
+        setPlayersReady(new Map(readyState));
+        if (nicknames) {
+          setPlayerNicknames(new Map(nicknames));
         }
       },
 

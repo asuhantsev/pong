@@ -22,7 +22,8 @@ function MultiplayerMenu({
   isJoiningRoom,
   onBack,
   myNickname,
-  isSocketReady
+  isSocketReady,
+  playerNicknames
 }) {
   // State declarations first
   const [joinRoomId, setJoinRoomId] = useState('');
@@ -96,19 +97,40 @@ function MultiplayerMenu({
       <div className="ready-status">
         {Array.from(playersReady.entries()).map(([id, ready]) => (
           <div key={id} className={`player-entry ${id === mySocketId ? 'my-player' : ''}`}>
-            <div className="player-nickname">
-              {id === mySocketId ? 
-                `${myNickname} (You)` : 
-                'Opponent'}
-            </div>
-            <div className="ready-status">
-              {ready ? '✅' : '⏳'}
+            <div className="player-info">
+              <span className="player-nickname">
+                {id === mySocketId ? 
+                  `${myNickname} (You)` : 
+                  `${playerNicknames.get(id) || 'Opponent'}`}
+              </span>
+              <span className="ready-indicator">
+                {ready ? '✅' : '⏳'}
+              </span>
             </div>
           </div>
         ))}
       </div>
     );
   };
+
+  // Add CSS for the new layout
+  const styles = `
+    .player-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 5px 10px;
+    }
+
+    .ready-indicator {
+      margin-left: 10px;
+    }
+
+    .player-nickname {
+      font-weight: bold;
+    }
+  `;
 
   // Render initial multiplayer menu if no room or role
   if (!roomId || !role) {
