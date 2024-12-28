@@ -13,20 +13,18 @@ function MultiplayerMenu({
   onJoinRoom, 
   onToggleReady,
   roomId, 
-  error, 
+  error: socketError,
   playersReady, 
   role,
   mySocketId,
   isReconnecting,
-  isCreatingRoom,
-  isJoiningRoom,
+  isCreatingRoom: isCreatingRoomProp,
+  isJoiningRoom: isJoiningRoomProp,
   onBack,
   myNickname
 }) {
   const [joinRoomId, setJoinRoomId] = useState('');
-  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
-  const [isJoiningRoom, setIsJoiningRoom] = useState(false);
-  const [error, setError] = useState(null);
+  const [localError, setLocalError] = useState(null);
 
   // Helper to check if both players are connected
   const areBothPlayersConnected = useCallback(() => {
@@ -61,12 +59,9 @@ function MultiplayerMenu({
 
   const handleCreateRoom = async () => {
     try {
-      setIsCreatingRoom(true);
       await onCreateRoom();
-    } catch (error) {
-      setError(`Failed to create room: ${error.message}`);
-    } finally {
-      setIsCreatingRoom(false);
+    } catch (err) {
+      setLocalError(`Failed to create room: ${err.message}`);
     }
   };
 
@@ -75,12 +70,9 @@ function MultiplayerMenu({
       if (!roomId?.trim()) {
         throw new Error('Room code is required');
       }
-      setIsJoiningRoom(true);
       await onJoinRoom(roomId);
-    } catch (error) {
-      setError(`Failed to join room: ${error.message}`);
-    } finally {
-      setIsJoiningRoom(false);
+    } catch (err) {
+      setLocalError(`Failed to join room: ${err.message}`);
     }
   };
 
@@ -125,9 +117,9 @@ function MultiplayerMenu({
           <button 
             className="start-button" 
             onClick={handleCreateRoom}
-            disabled={isCreatingRoom || isJoiningRoom}
+            disabled={isCreatingRoomProp || isJoiningRoomProp}
           >
-            {isCreatingRoom ? 'Creating Room...' : 'Create Room'}
+            {isCreatingRoomProp ? 'Creating Room...' : 'Create Room'}
           </button>
           <div className="join-room">
             <input
@@ -136,24 +128,24 @@ function MultiplayerMenu({
               onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
               placeholder="Enter Room Code"
               maxLength={6}
-              disabled={isCreatingRoom || isJoiningRoom}
+              disabled={isCreatingRoomProp || isJoiningRoomProp}
             />
             <button 
               className="start-button"
               onClick={() => handleJoinRoom(joinRoomId)}
-              disabled={!joinRoomId || isCreatingRoom || isJoiningRoom}
+              disabled={!joinRoomId || isCreatingRoomProp || isJoiningRoomProp}
             >
-              {isJoiningRoom ? 'Joining...' : 'Join Room'}
+              {isJoiningRoomProp ? 'Joining...' : 'Join Room'}
             </button>
           </div>
           <button 
             className="back-button"
             onClick={onBack}
-            disabled={isCreatingRoom || isJoiningRoom}
+            disabled={isCreatingRoomProp || isJoiningRoomProp}
           >
             Back
           </button>
-          {error && <div className="error-message">{error}</div>}
+          {localError && <div className="error-message">{localError}</div>}
         </div>
       ) : (
         // Room info and ready state UI
