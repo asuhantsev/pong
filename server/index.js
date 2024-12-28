@@ -40,12 +40,24 @@ const io = new Server(httpServer, {
     allowedHeaders: ["*"],
     credentials: true
   },
-  transports: ['websocket', 'polling'],
-  path: '/socket.io/'
+  transports: ['polling', 'websocket'],
+  path: '/socket.io/',
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  upgradeTimeout: 10000,
+  allowUpgrades: true,
+  cookie: false
 });
+
+// Add health check endpoint with CORS
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 
 // Health check endpoint
 app.get('/', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
   res.send('Pong server is running');
 });
 

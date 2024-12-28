@@ -136,8 +136,18 @@ function GameBoard() {
   useEffect(() => {
     if (socketError) {
       setConnectionError(socketError);
+      // Try to reconnect after a delay
+      if (isMultiplayer) {
+        const timer = setTimeout(() => {
+          if (socket) {
+            console.log('Attempting to reconnect...');
+            socket.connect();
+          }
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [socketError]);
+  }, [socketError, socket, isMultiplayer]);
 
   // Add retry handler
   const handleRetryConnection = () => {

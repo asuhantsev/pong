@@ -60,10 +60,16 @@ export function useMultiplayer({
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       timeout: 10000,
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       withCredentials: true,
       autoConnect: true,
-      path: '/socket.io/'
+      path: '/socket.io/',
+      forceNew: true,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000
     });
     
     // Add reconnect listeners
@@ -98,7 +104,10 @@ export function useMultiplayer({
     });
 
     newSocket.on('connect', () => {
-      console.log('Connected successfully with transport:', newSocket.io.engine.transport.name);
+      console.log('Connected with transport:', newSocket.io.engine.transport.name);
+      newSocket.io.engine.on('upgrade', () => {
+        console.log('Transport upgraded to:', newSocket.io.engine.transport.name);
+      });
       setError(null);
       onLoadingChange(false);
     });
