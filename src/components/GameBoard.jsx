@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import '../styles/GameElements.css'
 
 // Core components first
@@ -15,6 +15,7 @@ import ConnectionError from './ConnectionError'
 import NetworkStatus from './NetworkStatus'
 
 // Hooks and utils
+import { useGameState } from '../hooks/useGameState'
 import { useMultiplayer } from '../hooks/useMultiplayer'
 import StorageManager from '../utils/StorageManager'
 import { isValidNickname, getNicknameError } from '../utils/validation'
@@ -109,10 +110,7 @@ function GameBoard() {
 
   // Add nickname state
   const [nickname, setNickname] = useState(StorageManager.getNickname());
-  const [menuState, setMenuState] = useState({
-    screen: 'main', // 'main' | 'options' | 'multiplayer' | 'game'
-    mode: null // null | 'single' | 'multi'
-  });
+  const { menuState, handleMenuTransition } = useGameState();
 
   const { 
     socket, 

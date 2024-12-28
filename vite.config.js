@@ -5,9 +5,16 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/pong/',
-  server: {
-    port: 5173,
-    strictPort: true,
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+        // Prevent code splitting
+        inlineDynamicImports: true
+      }
+    },
+    // Add source maps for debugging
+    sourcemap: true
   },
   envPrefix: 'VITE_',
 })
