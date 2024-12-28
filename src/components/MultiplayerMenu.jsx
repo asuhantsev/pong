@@ -193,6 +193,18 @@ function MultiplayerMenu({
     };
   }, []);
 
+  // Add useEffect for debugging
+  useEffect(() => {
+    console.log('MultiplayerMenu props update:', {
+      roomId,
+      role,
+      mySocketId,
+      isReconnecting,
+      playersReady: Array.from(playersReady.entries()),
+      playerNicknames: Array.from(playerNicknames.entries())
+    });
+  }, [roomId, role, mySocketId, isReconnecting, playersReady, playerNicknames]);
+
   // Render initial multiplayer menu if no room or role
   if (!roomId || !role) {
     return (

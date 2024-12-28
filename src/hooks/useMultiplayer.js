@@ -99,6 +99,7 @@ export function useMultiplayer({
       setError(null);
       setRetryCount(0);
       setIsSocketReady(true);
+      setIsReconnecting(false);
     });
 
     newSocket.on('connect_error', (error) => {
@@ -176,6 +177,7 @@ export function useMultiplayer({
 
     setIsCreatingRoom(true);
     setError(null);
+    setIsReconnecting(false);
     
     console.log('Emitting createRoom event');
     socketRef.current.emit('createRoom');
@@ -468,6 +470,7 @@ export function useMultiplayer({
           setPlayerNicknames(new Map(nicknames));
         }
         setIsJoiningRoom(false);
+        setIsReconnecting(false);
       },
 
       playerJoined: ({ playerId, readyState, nicknames }) => {
