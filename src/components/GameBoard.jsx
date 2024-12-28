@@ -630,7 +630,7 @@ function GameBoard() {
     setIsMultiplayer(false);
     setRematchRequested(false);
     setRematchAccepted(false);
-    setIsReady(false); // Ensure player is unready
+    setIsReady(false);
     
     // Reset ball position and velocity
     setBallPos({

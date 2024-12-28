@@ -591,6 +591,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: 120px;
+  display: block;
 }
 
 .rematch-button {
@@ -612,6 +613,7 @@ body {
 .exit-button {
   background: #f44336;
   color: white;
+  margin-left: 1rem;
 }
 
 .exit-button:hover {
