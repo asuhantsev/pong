@@ -166,8 +166,10 @@ function GameBoard() {
     setLeftPaddlePos,
     setRightPaddlePos,
     setScore,
-    onPauseUpdate: setIsPaused,
-    onCountdownUpdate: setCountdown,
+    onPauseUpdate: ({ isPaused: newPauseState, countdownValue }) => {
+      setIsPaused(newPauseState);
+      setCountdown(countdownValue);
+    },
     onGameStart: () => setIsGameStarted(true),
     onGameEnd: () => setIsGameStarted(false),
     onWinnerUpdate: (winner) => {
@@ -829,27 +831,33 @@ function GameBoard() {
 
   // Update the pause menu render
   const renderPauseMenu = () => {
-    if (!isPaused) return null;
+    if (!isPaused || !menuState.mode === 'multi') return null;
     
     return (
-      <div className="pause-overlay" onClick={handlePauseMenuClick}>
-        <div className="pause-menu">
-          <h2>Game Paused</h2>
-          <button onClick={handlePause}>Resume</button>
-          <button onClick={handleExit}>Exit</button>
-        </div>
+      <div className="pause-menu">
+        <h2>Game Paused</h2>
+        {countdown !== null && (
+          <div className="countdown">
+            Resuming in: {countdown}
+          </div>
+        )}
+        {role === 'host' && (
+          <button onClick={handlePauseGame}>
+            Resume Game
+          </button>
+        )}
       </div>
     );
   };
 
   // Add pause button UI
   const renderPauseButton = () => {
-    if (!isGameStarted) return null;
-
+    if (!isGameStarted || menuState.mode !== 'multi' || role !== 'host') return null;
+    
     return (
       <button 
         className="pause-button"
-        onClick={handlePause}
+        onClick={handlePauseGame}
       >
         {isPaused ? 'Resume' : 'Pause'}
       </button>
@@ -1060,6 +1068,19 @@ function GameBoard() {
       }
     }
   }, [menuState.mode, roomId, joinRoom, handleMenuTransition]);
+
+  // Add pause handlers
+  const handlePauseGame = useCallback(() => {
+    if (!socket?.connected || !roomId) return;
+    
+    const newPauseState = !isPaused;
+    setIsPaused(newPauseState);
+    socket.emit('pauseGame', {
+      roomId,
+      isPaused: newPauseState,
+      countdownValue: newPauseState ? 3 : null
+    });
+  }, [socket, roomId, isPaused]);
 
   return (
     <div className="game-container">

@@ -527,6 +527,33 @@ export function useMultiplayer({
         
         // Notify other player about rematch request
         socket.to(roomId).emit('rematchRequest');
+      },
+
+      pauseUpdate: ({ isPaused, countdownValue, timestamp, from }) => {
+        console.log('Received pause update:', {
+          isPaused,
+          countdownValue,
+          timestamp,
+          from
+        });
+        
+        onPauseUpdate?.({
+          isPaused,
+          countdownValue
+        });
+
+        // Start countdown if game is resuming
+        if (!isPaused && countdownValue) {
+          let count = countdownValue;
+          const countdownInterval = setInterval(() => {
+            count--;
+            onCountdownUpdate?.(count);
+            
+            if (count <= 0) {
+              clearInterval(countdownInterval);
+            }
+          }, 1000);
+        }
       }
     };
 
