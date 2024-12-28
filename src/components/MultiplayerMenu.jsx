@@ -73,6 +73,31 @@ function MultiplayerMenu({
     onToggleReady(roomId);
   };
 
+  const renderReadyButton = () => {
+    const isReady = playersReady.get(mySocketId);
+    return (
+      <button 
+        onClick={handleToggleReady}
+        disabled={isReconnecting}
+        className={isReady ? 'ready-button ready' : 'ready-button'}
+      >
+        {isReady ? 'Ready' : 'Click when Ready'}
+      </button>
+    );
+  };
+
+  const renderReadyStatus = () => {
+    return (
+      <div className="ready-status">
+        {Array.from(playersReady.entries()).map(([id, ready]) => (
+          <div key={id}>
+            Player {id === mySocketId ? '(You)' : '(Opponent)'}: {ready ? '✅' : '⏳'}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="multiplayer-menu">
       {!roomId ? (
@@ -118,20 +143,8 @@ function MultiplayerMenu({
           {areBothPlayersConnected() ? (
             <div className="ready-section">
               <p>Both players connected!</p>
-              <button 
-                onClick={handleToggleReady}
-                disabled={isReconnecting}
-                className={playersReady.get(mySocketId) ? 'ready' : ''}
-              >
-                {playersReady.get(mySocketId) ? 'Ready' : 'Click when Ready'}
-              </button>
-              <div className="ready-status">
-                {Array.from(playersReady.entries()).map(([id, ready]) => (
-                  <div key={id}>
-                    Player {id === mySocketId ? '(You)' : '(Opponent)'}: {ready ? '✅' : '⏳'}
-                  </div>
-                ))}
-              </div>
+              {renderReadyButton()}
+              {renderReadyStatus()}
             </div>
           ) : (
             <p>Waiting for opponent...</p>

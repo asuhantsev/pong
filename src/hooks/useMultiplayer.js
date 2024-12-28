@@ -480,8 +480,11 @@ export function useMultiplayer({
         setRematchRequested(false);
         setRematchAccepted(false);
         
-        // Reset ready states
-        setPlayersReady(new Map());
+        // Explicitly reset ready states for both players
+        const newReadyState = new Map(
+          Array.from(playersReady.keys()).map(id => [id, false])
+        );
+        setPlayersReady(newReadyState);
         setIsReady(false);
         
         // Reset game flags
@@ -508,6 +511,30 @@ export function useMultiplayer({
         if (role === 'client') {
           setBallVelocity(velocity);
         }
+      },
+
+      rematchRequest: ({ roomId }) => {
+        if (!roomId) return;
+        
+        const room = rooms.get(roomId);
+        if (!room) return;
+        
+        console.log('Rematch requested:', {
+          roomId,
+          from: socket.id
+        });
+        
+        // Reset room state with both players explicitly not ready
+        room.readyState = new Map(room.players.map(id => [id, false]));
+        room.score = { left: 0, right: 0 };
+        
+        // Notify all players with new ready state
+        io.to(roomId).emit('readyStateUpdate', {
+          readyState: Array.from(room.readyState.entries())
+        });
+        
+        // Notify other player about rematch request
+        socket.to(roomId).emit('rematchRequest');
       }
     };
 

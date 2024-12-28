@@ -463,14 +463,22 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     if (!room) return;
     
-    // Reset room state for new game
+    // Reset room state for new game with both players not ready
     room.readyState = new Map(room.players.map(id => [id, false]));
     room.score = { left: 0, right: 0 };
     
-    console.log('Rematch accepted, resetting room:', roomId);
+    console.log('Rematch accepted, resetting room:', {
+      roomId,
+      readyState: Array.from(room.readyState.entries())
+    });
     
-    // Notify all players
+    // First notify about rematch acceptance
     io.to(roomId).emit('rematchAccepted');
+    
+    // Then send the updated ready state
+    io.to(roomId).emit('readyStateUpdate', {
+      readyState: Array.from(room.readyState.entries())
+    });
   });
 });
 
