@@ -102,8 +102,8 @@ function MultiplayerMenu({
     );
   };
 
-  // Render initial multiplayer menu if no room
-  if (!roomId) {
+  // Render initial multiplayer menu if no room or role
+  if (!roomId || !role) {
     return (
       <div className="multiplayer-menu">
         <div className="multiplayer-options">
