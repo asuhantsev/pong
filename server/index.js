@@ -35,18 +35,15 @@ app.use((req, res, next) => {
 // Configure Socket.IO
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST"],
-    allowedHeaders: ["*"],
+    origin: process.env.NODE_ENV === 'production' 
+      ? ['https://asuhantsev.github.io']
+      : ['http://localhost:5173'],
+    methods: ['GET', 'POST'],
     credentials: true
   },
-  transports: ['polling', 'websocket'],
-  path: '/socket.io/',
-  pingTimeout: 60000,
-  pingInterval: 25000,
-  upgradeTimeout: 10000,
-  allowUpgrades: true,
-  cookie: false
+  pingTimeout: 10000,
+  pingInterval: 5000,
+  transports: ['websocket']
 });
 
 // Add health check endpoint with CORS

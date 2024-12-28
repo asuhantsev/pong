@@ -50,11 +50,16 @@ const ConnectionStatus = ({ error, onRetry }) => {
   return (
     <div className="connection-error">
       <div className="error-message">
-        {error.message}
+        <h3>{error.message}</h3>
         {error.description && <p>{error.description}</p>}
       </div>
       {error.type === 'RETRY' ? (
-        <div className="retry-message">Retrying connection...</div>
+        <div className="retry-message">
+          <p>Retrying connection...</p>
+          <button onClick={handleConnectionRecovery}>
+            Try Different Server
+          </button>
+        </div>
       ) : (
         <button onClick={onRetry}>Try Again</button>
       )}
@@ -1026,6 +1031,22 @@ function GameBoard() {
       }));
     }
   }, [nickname, menuState.mode, socket?.connected, role, updateNickname]);
+
+  // Add connection recovery handler
+  const handleConnectionRecovery = useCallback(() => {
+    console.log('Attempting connection recovery...');
+    setConnectionError(null);
+    
+    if (menuState.mode === 'multi') {
+      if (roomId) {
+        // Try to rejoin existing room
+        joinRoom(roomId);
+      } else {
+        // Reset to multiplayer menu
+        handleMenuTransition('multiplayer');
+      }
+    }
+  }, [menuState.mode, roomId, joinRoom, handleMenuTransition]);
 
   return (
     <div className="game-container">

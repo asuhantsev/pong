@@ -14,3 +14,9 @@ services:
         values:
           Cache-Control: no-cache
           Connection: keep-alive
+          Upgrade: $http_upgrade
+          Connection: upgrade
+    routes:
+      - type: rewrite
+        source: /socket.io/*
+        destination: /socket.io/$1

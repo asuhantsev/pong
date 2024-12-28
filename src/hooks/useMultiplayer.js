@@ -10,6 +10,15 @@ const STORAGE_KEY = 'pong_session';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
 
+const SOCKET_OPTIONS = {
+  transports: ['websocket'],
+  reconnectionAttempts: 3,
+  reconnectionDelay: 1000,
+  timeout: 10000,
+  forceNew: true,
+  path: '/socket.io'
+};
+
 export function useMultiplayer({ 
   setBallPos, 
   setBallVelocity, 
@@ -57,81 +66,46 @@ export function useMultiplayer({
 
   // Move socket initialization to a separate effect
   useEffect(() => {
-    if (socketRef.current) return;
-    
     console.log('Initializing socket connection to:', SOCKET_SERVER);
     
-    const newSocket = io(SOCKET_SERVER, {
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 10000,
-      transports: ['polling', 'websocket'],
-      withCredentials: true,
-      autoConnect: true,
-      path: '/socket.io/',
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000
-    });
+    const newSocket = io(SOCKET_SERVER, SOCKET_OPTIONS);
     
-    // Add reconnect listeners
-    newSocket.on('reconnect_attempt', (attempt) => {
-      console.log('Attempting to reconnect:', attempt);
-    });
-
-    newSocket.on('reconnect', (attempt) => {
-      console.log('Reconnected after', attempt, 'attempts');
+    newSocket.on('connect', () => {
+      console.log('Socket connected successfully:', {
+        id: newSocket.id,
+        connected: newSocket.connected
+      });
       setError(null);
+      setRetryCount(0);
     });
-
-    socketRef.current = newSocket;
-    setSocket(newSocket);
 
     newSocket.on('connect_error', (error) => {
-      console.error('Connection error:', {
-        message: error.message,
-        description: error.description,
-        type: error.type,
-        server: SOCKET_SERVER
+      console.error('Socket connection error:', {
+        error,
+        attempts: retryCount + 1
       });
-      setError(`Connection failed: ${error.message}`);
-      onLoadingChange(false);
-    });
-
-    newSocket.on('error', (error) => {
-      console.error('Socket error:', error);
-      if (error.message === 'Room not found') {
-        clearSession();
+      
+      if (retryCount >= MAX_RETRIES) {
+        setError({
+          message: 'Unable to connect to game server',
+          type: 'FATAL',
+          description: 'Please check your internet connection and try again'
+        });
+        return;
       }
+      
+      setRetryCount(prev => prev + 1);
+      connectWithRetry();
     });
 
-    newSocket.on('connect', () => {
-      console.log('Connected with transport:', newSocket.io.engine.transport.name);
-      newSocket.io.engine.on('upgrade', () => {
-        console.log('Transport upgraded to:', newSocket.io.engine.transport.name);
-      });
-      setError(null);
-      onLoadingChange(false);
-    });
-
-    newSocket.on('disconnect', (reason) => {
-      console.log('Disconnected:', reason);
-      if (reason === 'io server disconnect') {
-        // Reconnect manually if server disconnected
-        newSocket.connect();
-      }
-    });
+    setSocket(newSocket);
+    socketRef.current = newSocket;
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
+      console.log('Cleaning up socket connection');
+      newSocket.close();
     };
-  }, []);
+  }, []); // Empty dependency array to create socket only once
 
   // Load session from storage
   useEffect(() => {
