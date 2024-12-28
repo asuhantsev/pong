@@ -327,10 +327,11 @@ io.on('connection', (socket) => {
     });
 
     // Broadcast to all clients in the room
-    io.to(roomId).emit('pauseUpdate', {
+    io.in(roomId).emit('pauseUpdate', {
       isPaused: data.isPaused,
       countdownValue: data.countdownValue,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      from: socket.id
     });
   });
 });

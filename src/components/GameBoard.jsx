@@ -350,8 +350,8 @@ function GameBoard() {
 
     // Clean up old positions
     if (buffer.length > 2 && currentTime - buffer[0].timestamp > 1000) {
-      buffer.shift();
-    }
+          buffer.shift();
+        }
   }, [role, paddleBuffer]);
 
   // 8. Pause/resume handlers
@@ -386,17 +386,16 @@ function GameBoard() {
   const handlePause = useCallback(() => {
     if (!isGameStarted) return;
     
-    // Update local state first
     const newPauseState = !isPaused;
     setIsPaused(newPauseState);
     
-    // Then notify other players if in multiplayer
     if (isMultiplayer && socket?.connected) {
       console.log('Sending pause update:', { newPauseState });
       socket.emit('pauseGame', {
         isPaused: newPauseState,
         countdownValue: newPauseState ? null : 3
       });
+      setIsPaused(newPauseState);
     }
   }, [isGameStarted, isPaused, socket, isMultiplayer]);
 
@@ -510,9 +509,9 @@ function GameBoard() {
       }
       
       // Reset game state
-      setIsGameStarted(false);
-      setIsPaused(false);
-      setCountdown(null);
+    setIsGameStarted(false);
+    setIsPaused(false);
+    setCountdown(null);
       
       // Clear buffers
       ballBufferRef.current = [];
@@ -535,7 +534,7 @@ function GameBoard() {
 
       // Handle pause/resume with Escape
       if (key === 'Escape' && isGameStarted) {
-        if (countdown) {
+    if (countdown) {
           clearInterval(countdownIntervalRef.current);
           setCountdown(null);
           handlePauseChange(true);
@@ -570,7 +569,7 @@ function GameBoard() {
   // 9. Render functions
   const renderReconnectingOverlay = () => {
     if (!isReconnecting) return null;
-    
+
     return (
       <div className="reconnecting-overlay">
         <div className="reconnecting-message">
@@ -616,26 +615,26 @@ function GameBoard() {
 
     // If not in multiplayer mode, show the initial menu
     if (!isMultiplayer) {
-      return (
+    return (
         <div className="menu-container">
           <h1>Pong Game</h1>
-          <div className="button-group">
-            <button 
-              className="start-button"
+        <div className="button-group">
+          <button 
+            className="start-button" 
               onClick={() => setIsGameStarted(true)}
             >
               Single Player
             </button>
             <button 
               className="multiplayer-button"
-              onClick={() => {
+            onClick={() => {
                 clearSession(); // Clear any existing session first
-                setIsMultiplayer(true);
-              }}
-            >
+              setIsMultiplayer(true);
+            }}
+          >
               Multiplayer
-            </button>
-          </div>
+          </button>
+        </div>
         </div>
       );
     }
@@ -667,7 +666,7 @@ function GameBoard() {
     if (!isGameStarted || isPaused) return;
 
     // Update ball position (only if host)
-    if (role === 'host') {
+      if (role === 'host') {
       const newBallPos = {
         x: ballPos.x + ballVelocity.x,
         y: ballPos.y + ballVelocity.y
@@ -779,29 +778,40 @@ function GameBoard() {
     
     const handlePauseUpdate = (data) => {
       console.log('Received pause update:', data);
+      
+      // Clear any existing countdown interval
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      
       setIsPaused(data.isPaused);
       
       if (data.countdownValue) {
         let count = data.countdownValue;
         setCountdown(count);
         
-        const interval = setInterval(() => {
+        countdownIntervalRef.current = setInterval(() => {
           count--;
           if (count > 0) {
             setCountdown(count);
           } else {
-            clearInterval(interval);
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
             setCountdown(null);
             setIsPaused(false);
           }
         }, 1000);
-        
-        return () => clearInterval(interval);
       }
     };
     
     socket.on('pauseUpdate', handlePauseUpdate);
-    return () => socket.off('pauseUpdate', handlePauseUpdate);
+    return () => {
+      socket.off('pauseUpdate', handlePauseUpdate);
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+    };
   }, [socket]);
 
   return (
@@ -825,12 +835,12 @@ function GameBoard() {
             position: 'relative',
             background: '#333333'
           }}>
-            <div className="game-board">
-              <Paddle position="left" top={leftPaddlePos} />
-              <Paddle position="right" top={rightPaddlePos} />
-              <Ball position={ballPos} />
-            </div>
-          </div>
+          <div className="game-board">
+            <Paddle position="left" top={leftPaddlePos} />
+            <Paddle position="right" top={rightPaddlePos} />
+            <Ball position={ballPos} />
+                      </div>
+                </div>
         </>
       ) : (
         <div className="start-menu">
