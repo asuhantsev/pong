@@ -20,9 +20,13 @@ function MultiplayerMenu({
   isReconnecting,
   isCreatingRoom,
   isJoiningRoom,
-  onBack
+  onBack,
+  myNickname
 }) {
   const [joinRoomId, setJoinRoomId] = useState('');
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [isJoiningRoom, setIsJoiningRoom] = useState(false);
+  const [error, setError] = useState(null);
 
   // Helper to check if both players are connected
   const areBothPlayersConnected = useCallback(() => {
@@ -55,13 +59,29 @@ function MultiplayerMenu({
     });
   }, [roomId, role, mySocketId, playersReady]);
 
-  const handleCreateRoom = () => {
-    console.log('Create room button clicked', {
-      isCreatingRoom,
-      socketId: mySocketId,
-      currentRoomId: roomId
-    });
-    onCreateRoom();
+  const handleCreateRoom = async () => {
+    try {
+      setIsCreatingRoom(true);
+      await onCreateRoom();
+    } catch (error) {
+      setError(`Failed to create room: ${error.message}`);
+    } finally {
+      setIsCreatingRoom(false);
+    }
+  };
+
+  const handleJoinRoom = async (roomId) => {
+    try {
+      if (!roomId?.trim()) {
+        throw new Error('Room code is required');
+      }
+      setIsJoiningRoom(true);
+      await onJoinRoom(roomId);
+    } catch (error) {
+      setError(`Failed to join room: ${error.message}`);
+    } finally {
+      setIsJoiningRoom(false);
+    }
   };
 
   const handleToggleReady = () => {
@@ -120,7 +140,7 @@ function MultiplayerMenu({
             />
             <button 
               className="start-button"
-              onClick={() => onJoinRoom(joinRoomId)}
+              onClick={() => handleJoinRoom(joinRoomId)}
               disabled={!joinRoomId || isCreatingRoom || isJoiningRoom}
             >
               {isJoiningRoom ? 'Joining...' : 'Join Room'}
@@ -151,6 +171,20 @@ function MultiplayerMenu({
           )}
         </div>
       )}
+      <div className="players-list">
+        {Array.from(playersReady.entries()).map(([id, ready]) => (
+          <div key={id} className={`player-entry ${id === mySocketId ? 'my-player' : ''}`}>
+            <div className="player-nickname">
+              {id === mySocketId ? 
+                `${myNickname} (You)` : 
+                'Opponent'}
+            </div>
+            <div className="ready-status">
+              {ready ? '✅' : '⏳'}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

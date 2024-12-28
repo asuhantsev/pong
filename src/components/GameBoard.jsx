@@ -3,9 +3,12 @@ import '../styles/GameElements.css'
 import Paddle from './Paddle'
 import Ball from './Ball'
 import MultiplayerMenu from './MultiplayerMenu'
+import MainMenu from './MainMenu'
+import OptionsMenu from './OptionsMenu'
 import { useMultiplayer } from '../hooks/useMultiplayer'
 import ConnectionError from './ConnectionError'
 import NetworkStatus from './NetworkStatus'
+import StorageManager from '../utils/StorageManager'
 import { 
   PADDLE_SPEED,
   BALL_SIZE,
@@ -18,8 +21,10 @@ import {
   PHYSICS_STEP,
   INTERPOLATION_STEP,
   BALL_SPEED,
-  SPEED_INCREASE
-} from '../constants/gameConstants';
+  SPEED_INCREASE,
+  NICKNAME_RULES
+} from '../constants/gameConstants'
+import { isValidNickname, getNicknameError } from '../utils/validation'
 
 // Group all constants at the top
 const PADDLE_BOUNDARIES = {
@@ -89,11 +94,15 @@ function GameBoard() {
   const [countdown, setCountdown] = useState(null)
 
   // Add multiplayer state
-  const [isMultiplayer, setIsMultiplayer] = useState(false)
-
-  // Add rematch state
   const [rematchRequested, setRematchRequested] = useState(false);
   const [rematchAccepted, setRematchAccepted] = useState(false);
+
+  // Add nickname state
+  const [nickname, setNickname] = useState(StorageManager.getNickname());
+  const [menuState, setMenuState] = useState({
+    screen: 'main', // 'main' | 'options' | 'multiplayer' | 'game'
+    mode: null // null | 'single' | 'multi'
+  });
 
   const { 
     socket, 
@@ -117,7 +126,8 @@ function GameBoard() {
     isConnected,
     paddleBuffer,
     isCreatingRoom,
-    isJoiningRoom
+    isJoiningRoom,
+    updateNickname, // new function
   } = useMultiplayer({
     setBallPos,
     setBallVelocity,
@@ -136,15 +146,20 @@ function GameBoard() {
     onLoadingChange: setIsLoading,
     onNetworkStatsUpdate: setNetworkStats,
     setWinner,
-    setIsGameStarted
+    setIsGameStarted,
+    nickname, // Add nickname
+    onNicknameUpdate: (newNickname) => {
+      setNickname(newNickname);
+      StorageManager.saveNickname(newNickname);
+    },
   });
 
-  // Add connection error handler
+  // Update connection error handler
   useEffect(() => {
     if (socketError) {
       setConnectionError(socketError);
       // Try to reconnect after a delay
-      if (isMultiplayer) {
+      if (menuState.mode === 'multi') {
         const timer = setTimeout(() => {
           if (socket) {
             console.log('Attempting to reconnect...');
@@ -154,7 +169,7 @@ function GameBoard() {
         return () => clearTimeout(timer);
       }
     }
-  }, [socketError, socket, isMultiplayer]);
+  }, [socketError, socket, menuState.mode]);
 
   // Add retry handler
   const handleRetryConnection = () => {
@@ -163,13 +178,6 @@ function GameBoard() {
       // Attempt to rejoin the room
       joinRoom(roomId);
     }
-  };
-
-  // Add exit handler
-  const handleExitMultiplayer = () => {
-    setConnectionError(null);
-    setIsMultiplayer(false);
-    disconnect();
   };
 
   // 1. Basic utility functions that don't depend on other functions
@@ -618,21 +626,16 @@ function GameBoard() {
     e.stopPropagation();
   };
 
-  const handleExit = useCallback(() => {
-    if (socket?.connected) {
-      socket.emit('playerExit', { roomId });
-    }
-    
-    // Reset all game states
+  const resetGameState = useCallback(() => {
+    // Reset game progress
     setWinner(null);
     setScore({ left: 0, right: 0 });
     setIsGameStarted(false);
-    setIsMultiplayer(false);
     setRematchRequested(false);
     setRematchAccepted(false);
     setIsReady(false);
     
-    // Reset ball position and velocity
+    // Reset ball state
     setBallPos({
       x: BOARD_WIDTH / 2,
       y: BOARD_HEIGHT / 2
@@ -642,9 +645,21 @@ function GameBoard() {
       y: BALL_SPEED.initial.y
     });
     
-    disconnect();
-    clearSession();
-  }, [socket, roomId, disconnect, clearSession]);
+    // Reset menu state
+    handleMenuTransition('main');
+    
+    // Clear any errors
+    setConnectionError(null);
+  }, [handleMenuTransition]);
+
+  const handleExit = useCallback(() => {
+    if (menuState.mode === 'multi' && socket?.connected) {
+      socket.emit('playerExit', { roomId });
+      disconnect();
+      clearSession();
+    }
+    resetGameState();
+  }, [menuState.mode, socket, roomId, disconnect, clearSession, resetGameState]);
 
   // Add exit notification handler
   useEffect(() => {
@@ -658,77 +673,76 @@ function GameBoard() {
       // Auto-cleanup after showing message
       setTimeout(() => {
         setConnectionError(null);
-        setIsMultiplayer(false);
+        handleMenuTransition('main');
         clearSession();
       }, 3000);
     };
     
     socket.on('playerExited', handlePlayerExit);
     return () => socket.off('playerExited', handlePlayerExit);
-  }, [socket, clearSession]);
+  }, [socket, clearSession, handleMenuTransition]);
+
+  const handleMenuTransition = useCallback((screen, mode = null) => {
+    // Determine the correct mode based on screen
+    let newMode = mode;
+    if (screen === 'multiplayer') {
+      newMode = 'multi';
+    } else if (screen === 'game' && !mode) {
+      newMode = 'single';
+    }
+    
+    // Cleanup previous state
+    if (menuState.mode === 'multi' && newMode !== 'multi') {
+      clearSession();
+      disconnect();
+    }
+    
+    setMenuState({ screen, mode: newMode });
+  }, [menuState.mode, clearSession, disconnect]);
 
   const renderStartMenu = () => {
     if (winner) {
+      return renderWinnerScreen();
+    }
+
+    if (menuState.mode === 'multi') {
       return (
-        <div className="winner-screen">
-          <h2>{winner} Wins!</h2>
-          <button 
-            className="start-button"
-            onClick={() => {
-              setWinner(null);
-              setScore({ left: 0, right: 0 });
-            }}
-          >
-            Play Again
-          </button>
-        </div>
+        <MultiplayerMenu
+          onCreateRoom={createRoom}
+          onJoinRoom={joinRoom}
+          onToggleReady={toggleReady}
+          roomId={roomId}
+          error={socketError}
+          playersReady={playersReady}
+          role={role}
+          mySocketId={socket?.id}
+          isReconnecting={isReconnecting}
+          isCreatingRoom={isCreatingRoom}
+          isJoiningRoom={isJoiningRoom}
+          onBack={() => handleMenuTransition('main')}
+          myNickname={nickname}
+        />
       );
     }
 
-    // If not in multiplayer mode, show the initial menu
-    if (!isMultiplayer) {
-    return (
-        <div className="menu-container">
-          <h1>Pong Game</h1>
-        <div className="button-group">
-          <button 
-            className="start-button" 
-              onClick={() => setIsGameStarted(true)}
-            >
-              Single Player
-            </button>
-            <button 
-              className="multiplayer-button"
-            onClick={() => {
-                clearSession(); // Clear any existing session first
-              setIsMultiplayer(true);
-            }}
-          >
-              Multiplayer
-          </button>
-        </div>
-        </div>
-      );
-    }
-
-    return (
-      <MultiplayerMenu
-        onCreateRoom={createRoom}
-        onJoinRoom={joinRoom}
-        onToggleReady={toggleReady}
-        roomId={roomId}
-        error={socketError}
-        playersReady={playersReady}
-        role={role}
-        mySocketId={socket?.id}
-        isReconnecting={isReconnecting}
-        isCreatingRoom={isCreatingRoom}
-        isJoiningRoom={isJoiningRoom}
-        onBack={() => {
-          console.log('Back button clicked');
-          clearSession();  // Clear session first
-          disconnect();    // Then disconnect
-          setIsMultiplayer(false);  // Finally, exit multiplayer mode
+    return menuState.screen === 'options' ? (
+      <OptionsMenu
+        currentNickname={nickname}
+        onNicknameChange={handleNicknameChange}
+        onBack={() => handleMenuTransition('main')}
+      />
+    ) : (
+      <MainMenu
+        nickname={nickname}
+        onMultiplayerClick={() => handleMenuTransition('multiplayer')}
+        onOptionsClick={() => handleMenuTransition('options')}
+        onSinglePlayerClick={() => {
+          handleMenuTransition('game', 'single');
+          setIsGameStarted(true);
+          setPlayerNames({
+            left: nickname,
+            right: 'Computer'
+          });
         }}
       />
     );
@@ -833,18 +847,19 @@ function GameBoard() {
       isGameStarted,
       winner,
       isPaused,
-      isMultiplayer,
+      mode: menuState.mode,
       role
     });
-  }, [isGameStarted, winner, isPaused, isMultiplayer, role]);
+  }, [isGameStarted, winner, isPaused, menuState.mode, role]);
 
   // Add reconnection handler
   useEffect(() => {
-    if (socket && !socket.connected && isGameStarted) {
+    if (socket && !socket.connected && 
+        menuState.mode === 'multi') {
       console.log('Attempting to reconnect socket...');
       socket.connect();
     }
-  }, [socket, isGameStarted]);
+  }, [socket, menuState.mode]);
 
   // Add pause event handler
   useEffect(() => {
@@ -973,6 +988,35 @@ function GameBoard() {
       socket.off('rematchDeclined', handleRematchDeclined);
     };
   }, [socket, setBallPos, setBallVelocity]);
+
+  // Update nickname change handler
+  const handleNicknameChange = useCallback((newNickname) => {
+    try {
+      if (!isValidNickname(newNickname)) {
+        throw new Error(getNicknameError(newNickname));
+      }
+
+      setNickname(newNickname);
+      StorageManager.saveNickname(newNickname);
+
+    } catch (error) {
+      setConnectionError(error.message);
+      setTimeout(() => setConnectionError(null), 3000);
+    }
+  }, []);
+
+  // Add useEffect for nickname sync with multiplayer
+  useEffect(() => {
+    if (menuState.mode === 'multi' && socket?.connected) {
+      updateNickname(nickname);
+      
+      // Update player names based on role
+      setPlayerNames(prev => ({
+        ...prev,
+        [role === 'host' ? 'left' : 'right']: nickname
+      }));
+    }
+  }, [nickname, menuState.mode, socket?.connected, role, updateNickname]);
 
   return (
     <div className="game-container">

@@ -1,0 +1,83 @@
+.options-menu {
+  background: rgba(0, 0, 0, 0.9);
+  padding: 2rem;
+  border-radius: 10px;
+  color: white;
+  min-width: 300px;
+}
+
+.options-menu h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.nickname-section {
+  margin-bottom: 2rem;
+}
+
+.nickname-section label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.nickname-section input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #444;
+  border-radius: 5px;
+  background: #222;
+  color: white;
+  font-size: 1rem;
+}
+
+.nickname-section input:focus {
+  border-color: #666;
+  outline: none;
+}
+
+.error-message {
+  color: #ff4444;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.options-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.save-button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #4CAF50;
+  color: white;
+}
+
+.save-button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+.save-button.saved {
+  background: #45a049;
+}
+
+.back-button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #666;
+  color: white;
+}
+
+.back-button:hover {
+  background: #555;
+} 

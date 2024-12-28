@@ -15,4 +15,18 @@ export const BALL_SPEED = {
   },
   max: 10
 };
-export const SPEED_INCREASE = 1.5; 
+export const SPEED_INCREASE = 1.5;
+
+export const NICKNAME_RULES = {
+  MIN_LENGTH: 3,
+  MAX_LENGTH: 14,
+  PATTERN: /^[a-zA-Z0-9]+$/,
+  DEFAULT: 'Player'
+};
+
+export const NICKNAME_ERRORS = {
+  TOO_SHORT: 'Nickname must be at least 3 characters',
+  TOO_LONG: 'Nickname cannot exceed 14 characters',
+  INVALID_CHARS: 'Only letters and numbers are allowed',
+  REQUIRED: 'Nickname is required'
+}; 

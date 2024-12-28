@@ -480,6 +480,58 @@ io.on('connection', (socket) => {
       readyState: Array.from(room.readyState.entries())
     });
   });
+
+  // Add nickname handling
+  socket.on('nicknameUpdate', ({ roomId, nickname }) => {
+    try {
+      if (!roomId) {
+        throw new Error('Room ID is required');
+      }
+      
+      const room = rooms.get(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
+      
+      if (!room.players.includes(socket.id)) {
+        throw new Error('Player not in room');
+      }
+
+      // Update nickname in room state
+      room.nicknames = room.nicknames || new Map();
+      room.nicknames.set(socket.id, nickname);
+      
+      // Broadcast to other players
+      socket.to(roomId).emit('playerNicknameUpdate', {
+        playerId: socket.id,
+        nickname
+      });
+
+    } catch (error) {
+      console.error('Nickname update error:', error);
+      socket.emit('error', error.message);
+    }
+  });
+
+  // Update room joining to include nicknames
+  socket.on('joinRoom', (roomId) => {
+    try {
+      // ... existing validation ...
+      
+      const room = rooms.get(roomId);
+      room.nicknames = room.nicknames || new Map();
+      
+      io.to(roomId).emit('playerJoined', {
+        playerId: socket.id,
+        readyState: Array.from(room.readyState.entries()),
+        nicknames: Array.from(room.nicknames.entries())
+      });
+      
+    } catch (error) {
+      console.error('Join room error:', error);
+      socket.emit('error', error.message);
+    }
+  });
 });
 
 const PORT = process.env.PORT || 3001;
