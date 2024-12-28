@@ -127,9 +127,14 @@ function GameBoard() {
     onCountdownUpdate: setCountdown,
     onGameStart: () => setIsGameStarted(true),
     onGameEnd: () => setIsGameStarted(false),
-    onWinnerUpdate: setWinner,
+    onWinnerUpdate: (winner) => {
+      console.log('Winner update received:', winner);
+      setWinner(winner);
+      setIsGameStarted(false);
+    },
     onLoadingChange: setIsLoading,
-    onNetworkStatsUpdate: setNetworkStats
+    onNetworkStatsUpdate: setNetworkStats,
+    setWinner
   });
 
   // Add connection error handler
@@ -227,10 +232,12 @@ function GameBoard() {
 
     if (newScore[scorer] >= WINNING_SCORE) {
       const winnerName = playerNames[scorer];
+      console.log('Game won by:', winnerName, 'Score:', newScore);
+      
       setWinner(winnerName);
       setIsGameStarted(false);
+      
       if (isMultiplayer && socket?.connected) {
-        // Explicitly send winner update to all players
         socket.emit('gameWinner', {
           winner: winnerName,
           roomId,

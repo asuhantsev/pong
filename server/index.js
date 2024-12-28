@@ -415,22 +415,29 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Add winner handler
+  // Update winner handler
   socket.on('gameWinner', ({ winner, roomId, score }) => {
-    if (!roomId) return;
+    if (!roomId) {
+      console.log('No roomId provided for winner update');
+      return;
+    }
     
     const room = rooms.get(roomId);
-    if (!room) return;
+    if (!room) {
+      console.log('Room not found for winner update:', roomId);
+      return;
+    }
     
-    console.log('Game winner:', {
+    console.log('Broadcasting game winner:', {
       roomId,
       winner,
       score,
-      from: socket.id
+      from: socket.id,
+      to: room.players
     });
     
-    // Broadcast winner to all players in room with score
-    io.to(roomId).emit('winnerUpdate', { 
+    // Broadcast to ALL players in room, including sender
+    io.in(roomId).emit('winnerUpdate', { 
       winner,
       score 
     });
