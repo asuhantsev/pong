@@ -251,7 +251,7 @@ function GameBoard() {
       setWinner(winnerName);
       setIsGameStarted(false);
       
-      if (isMultiplayer && socket?.connected) {
+      if (menuState.mode === 'multi' && socket?.connected) {
         socket.emit('gameWinner', {
           winner: winnerName,
           roomId,
@@ -263,14 +263,14 @@ function GameBoard() {
 
     resetBallWithDelay(scorer === 'left' ? 1 : -1);
     
-    if (isMultiplayer) {
+    if (menuState.mode === 'multi') {
       sendScore(newScore, scorer);
     }
 
     setTimeout(() => {
       scoreProcessedRef.current = false;
     }, 1000);
-  }, [score, playerNames, isMultiplayer, socket, roomId, sendScore]);
+  }, [score, playerNames, menuState.mode, socket, roomId, sendScore]);
 
   // 5. Ball interpolation (used in game loop)
   const interpolateBall = useCallback((timestamp) => {
@@ -427,7 +427,7 @@ function GameBoard() {
     
     const newPauseState = !isPaused;
     
-    if (isMultiplayer && socket?.connected) {
+    if (menuState.mode === 'multi' && socket?.connected) {
       console.log('Sending pause update:', { newPauseState });
       try {
         socket.emit('pauseGame', {
@@ -440,7 +440,7 @@ function GameBoard() {
     }
     // Always update local state
     setIsPaused(newPauseState);
-  }, [isGameStarted, isPaused, socket, isMultiplayer]);
+  }, [isGameStarted, isPaused, socket, menuState.mode]);
 
   const handleResume = useCallback(() => {
     if (!socket?.connected) return;
