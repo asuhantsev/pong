@@ -381,18 +381,6 @@ export function useMultiplayer({
         setScore(score);
       },
 
-      pauseUpdate: ({ isPaused, countdownValue }) => {
-        console.log('Received pause update:', { isPaused, countdownValue });
-        
-        // Update pause state
-        onPauseUpdate(isPaused);
-        
-        // Update countdown
-        if (typeof countdownValue === 'number' || countdownValue === null) {
-          onCountdownUpdate(countdownValue);
-        }
-      },
-
       winnerUpdate: (winner) => {
         console.log('Received winner update:', winner);
         onWinnerUpdate(winner);

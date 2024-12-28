@@ -386,18 +386,19 @@ function GameBoard() {
   const handlePause = useCallback(() => {
     if (!isGameStarted) return;
     
-    // Check socket connection before sending
-    if (!socket?.connected) {
-      console.log('Socket not connected, cannot pause');
-      return;
-    }
-    
+    // Update local state first
     const newPauseState = !isPaused;
-    socket.emit('pauseGame', {
-      isPaused: newPauseState,
-      countdownValue: newPauseState ? null : 3  // Start countdown when resuming
-    });
-  }, [isGameStarted, isPaused, socket]);
+    setIsPaused(newPauseState);
+    
+    // Then notify other players if in multiplayer
+    if (isMultiplayer && socket?.connected) {
+      console.log('Sending pause update:', { newPauseState });
+      socket.emit('pauseGame', {
+        isPaused: newPauseState,
+        countdownValue: newPauseState ? null : 3
+      });
+    }
+  }, [isGameStarted, isPaused, socket, isMultiplayer]);
 
   const handleResume = useCallback(() => {
     if (!socket?.connected) return;
@@ -771,6 +772,37 @@ function GameBoard() {
       socket.connect();
     }
   }, [socket, isGameStarted]);
+
+  // Add pause event handler
+  useEffect(() => {
+    if (!socket) return;
+    
+    const handlePauseUpdate = (data) => {
+      console.log('Received pause update:', data);
+      setIsPaused(data.isPaused);
+      
+      if (data.countdownValue) {
+        let count = data.countdownValue;
+        setCountdown(count);
+        
+        const interval = setInterval(() => {
+          count--;
+          if (count > 0) {
+            setCountdown(count);
+          } else {
+            clearInterval(interval);
+            setCountdown(null);
+            setIsPaused(false);
+          }
+        }, 1000);
+        
+        return () => clearInterval(interval);
+      }
+    };
+    
+    socket.on('pauseUpdate', handlePauseUpdate);
+    return () => socket.off('pauseUpdate', handlePauseUpdate);
+  }, [socket]);
 
   return (
     <div className="game-container">

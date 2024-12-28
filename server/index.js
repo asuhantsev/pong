@@ -326,10 +326,11 @@ io.on('connection', (socket) => {
       from: socket.id
     });
 
-    // Broadcast to all clients including sender
-    io.in(roomId).emit('pauseUpdate', {
+    // Broadcast to all clients in the room
+    io.to(roomId).emit('pauseUpdate', {
       isPaused: data.isPaused,
-      countdownValue: data.countdownValue
+      countdownValue: data.countdownValue,
+      timestamp: Date.now()
     });
   });
 });
