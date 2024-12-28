@@ -43,6 +43,22 @@ const PADDLE_BOUNDARIES = {
   bottom: BOARD_HEIGHT - PADDLE_HEIGHT
 };
 
+// Add connection recovery handler
+const handleConnectionRecovery = useCallback(() => {
+  console.log('Attempting connection recovery...');
+  setConnectionError(null);
+  
+  if (menuState.mode === 'multi') {
+    if (roomId) {
+      // Try to rejoin existing room
+      joinRoom(roomId);
+    } else {
+      // Reset to multiplayer menu
+      handleMenuTransition('multiplayer');
+    }
+  }
+}, [menuState.mode, roomId, joinRoom, handleMenuTransition]);
+
 // Add connection status component
 const ConnectionStatus = ({ error, onRetry }) => {
   if (!error) return null;
@@ -1031,22 +1047,6 @@ function GameBoard() {
       }));
     }
   }, [nickname, menuState.mode, socket?.connected, role, updateNickname]);
-
-  // Add connection recovery handler
-  const handleConnectionRecovery = useCallback(() => {
-    console.log('Attempting connection recovery...');
-    setConnectionError(null);
-    
-    if (menuState.mode === 'multi') {
-      if (roomId) {
-        // Try to rejoin existing room
-        joinRoom(roomId);
-      } else {
-        // Reset to multiplayer menu
-        handleMenuTransition('multiplayer');
-      }
-    }
-  }, [menuState.mode, roomId, joinRoom, handleMenuTransition]);
 
   return (
     <div className="game-container">

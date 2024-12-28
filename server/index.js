@@ -41,9 +41,19 @@ const io = new Server(httpServer, {
     methods: ['GET', 'POST'],
     credentials: true
   },
+  path: '/socket.io/',
+  transports: ['websocket', 'polling'],
   pingTimeout: 10000,
   pingInterval: 5000,
-  transports: ['websocket']
+  allowUpgrades: true,
+  upgradeTimeout: 10000,
+  allowEIO3: true
+});
+
+// Add WebSocket upgrade handling
+httpServer.on('upgrade', (request, socket, head) => {
+  console.log('WebSocket upgrade requested');
+  io.engine.handleUpgrade(request, socket, head);
 });
 
 // Add health check endpoint with CORS

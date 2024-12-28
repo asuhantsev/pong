@@ -11,12 +11,14 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
 
 const SOCKET_OPTIONS = {
-  transports: ['websocket'],
+  transports: ['websocket', 'polling'],
   reconnectionAttempts: 3,
   reconnectionDelay: 1000,
   timeout: 10000,
   forceNew: true,
-  path: '/socket.io'
+  path: '/socket.io/',
+  autoConnect: false,
+  reconnection: true
 };
 
 export function useMultiplayer({ 
@@ -70,6 +72,11 @@ export function useMultiplayer({
     
     const newSocket = io(SOCKET_SERVER, SOCKET_OPTIONS);
     
+    // Try to connect after setup
+    setTimeout(() => {
+      newSocket.connect();
+    }, 100);
+
     newSocket.on('connect', () => {
       console.log('Socket connected successfully:', {
         id: newSocket.id,
