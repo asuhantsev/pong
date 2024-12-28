@@ -90,6 +90,13 @@ export function useMultiplayer({
       onLoadingChange(false);
     });
 
+    newSocket.on('error', (error) => {
+      console.error('Socket error:', error);
+      if (error.message === 'Room not found') {
+        clearSession();
+      }
+    });
+
     newSocket.on('connect', () => {
       console.log('Connected successfully with transport:', newSocket.io.engine.transport.name);
       setError(null);

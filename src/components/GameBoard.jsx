@@ -387,16 +387,20 @@ function GameBoard() {
     if (!isGameStarted) return;
     
     const newPauseState = !isPaused;
-    setIsPaused(newPauseState);
     
     if (isMultiplayer && socket?.connected) {
       console.log('Sending pause update:', { newPauseState });
-      socket.emit('pauseGame', {
-        isPaused: newPauseState,
-        countdownValue: newPauseState ? null : 3
-      });
-      setIsPaused(newPauseState);
+      try {
+        socket.emit('pauseGame', {
+          isPaused: newPauseState,
+          countdownValue: newPauseState ? null : 3
+        });
+      } catch (error) {
+        console.error('Error sending pause update:', error);
+      }
     }
+    // Always update local state
+    setIsPaused(newPauseState);
   }, [isGameStarted, isPaused, socket, isMultiplayer]);
 
   const handleResume = useCallback(() => {
