@@ -89,6 +89,11 @@ function GameBoard() {
 
   // Add multiplayer state
   const [isMultiplayer, setIsMultiplayer] = useState(false)
+
+  // Add rematch state
+  const [rematchRequested, setRematchRequested] = useState(false);
+  const [rematchAccepted, setRematchAccepted] = useState(false);
+
   const { 
     socket, 
     roomId, 
@@ -849,6 +854,107 @@ function GameBoard() {
       }
     };
   }, [socket]);
+
+  // Update winner screen render
+  const renderWinnerScreen = () => {
+    if (!winner) return null;
+    const isWinner = winner === (role === 'host' ? playerNames.left : playerNames.right);
+    
+    return (
+      <div className="winner-screen">
+        <h2>{isWinner ? 'You Won!' : 'You Lost!'}</h2>
+        <p>{winner} is the winner!</p>
+        <div className="winner-buttons">
+          {isMultiplayer ? (
+            <>
+              {!rematchRequested ? (
+                <button 
+                  className="rematch-button"
+                  onClick={handleRematchRequest}
+                >
+                  Request Rematch
+                </button>
+              ) : (
+                <div className="waiting-message">
+                  Waiting for opponent...
+                </div>
+              )}
+            </>
+          ) : (
+          <button 
+            className="start-button"
+            onClick={() => {
+              setWinner(null);
+              setScore({ left: 0, right: 0 });
+              setRematchRequested(false);
+              setRematchAccepted(false);
+            }}
+          >
+            Play Again
+          </button>
+          )}
+          <button 
+            className="exit-button"
+            onClick={handleExit}
+          >
+            Exit to Menu
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Add rematch handlers
+  const handleRematchRequest = useCallback(() => {
+    if (!socket?.connected) return;
+    
+    socket.emit('rematchRequest', { roomId });
+    setRematchRequested(true);
+  }, [socket, roomId]);
+
+  // Add rematch effect handler
+  useEffect(() => {
+    if (!socket) return;
+    
+    const handleRematchRequest = () => {
+      // Show rematch request to opponent
+      setConnectionError(`Opponent wants a rematch! Accept?`);
+    };
+    
+    const handleRematchAccepted = () => {
+      setRematchAccepted(true);
+      setRematchRequested(false);
+      setWinner(null);
+      setScore({ left: 0, right: 0 });
+      setConnectionError(null);
+      
+      // Reset game state for rematch
+      setBallPos({
+        x: BOARD_WIDTH / 2,
+        y: BOARD_HEIGHT / 2
+      });
+      setBallVelocity({
+        x: BALL_SPEED.x,
+        y: BALL_SPEED.y
+      });
+    };
+    
+    const handleRematchDeclined = () => {
+      setRematchRequested(false);
+      setConnectionError('Opponent declined rematch');
+      setTimeout(() => setConnectionError(null), 3000);
+    };
+    
+    socket.on('rematchRequest', handleRematchRequest);
+    socket.on('rematchAccepted', handleRematchAccepted);
+    socket.on('rematchDeclined', handleRematchDeclined);
+    
+    return () => {
+      socket.off('rematchRequest', handleRematchRequest);
+      socket.off('rematchAccepted', handleRematchAccepted);
+      socket.off('rematchDeclined', handleRematchDeclined);
+    };
+  }, [socket, setBallPos, setBallVelocity]);
 
   return (
     <div className="game-container">

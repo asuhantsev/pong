@@ -370,6 +370,48 @@ io.on('connection', (socket) => {
     // Leave the room
     socket.leave(roomId);
   });
+
+  // Add rematch handlers
+  socket.on('rematchRequest', ({ roomId }) => {
+    if (!roomId) {
+      console.log('No room found for rematch request');
+      return;
+    }
+    
+    const room = rooms.get(roomId);
+    if (!room) {
+      console.log('Room not found for rematch request');
+      return;
+    }
+    
+    console.log('Rematch requested:', {
+      roomId,
+      from: socket.id
+    });
+    
+    // Reset ready states
+    room.readyState = new Map(room.players.map(id => [id, false]));
+    
+    // Notify other player
+    socket.to(roomId).emit('rematchRequest');
+  });
+
+  socket.on('rematchResponse', ({ roomId, accepted }) => {
+    if (!roomId) return;
+    
+    const room = rooms.get(roomId);
+    if (!room) return;
+    
+    if (accepted) {
+      // Reset room state for new game
+      room.readyState = new Map(room.players.map(id => [id, false]));
+      
+      // Notify all players
+      io.to(roomId).emit('rematchAccepted');
+    } else {
+      socket.to(roomId).emit('rematchDeclined');
+    }
+  });
 });
 
 const PORT = process.env.PORT || 3001;
