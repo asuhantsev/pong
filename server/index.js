@@ -312,24 +312,13 @@ io.on('connection', (socket) => {
   });
 
   // Add pause game handler
-  socket.on('pauseGame', ({ isPaused, countdownValue }) => {
-    const roomId = socket.roomId;
-    if (!roomId) {
-      console.log('No room found for pause update');
-      return;
-    }
+  socket.on('pauseGame', (data) => {
+    const { roomId } = getCurrentRoom(socket);
+    if (!roomId) return;
 
-    const room = rooms.get(roomId);
-    if (!room) {
-      console.log('Room not found for pause update');
-      return;
-    }
-
-    // Broadcast pause state to all players in the room
     io.to(roomId).emit('pauseUpdate', {
-      isPaused,
-      countdownValue,
-      timestamp: Date.now()
+      isPaused: data.isPaused,
+      countdownValue: data.countdownValue
     });
   });
 });

@@ -385,8 +385,14 @@ function GameBoard() {
 
   const handlePause = useCallback(() => {
     if (!isGameStarted) return;
-    handlePauseChange(!isPaused);
-  }, [isPaused, isGameStarted, handlePauseChange]);
+    if (socket?.connected) {
+      socket.emit('pauseGame', {
+        isPaused: !isPaused,
+        countdownValue: !isPaused ? null : 3 // Start countdown when resuming
+      });
+    }
+    setIsPaused(!isPaused);
+  }, [isPaused, isGameStarted, socket]);
 
   const handleResume = useCallback(() => {
     if (!socket?.connected) return;
@@ -711,7 +717,7 @@ function GameBoard() {
       <div className="pause-overlay" onClick={handlePauseMenuClick}>
         <div className="pause-menu">
           <h2>Game Paused</h2>
-          <button onClick={() => handlePauseChange(false)}>Resume</button>
+          <button onClick={handlePause}>Resume</button>
           <button onClick={handleExit}>Exit</button>
         </div>
       </div>
@@ -757,6 +763,7 @@ function GameBoard() {
     <div className="game-container">
       {renderPauseButton()}
       {renderPauseMenu()}
+      {renderCountdown()}
       {isGameStarted ? (
         <>
           <div className="score-board">
