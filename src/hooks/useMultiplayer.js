@@ -63,10 +63,19 @@ export function useMultiplayer({
       transports: ['websocket', 'polling'],
       withCredentials: true,
       autoConnect: true,
-      forceNew: true,
       path: '/socket.io/'
     });
     
+    // Add reconnect listeners
+    newSocket.on('reconnect_attempt', (attempt) => {
+      console.log('Attempting to reconnect:', attempt);
+    });
+
+    newSocket.on('reconnect', (attempt) => {
+      console.log('Reconnected after', attempt, 'attempts');
+      setError(null);
+    });
+
     socketRef.current = newSocket;
     setSocket(newSocket);
 
@@ -444,6 +453,13 @@ export function useMultiplayer({
 
       pauseUpdate: (data) => {
         console.log('Received pause update:', data);
+        // Ensure socket is connected
+        if (!socketRef.current?.connected) {
+          console.log('Socket disconnected during pause, reconnecting...');
+          socketRef.current?.connect();
+          return;
+        }
+
         if (data.countdownValue !== null) {
           let count = data.countdownValue;
           onCountdownUpdate(count);

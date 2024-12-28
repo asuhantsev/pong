@@ -385,14 +385,21 @@ function GameBoard() {
 
   const handlePause = useCallback(() => {
     if (!isGameStarted) return;
+    // Check socket connection before sending
+    if (!socket?.connected) {
+      console.log('Socket not connected, reconnecting...');
+      socket?.connect();
+      return;
+    }
+    
     if (socket?.connected) {
       socket.emit('pauseGame', {
         isPaused: !isPaused,
-        countdownValue: !isPaused ? null : 3 // Start countdown when resuming
+        countdownValue: !isPaused ? 3 : null // Start countdown when resuming
       });
     }
     setIsPaused(!isPaused);
-  }, [isPaused, isGameStarted, socket]);
+  }, [isGameStarted, isPaused, socket]);
 
   const handleResume = useCallback(() => {
     if (!socket?.connected) return;
@@ -758,6 +765,14 @@ function GameBoard() {
       role
     });
   }, [isGameStarted, winner, isPaused, isMultiplayer, role]);
+
+  // Add reconnection handler
+  useEffect(() => {
+    if (socket && !socket.connected && isGameStarted) {
+      console.log('Attempting to reconnect socket...');
+      socket.connect();
+    }
+  }, [socket, isGameStarted]);
 
   return (
     <div className="game-container">

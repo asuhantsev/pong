@@ -314,7 +314,16 @@ io.on('connection', (socket) => {
   // Add pause game handler
   socket.on('pauseGame', (data) => {
     const { roomId } = getCurrentRoom(socket);
-    if (!roomId) return;
+    if (!roomId) {
+      console.log('No room found for pause update, socket:', socket.id);
+      return;
+    }
+
+    console.log('Processing pause update:', {
+      roomId,
+      isPaused: data.isPaused,
+      countdownValue: data.countdownValue
+    });
 
     io.to(roomId).emit('pauseUpdate', {
       isPaused: data.isPaused,
