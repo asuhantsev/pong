@@ -587,12 +587,15 @@ export function useMultiplayer({
         // Start countdown if game is resuming
         if (!isPaused && countdownValue) {
           let count = countdownValue;
+          onCountdownUpdate?.(count);
+          
           const countdownInterval = setInterval(() => {
             count--;
             onCountdownUpdate?.(count);
             
             if (count <= 0) {
               clearInterval(countdownInterval);
+              onCountdownUpdate?.(null);
             }
           }, 1000);
         }

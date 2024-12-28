@@ -829,45 +829,44 @@ function GameBoard() {
 
   // Update the pause menu render
   const renderPauseMenu = () => {
-    if (!isPaused || !menuState.mode === 'multi') return null;
-    
+    if (!isPaused || !isGameStarted) return null;
+
     return (
-      <div className="pause-menu">
-        <h2>Game Paused</h2>
-        {countdown !== null && (
-          <div className="countdown">
-            Resuming in: {countdown}
-          </div>
-        )}
-        {role === 'host' && (
-          <button onClick={handlePauseGame}>
+      <div className="pause-overlay">
+        <div className="pause-menu">
+          <h2>Game Paused</h2>
+          <button 
+            className="resume-button"
+            onClick={handlePauseGame}
+          >
             Resume Game
           </button>
-        )}
+        </div>
       </div>
     );
   };
 
   // Add pause button UI
   const renderPauseButton = () => {
-    if (!isGameStarted || menuState.mode !== 'multi' || role !== 'host') return null;
-    
+    if (!isGameStarted || menuState.mode !== 'multi') return null;
+
     return (
       <button 
         className="pause-button"
         onClick={handlePauseGame}
+        disabled={!!winner}
       >
         {isPaused ? 'Resume' : 'Pause'}
       </button>
     );
   };
 
-  // Update countdown display
+  // Add countdown render function
   const renderCountdown = () => {
-    if (!countdown) return null;
-    
+    if (!countdown || !isGameStarted) return null;
+
     return (
-      <div className="pause-overlay">
+      <div className="countdown-overlay">
         <div className="countdown">
           {countdown}
         </div>
