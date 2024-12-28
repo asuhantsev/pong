@@ -161,6 +161,11 @@ io.on('connection', (socket) => {
         throw new Error('Player not in room');
       }
 
+      // Check if both players are connected
+      if (room.players.length < 2) {
+        throw new Error('Waiting for opponent');
+      }
+
       // Initialize nicknames Map if it doesn't exist
       room.nicknames = room.nicknames || new Map();
       if (nickname) {

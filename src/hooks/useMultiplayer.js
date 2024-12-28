@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import { BOARD_HEIGHT, PADDLE_HEIGHT } from '../constants/gameConstants';
+import { isValidNickname } from '../utils/validation';
 
 const SOCKET_SERVER = import.meta.env.PROD 
   ? 'https://pong-322h.onrender.com'
@@ -268,17 +269,17 @@ export function useMultiplayer({
   };
 
   const toggleReady = useCallback((roomId) => {
-    console.log('Toggling ready state:', {
-      roomId,
-      socketId: socket?.id,
-      currentReadyState: playersReady.get(socket?.id),
-      nickname
-    });
-
     if (!socket?.connected || !roomId) {
       console.error('Cannot toggle ready: not connected or no room');
       return;
     }
+
+    console.log('Toggling ready state:', {
+      roomId,
+      socketId: socket.id,
+      currentReadyState: playersReady.get(socket.id),
+      nickname
+    });
 
     socket.emit('toggleReady', { 
       roomId,
@@ -294,7 +295,15 @@ export function useMultiplayer({
 
   // Add nickname update handler
   const updateNickname = useCallback((newNickname) => {
-    if (!socket?.connected || !roomId) return;
+    if (!socket?.connected || !roomId) {
+      console.error('Cannot update nickname: not connected or no room');
+      return;
+    }
+    
+    if (!isValidNickname(newNickname)) {
+      console.error('Invalid nickname:', newNickname);
+      return;
+    }
     
     console.log('Updating nickname:', {
       roomId,
@@ -743,6 +752,49 @@ export function useMultiplayer({
       socket.off('reconnect', handleReconnect);
     };
   }, [socket]);
+
+  // Update socket event handlers cleanup
+  useEffect(() => {
+    if (!socket) return;
+
+    const handlers = {
+      // ... existing handlers ...
+    };
+
+    // Register handlers
+    Object.entries(handlers).forEach(([event, handler]) => {
+      socket.on(event, handler);
+    });
+
+    // Cleanup all handlers on unmount
+    return () => {
+      if (socket) {
+        Object.keys(handlers).forEach(event => {
+          socket.off(event);
+        });
+        socket.off('connect');
+        socket.off('disconnect');
+        socket.off('connect_error');
+        socket.off('connect_timeout');
+      }
+    };
+  }, [
+    socket,
+    role,
+    setBallPos,
+    setBallVelocity,
+    setLeftPaddlePos,
+    setRightPaddlePos,
+    setScore,
+    onPauseUpdate,
+    onCountdownUpdate,
+    onGameStart,
+    onGameEnd,
+    onWinnerUpdate,
+    onNetworkStatsUpdate,
+    setWinner,
+    setIsGameStarted
+  ]);
 
   return {
     socket: socketRef.current,

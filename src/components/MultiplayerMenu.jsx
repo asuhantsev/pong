@@ -71,7 +71,9 @@ function MultiplayerMenu({
     console.log('Toggle ready clicked:', {
       roomId,
       mySocketId,
-      currentState: playersReady.get(mySocketId)
+      currentState: playersReady.get(mySocketId),
+      allPlayers: Array.from(playersReady.entries()),
+      allNicknames: Array.from(playerNicknames.entries())
     });
     
     onToggleReady(roomId);
@@ -95,42 +97,90 @@ function MultiplayerMenu({
   const renderReadyStatus = () => {
     return (
       <div className="ready-status">
-        {Array.from(playersReady.entries()).map(([id, ready]) => (
-          <div key={id} className={`player-entry ${id === mySocketId ? 'my-player' : ''}`}>
-            <div className="player-info">
-              <span className="player-nickname">
-                {id === mySocketId ? 
-                  `${myNickname} (You)` : 
-                  `${playerNicknames.get(id) || 'Opponent'}`}
-              </span>
-              <span className="ready-indicator">
-                {ready ? '✅' : '⏳'}
-              </span>
+        {Array.from(playersReady.entries()).map(([id, ready]) => {
+          const isMe = id === mySocketId;
+          const playerNickname = isMe ? myNickname : playerNicknames.get(id);
+          
+          console.log('Rendering player:', {
+            id,
+            isMe,
+            nickname: playerNickname,
+            ready
+          });
+
+          return (
+            <div key={id} className={`player-entry ${isMe ? 'my-player' : ''}`}>
+              <div className="player-info">
+                <span className="player-nickname">
+                  {playerNickname || 'Unknown'} {isMe ? '(You)' : ''}
+                </span>
+                <span className="ready-indicator">
+                  {ready ? '✅' : '⏳'}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };
 
-  // Add CSS for the new layout
-  const styles = `
-    .player-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      padding: 5px 10px;
-    }
+  // Move styles to a separate CSS file or use useEffect
+  useEffect(() => {
+    const styles = document.createElement('style');
+    styles.textContent = `
+      .player-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 8px 16px;
+        margin: 4px 0;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
 
-    .ready-indicator {
-      margin-left: 10px;
-    }
+      .ready-indicator {
+        margin-left: 16px;
+        font-size: 1.2em;
+      }
 
-    .player-nickname {
-      font-weight: bold;
-    }
-  `;
+      .player-nickname {
+        font-weight: bold;
+        color: #fff;
+      }
+
+      .ready-button {
+        margin: 16px 0;
+        padding: 12px 24px;
+        font-size: 1.2em;
+        cursor: pointer;
+        background: #4CAF50;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        transition: background 0.3s;
+      }
+
+      .ready-button:hover {
+        background: #45a049;
+      }
+
+      .ready-button.ready {
+        background: #2196F3;
+      }
+
+      .ready-button:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+      }
+    `;
+    document.head.appendChild(styles);
+    
+    return () => {
+      document.head.removeChild(styles);
+    };
+  }, []);
 
   // Render initial multiplayer menu if no room or role
   if (!roomId || !role) {

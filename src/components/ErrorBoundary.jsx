@@ -12,12 +12,18 @@ class ErrorBoundary extends React.Component {
     console.error('Game Error:', error, errorInfo);
   }
 
+  handleRestart = () => {
+    this.setState({ hasError: false, error: null });
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
       return (
         <div className="error-screen">
           <h2>Something went wrong</h2>
-          <button onClick={() => window.location.reload()}>
+          <p>{this.state.error?.message || 'Unknown error occurred'}</p>
+          <button onClick={this.handleRestart}>
             Restart Game
           </button>
         </div>
