@@ -375,24 +375,19 @@ io.on('connection', (socket) => {
 
   // Add rematch handlers
   socket.on('rematchRequest', ({ roomId }) => {
-    if (!roomId) {
-      console.log('No room found for rematch request');
-      return;
-    }
+    if (!roomId) return;
     
     const room = rooms.get(roomId);
-    if (!room) {
-      console.log('Room not found for rematch request');
-      return;
-    }
+    if (!room) return;
     
     console.log('Rematch requested:', {
       roomId,
       from: socket.id
     });
     
-    // Reset ready states
+    // Reset room state
     room.readyState = new Map(room.players.map(id => [id, false]));
+    room.score = { left: 0, right: 0 };
     
     // Notify other player
     socket.to(roomId).emit('rematchRequest');
@@ -471,6 +466,8 @@ io.on('connection', (socket) => {
     // Reset room state for new game
     room.readyState = new Map(room.players.map(id => [id, false]));
     room.score = { left: 0, right: 0 };
+    
+    console.log('Rematch accepted, resetting room:', roomId);
     
     // Notify all players
     io.to(roomId).emit('rematchAccepted');

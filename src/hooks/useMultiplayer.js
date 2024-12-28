@@ -486,16 +486,15 @@ export function useMultiplayer({
         
         // Reset game flags
         setIsGameStarted(false);
-        
-        // Notify game start handler
-        onGameStart();
       },
 
       playerExited: () => {
+        console.log('Player exited, cleaning up game state');
         setError('Other player has left the game');
         onGameEnd();
         setIsGameStarted(false);
         setWinner(null);
+        setIsReady(false);
         
         // Auto cleanup after showing message
         setTimeout(() => {
