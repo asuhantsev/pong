@@ -19,7 +19,8 @@ export function useMultiplayer({
   onGameEnd,
   onWinnerUpdate,
   onLoadingChange,
-  onNetworkStatsUpdate
+  onNetworkStatsUpdate,
+  setWinner
 }) {
   const [socket, setSocket] = useState(null);
   const [mySocketId, setMySocketId] = useState(null);
@@ -401,12 +402,8 @@ export function useMultiplayer({
         console.log('Received winner update:', { winner, score });
         onWinnerUpdate(winner);
         setScore(score);
+        setWinner(winner);
         setIsGameStarted(false);
-        
-        // Ensure both players see the winner screen
-        requestAnimationFrame(() => {
-          setWinner(winner);
-        });
       },
 
       gameReady: () => {
@@ -518,8 +515,8 @@ export function useMultiplayer({
     onGameStart,
     onGameEnd,
     onWinnerUpdate,
-    onLoadingChange,
-    onNetworkStatsUpdate
+    onNetworkStatsUpdate,
+    setWinner
   ]);
 
   // Keep time sync separate as it's on a different interval
