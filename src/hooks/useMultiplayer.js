@@ -20,7 +20,8 @@ export function useMultiplayer({
   onWinnerUpdate,
   onLoadingChange,
   onNetworkStatsUpdate,
-  setWinner
+  setWinner,
+  setIsGameStarted
 }) {
   const [socket, setSocket] = useState(null);
   const [mySocketId, setMySocketId] = useState(null);
@@ -261,6 +262,7 @@ export function useMultiplayer({
         velocity,
         timestamp: now
       });
+      socketRef.current.emit('ballSpeedSync', { velocity });
       lastBallUpdate = now;
     }
   }, [socketRef, roomId, role]);
@@ -288,7 +290,7 @@ export function useMultiplayer({
 
   const sendWinner = (winner) => {
     if (role !== 'host') return;
-    socket?.emit('winner', { roomId, winner });
+    socket?.emit('gameWinner', { roomId, winner, score });
   };
 
   // Consolidate ALL socket event handlers in one effect
@@ -401,8 +403,10 @@ export function useMultiplayer({
         console.log('Received winner update:', { winner, score });
         setScore(score);
         setWinner(winner);
-        setIsGameStarted(false);
-        onWinnerUpdate(winner);
+        if (setIsGameStarted) {
+          setIsGameStarted(false);
+        }
+        onWinnerUpdate?.(winner);
       },
 
       gameReady: () => {
@@ -495,8 +499,8 @@ export function useMultiplayer({
       socket.on(event, handler);
     });
 
+    // Cleanup
     return () => {
-      clearInterval(pingInterval);
       Object.entries(handlers).forEach(([event, handler]) => {
         socket.off(event, handler);
       });
@@ -515,7 +519,8 @@ export function useMultiplayer({
     onGameEnd,
     onWinnerUpdate,
     onNetworkStatsUpdate,
-    setWinner
+    setWinner,
+    setIsGameStarted
   ]);
 
   // Keep time sync separate as it's on a different interval
@@ -561,6 +566,13 @@ export function useMultiplayer({
       socket.off('roomRejoined', handleRoomRejoined);
     };
   }, [socket, isReconnecting, roomId, sessionId]);
+
+  // Add ball speed synchronization
+  socket.on('ballSpeedSync', ({ velocity }) => {
+    if (role === 'client') {
+      setBallVelocity(velocity);
+    }
+  });
 
   return {
     socket: socketRef.current,

@@ -9,6 +9,10 @@ export const WINNING_SCORE = 10;
 export const PHYSICS_STEP = 1000 / 60;
 export const INTERPOLATION_STEP = 1000 / 120;
 export const BALL_SPEED = {
-  x: 3,
-  y: 3
-}; 
+  initial: {
+    x: 3,
+    y: 3
+  },
+  max: 10
+};
+export const SPEED_INCREASE = 1.5; 

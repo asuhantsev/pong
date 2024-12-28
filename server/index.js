@@ -417,14 +417,19 @@ io.on('connection', (socket) => {
 
   // Update winner handler
   socket.on('gameWinner', ({ winner, roomId, score }) => {
-    if (!roomId) {
-      console.log('No roomId provided for winner update');
+    if (!roomId || !winner) {
+      console.log('Invalid winner update data:', { roomId, winner, score });
       return;
     }
     
     const room = rooms.get(roomId);
     if (!room) {
       console.log('Room not found for winner update:', roomId);
+      return;
+    }
+    
+    if (!room.players.includes(socket.id)) {
+      console.log('Unauthorized winner update attempt:', socket.id);
       return;
     }
     
@@ -441,6 +446,20 @@ io.on('connection', (socket) => {
       winner,
       score 
     });
+  });
+
+  // Add ball speed sync handler
+  socket.on('ballSpeedSync', ({ velocity }) => {
+    const roomId = socket.roomId;
+    if (!roomId) return;
+    
+    const room = rooms.get(roomId);
+    if (!room) return;
+    
+    // Only allow host to sync ball speed
+    if (room.players[0] !== socket.id) return;
+    
+    socket.to(roomId).emit('ballSpeedSync', { velocity });
   });
 });
 

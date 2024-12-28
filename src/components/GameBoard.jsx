@@ -17,7 +17,8 @@ import {
   WINNING_SCORE,
   PHYSICS_STEP,
   INTERPOLATION_STEP,
-  BALL_SPEED
+  BALL_SPEED,
+  SPEED_INCREASE
 } from '../constants/gameConstants';
 
 // Group all constants at the top
@@ -62,8 +63,8 @@ function GameBoard() {
 
   // Update initial ball velocity state
   const [ballVelocity, setBallVelocity] = useState({
-    x: BALL_SPEED.x,
-    y: BALL_SPEED.y
+    x: BALL_SPEED.initial.x,
+    y: BALL_SPEED.initial.y
   })
 
   // Add game state
@@ -134,7 +135,8 @@ function GameBoard() {
     },
     onLoadingChange: setIsLoading,
     onNetworkStatsUpdate: setNetworkStats,
-    setWinner
+    setWinner,
+    setIsGameStarted
   });
 
   // Add connection error handler
@@ -200,23 +202,27 @@ function GameBoard() {
 
   // 3. Ball reset (used by handleScoring)
   const resetBallWithDelay = (direction) => {
-    setIsScoreDelay(true)
+    setIsScoreDelay(true);
     const totalScore = score.left + score.right;
-    const goalSpeedIncrease = Math.min(totalScore * 0.15, 0.5);
-    const currentSpeed = BALL_SPEED.x * (1 + goalSpeedIncrease);
+    
+    // Calculate new speed with 1.5 increase per goal, capped at max speed
+    const newSpeed = Math.min(
+      BALL_SPEED.initial.x + (totalScore * SPEED_INCREASE),
+      BALL_SPEED.max
+    );
     
     setTimeout(() => {
       setBallPos({
         x: BOARD_WIDTH / 2,
         y: BOARD_HEIGHT / 2
-      })
+      });
       setBallVelocity({
-        x: direction * currentSpeed,
-        y: Math.random() * BALL_SPEED.y * 2 - BALL_SPEED.y
-      })
-      setIsScoreDelay(false)
-    }, 1000)
-  }
+        x: direction * newSpeed,
+        y: (Math.random() * 2 - 1) * newSpeed // Randomize y direction with same speed
+      });
+      setIsScoreDelay(false);
+    }, 1000);
+  };
 
   // 4. Scoring handler (used by updateBallPhysics)
   const handleScoring = useCallback((scorer) => {
@@ -613,19 +619,23 @@ function GameBoard() {
   };
 
   const handleExit = useCallback(() => {
-    // Notify other player before cleanup
-    if (socket?.connected) {
-      socket.emit('playerExit', { roomId });
-    }
-    
-    // Clean up local state
     setWinner(null);
     setScore({ left: 0, right: 0 });
     setIsGameStarted(false);
     setIsMultiplayer(false);
-    clearSession();
+    setRematchRequested(false);
+    setRematchAccepted(false);
+    setBallPos({
+      x: BOARD_WIDTH / 2,
+      y: BOARD_HEIGHT / 2
+    });
+    setBallVelocity({
+      x: BALL_SPEED.initial.x,
+      y: BALL_SPEED.initial.y
+    });
     disconnect();
-  }, [socket, roomId, clearSession, disconnect]);
+    clearSession();
+  }, [disconnect, clearSession]);
 
   // Add exit notification handler
   useEffect(() => {
@@ -943,25 +953,26 @@ function GameBoard() {
     if (!socket) return;
     
     const handleRematchRequest = () => {
-      // Show rematch request to opponent
-      setConnectionError(`Opponent wants a rematch! Accept?`);
+      setConnectionError(`Opponent wants a rematch!`);
     };
     
     const handleRematchAccepted = () => {
+      console.log('Rematch accepted, resetting game state');
       setRematchAccepted(true);
       setRematchRequested(false);
       setWinner(null);
       setScore({ left: 0, right: 0 });
       setConnectionError(null);
+      setIsGameStarted(true);
       
-      // Reset game state for rematch
+      // Reset game state for rematch with initial speed
       setBallPos({
         x: BOARD_WIDTH / 2,
         y: BOARD_HEIGHT / 2
       });
       setBallVelocity({
-        x: BALL_SPEED.x,
-        y: BALL_SPEED.y
+        x: BALL_SPEED.initial.x,
+        y: BALL_SPEED.initial.y
       });
     };
     
