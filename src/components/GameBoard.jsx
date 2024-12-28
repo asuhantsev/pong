@@ -623,12 +623,16 @@ function GameBoard() {
       socket.emit('playerExit', { roomId });
     }
     
+    // Reset all game states
     setWinner(null);
     setScore({ left: 0, right: 0 });
     setIsGameStarted(false);
     setIsMultiplayer(false);
     setRematchRequested(false);
     setRematchAccepted(false);
+    setIsReady(false); // Ensure player is unready
+    
+    // Reset ball position and velocity
     setBallPos({
       x: BOARD_WIDTH / 2,
       y: BOARD_HEIGHT / 2
@@ -637,6 +641,7 @@ function GameBoard() {
       x: BALL_SPEED.initial.x,
       y: BALL_SPEED.initial.y
     });
+    
     disconnect();
     clearSession();
   }, [socket, roomId, disconnect, clearSession]);
@@ -886,59 +891,29 @@ function GameBoard() {
   // Update winner screen render
   const renderWinnerScreen = () => {
     if (!winner) return null;
-    // Determine if current player is winner
     const isWinner = winner === (role === 'host' ? playerNames.left : playerNames.right);
     
     return (
       <div className="pause-overlay">
         <div className="winner-screen">
           <h2>{isWinner ? 'You Won!' : 'You Lost!'}</h2>
-          <p className="winner-message">
+          <div className="winner-message">
             {isWinner ? 'Congratulations!' : `${winner} won the game!`}
-          </p>
+          </div>
           <div className="winner-buttons">
-            {isMultiplayer ? (
-              <>
-                {!rematchRequested ? (
-                  <button 
-                    className="rematch-button"
-                    onClick={handleRematchRequest}
-                  >
-                    Play Again
-                  </button>
-                ) : (
-                  <div className="waiting-message">
-                    Waiting for opponent...
-                  </div>
-                )}
-                <button 
-                  className="exit-button"
-                  onClick={handleExit}
-                >
-                  Exit to Menu
-                </button>
-              </>
-            ) : (
-              <>
-                <button 
-                  className="start-button"
-                  onClick={() => {
-                    setWinner(null);
-                    setScore({ left: 0, right: 0 });
-                    setRematchRequested(false);
-                    setRematchAccepted(false);
-                  }}
-                >
-                  Play Again
-                </button>
-                <button 
-                  className="exit-button"
-                  onClick={handleExit}
-                >
-                  Exit to Menu
-                </button>
-              </>
-            )}
+            <button 
+              className="rematch-button"
+              onClick={handleRematchRequest}
+              disabled={rematchRequested}
+            >
+              {rematchRequested ? 'Waiting...' : 'Play Again'}
+            </button>
+            <button 
+              className="exit-button"
+              onClick={handleExit}
+            >
+              Exit to Menu
+            </button>
           </div>
         </div>
       </div>
@@ -948,7 +923,9 @@ function GameBoard() {
   // Add rematch handlers
   const handleRematchRequest = useCallback(() => {
     if (!socket?.connected) return;
+    
     setRematchRequested(true);
+    setIsReady(false); // Ensure players start unready
     socket.emit('rematchRequest', { roomId });
   }, [socket, roomId]);
 

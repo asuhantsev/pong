@@ -552,56 +552,69 @@ body {
   position: relative;
 }
 
+/* Winner Screen Styles */
 .winner-screen {
-  background: #000000;
-  padding: 40px;
-  border: 2px solid white;
+  background: rgba(0, 0, 0, 0.9);
+  padding: 2rem;
   border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
+  text-align: center;
+  color: white;
   z-index: 9999;
 }
 
 .winner-screen h2 {
   color: white;
   font-size: 48px;
-  margin: 0;
+  margin: 0 0 1rem 0;
   text-align: center;
 }
 
 .winner-message {
-  color: #888;
-  font-size: 24px;
-  margin: 0;
+  color: #ccc;
+  font-size: 1.2rem;
+  margin: 1rem 0;
 }
 
 .winner-buttons {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
-  min-width: 200px;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.rematch-button,
+.exit-button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
 }
 
 .rematch-button {
-  padding: 15px 30px;
-  font-size: 18px;
   background: #4CAF50;
   color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
 }
 
-.rematch-button:hover {
+.rematch-button:hover:not(:disabled) {
   background: #45a049;
+  transform: scale(1.05);
 }
 
-.waiting-message {
-  color: #888;
-  text-align: center;
-  padding: 15px;
-  border: 1px solid #444;
-  border-radius: 5px;
+.rematch-button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.exit-button {
+  background: #f44336;
+  color: white;
+}
+
+.exit-button:hover {
+  background: #da190b;
+  transform: scale(1.05);
 } 
