@@ -139,9 +139,9 @@ function GameBoard() {
   const { 
     socket, 
     roomId, 
-    error: socketError, 
-    isReady, 
-    createRoom, 
+    error: socketError,
+    isSocketReady,
+    createRoom,
     joinRoom,
     role,
     sendPaddleMove,
@@ -740,6 +740,7 @@ function GameBoard() {
               handleMenuTransition('main'); // Go back to main menu
             }}
             myNickname={nickname}
+            isSocketReady={isSocketReady}
           />
         );
 

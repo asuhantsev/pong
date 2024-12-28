@@ -12,10 +12,12 @@ services:
     headers:
       - path: /*
         values:
-          Cache-Control: no-cache
-          Connection: keep-alive
+          Access-Control-Allow-Origin: https://asuhantsev.github.io
+          Access-Control-Allow-Methods: GET, POST, OPTIONS
+          Access-Control-Allow-Headers: Content-Type
+          Access-Control-Allow-Credentials: true
     routes:
       - type: rewrite
         source: /socket.io/*
         destination: /socket.io/$1
-    websocket: true # Enable WebSocket support
+    websocket: true

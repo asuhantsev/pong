@@ -42,18 +42,23 @@ const io = new Server(httpServer, {
     credentials: true
   },
   path: '/socket.io/',
-  transports: ['websocket', 'polling'],
-  pingTimeout: 10000,
-  pingInterval: 5000,
-  allowUpgrades: true,
+  transports: ['polling', 'websocket'],
+  pingTimeout: 20000,
+  pingInterval: 10000,
   upgradeTimeout: 10000,
-  allowEIO3: true
+  allowEIO3: true,
+  allowUpgrades: true
 });
 
-// Add WebSocket upgrade handling
+// Add WebSocket upgrade handler
 httpServer.on('upgrade', (request, socket, head) => {
-  console.log('WebSocket upgrade requested');
+  console.log('WebSocket upgrade requested:', request.url);
   io.engine.handleUpgrade(request, socket, head);
+});
+
+// Add health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', connections: io.engine.clientsCount });
 });
 
 // Add health check endpoint with CORS
