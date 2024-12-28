@@ -1,15 +1,25 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import '../styles/GameElements.css'
-import Paddle from './Paddle'
+
+// Core components first
 import Ball from './Ball'
-import MultiplayerMenu from './MultiplayerMenu'
+import Paddle from './Paddle'
+
+// Menu components
 import MainMenu from './MainMenu'
 import OptionsMenu from './OptionsMenu'
+import MultiplayerMenu from './MultiplayerMenu'
+
+// Utility components
 import ConnectionError from './ConnectionError'
 import NetworkStatus from './NetworkStatus'
+
+// Hooks and utils
 import { useMultiplayer } from '../hooks/useMultiplayer'
 import StorageManager from '../utils/StorageManager'
 import { isValidNickname, getNicknameError } from '../utils/validation'
+
+// Constants last
 import { 
   PADDLE_SPEED,
   BALL_SIZE,

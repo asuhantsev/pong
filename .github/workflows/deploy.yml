@@ -18,6 +18,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+          cache: 'npm'
           
       - name: Install Dependencies
         run: npm ci
@@ -26,6 +27,7 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          BASE_URL: '/pong/'
           
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
