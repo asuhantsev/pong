@@ -268,17 +268,21 @@ export function useMultiplayer({
   const toggleReady = useCallback((roomId) => {
     console.log('Toggling ready state:', {
       roomId,
-      socketId: socketRef.current?.id,
-      currentReadyState: playersReady.get(socketRef.current?.id)
+      socketId: socket?.id,
+      currentReadyState: playersReady.get(socket?.id)
     });
 
-    if (!socketRef.current?.connected || !roomId) {
+    if (!socket?.connected || !roomId) {
       console.error('Cannot toggle ready: not connected or no room');
       return;
     }
 
-    socketRef.current.emit('toggleReady', { roomId });
-  }, [playersReady]);
+    // Emit toggleReady event
+    socket.emit('toggleReady', { 
+      roomId,
+      playerId: socket.id 
+    });
+  }, [socket, playersReady]);
 
   const sendWinner = (winner) => {
     if (role !== 'host') return;
@@ -452,7 +456,6 @@ export function useMultiplayer({
         const allReady = Array.from(newReadyState.values()).every(ready => ready);
         if (allReady && newReadyState.size === 2) {
           console.log('All players ready, starting game...');
-          setIsReady(true);
           onGameStart();
         }
       },

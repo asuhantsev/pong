@@ -152,41 +152,38 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Add ready state handler
-  socket.on('toggleReady', ({ roomId }) => {
-    console.log('Toggle ready request:', { 
-      roomId, 
-      socketId: socket.id 
-    });
-    
-    const room = rooms.get(roomId);
-    if (!room) {
-      console.log('Room not found:', roomId);
-      return;
-    }
+  // Add toggleReady handler
+  socket.on('toggleReady', ({ roomId, playerId }) => {
+    try {
+      console.log('Toggle ready request:', { roomId, playerId });
+      
+      const room = rooms.get(roomId);
+      if (!room) {
+        throw new Error('Room not found');
+      }
 
-    // Toggle ready state for this player
-    const currentState = room.readyState.get(socket.id) || false;
-    const newState = !currentState;
-    room.readyState.set(socket.id, newState);
+      if (!room.players.includes(socket.id)) {
+        throw new Error('Player not in room');
+      }
 
-    console.log('Ready state updated:', {
-      roomId,
-      socketId: socket.id,
-      newState,
-      allStates: Array.from(room.readyState.entries())
-    });
+      // Toggle ready state
+      const currentState = room.readyState.get(socket.id) || false;
+      room.readyState.set(socket.id, !currentState);
 
-    // Broadcast ready state to all players in the room
-    io.to(roomId).emit('readyStateUpdate', {
-      readyState: Array.from(room.readyState.entries())
-    });
+      console.log('Ready state updated:', {
+        roomId,
+        playerId: socket.id,
+        readyState: Array.from(room.readyState.entries())
+      });
 
-    // Check if all players are ready
-    const allReady = Array.from(room.readyState.values()).every(ready => ready);
-    if (allReady && room.players.length === 2) {
-      console.log('All players ready, starting game in room:', roomId);
-      io.to(roomId).emit('gameReady');
+      // Broadcast new ready state to all players in room
+      io.to(roomId).emit('readyStateUpdate', {
+        readyState: Array.from(room.readyState.entries())
+      });
+
+    } catch (error) {
+      console.error('Toggle ready error:', error);
+      socket.emit('error', error.message);
     }
   });
 

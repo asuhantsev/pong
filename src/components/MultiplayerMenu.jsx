@@ -62,16 +62,24 @@ function MultiplayerMenu({
 
   // Add ready button handlers
   const handleToggleReady = () => {
+    if (!roomId || !mySocketId) {
+      console.error('Cannot toggle ready: missing roomId or socketId');
+      return;
+    }
+
     console.log('Toggle ready clicked:', {
       roomId,
       mySocketId,
       currentState: playersReady.get(mySocketId)
     });
+    
     onToggleReady(roomId);
   };
 
   const renderReadyButton = () => {
-    const isReady = playersReady.get(mySocketId);
+    if (!mySocketId) return null;
+    
+    const isReady = playersReady.get(mySocketId) || false;
     return (
       <button 
         onClick={handleToggleReady}
