@@ -292,6 +292,21 @@ export function useMultiplayer({
     socket?.emit('gameWinner', { roomId, winner, score });
   };
 
+  // Add nickname update handler
+  const updateNickname = useCallback((newNickname) => {
+    if (!socket?.connected || !roomId) return;
+    
+    console.log('Updating nickname:', {
+      roomId,
+      nickname: newNickname
+    });
+    
+    socket.emit('nicknameUpdate', {
+      roomId,
+      nickname: newNickname
+    });
+  }, [socket, roomId]);
+
   // Consolidate ALL socket event handlers in one effect
   useEffect(() => {
     if (!socket) return;
@@ -435,27 +450,22 @@ export function useMultiplayer({
         saveSession(roomId, sessionId);
       },
 
-      roomJoined: ({ roomId, sessionId, role: assignedRole, readyState }) => {
-        console.log('Room joined:', { roomId, role: assignedRole, readyState });
+      roomJoined: ({ roomId, role: newRole, readyState, nicknames }) => {
+        console.log('Room joined:', { roomId, role: newRole, readyState, nicknames });
         setRoomId(roomId);
-        setSessionId(sessionId);
-        setRole(assignedRole);
-        setIsJoiningRoom(false);
+        setRole(newRole);
         setPlayersReady(new Map(readyState));
-        saveSession(roomId, sessionId);
+        if (nicknames) {
+          setPlayerNicknames(new Map(nicknames));
+        }
+        setIsJoiningRoom(false);
       },
 
-      playerJoined: ({ playerId, readyState, nickname }) => {
-        console.log('Player joined:', { playerId, readyState, nickname });
-        if (readyState) {
-          setPlayersReady(new Map(readyState));
-        }
-        if (nickname) {
-          setPlayerNicknames(prev => {
-            const newNicknames = new Map(prev);
-            newNicknames.set(playerId, nickname);
-            return newNicknames;
-          });
+      playerJoined: ({ playerId, readyState, nicknames }) => {
+        console.log('Player joined:', { playerId, readyState, nicknames });
+        setPlayersReady(new Map(readyState));
+        if (nicknames) {
+          setPlayerNicknames(new Map(nicknames));
         }
       },
 
@@ -574,6 +584,15 @@ export function useMultiplayer({
             }
           }, 1000);
         }
+      },
+
+      playerNicknameUpdate: ({ playerId, nickname }) => {
+        console.log('Player nickname updated:', { playerId, nickname });
+        setPlayerNicknames(prev => {
+          const newNicknames = new Map(prev);
+          newNicknames.set(playerId, nickname);
+          return newNicknames;
+        });
       }
     };
 

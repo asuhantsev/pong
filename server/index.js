@@ -77,7 +77,8 @@ io.on('connection', (socket) => {
     const room = {
       id: roomId,
       players: [socket.id],
-      readyState: new Map([[socket.id, false]])
+      readyState: new Map([[socket.id, false]]),
+      nicknames: new Map()
     };
     
     rooms.set(roomId, room);
@@ -97,55 +98,49 @@ io.on('connection', (socket) => {
       roomId,
       sessionId,
       role: 'host',
-      readyState: Array.from(room.readyState.entries())
+      readyState: Array.from(room.readyState.entries()),
+      nicknames: Array.from(room.nicknames.entries())
     });
   });
 
   // Add join room handler
   socket.on('joinRoom', (roomId) => {
-    console.log('Join room request:', { roomId, socketId: socket.id });
-    
-    const room = rooms.get(roomId);
-    if (!room) {
-      console.log('Room not found:', roomId);
-      socket.emit('roomError', 'Room not found');
-      return;
-    }
-
-    if (room.players.length >= 2) {
-      console.log('Room is full:', roomId);
-      socket.emit('roomError', 'Room is full');
-      return;
-    }
-
     try {
+      console.log('Join room request:', { roomId, socketId: socket.id });
+      
+      const room = rooms.get(roomId);
+      if (!room) {
+        socket.emit('roomError', 'Room not found');
+        return;
+      }
+
+      if (room.players.length >= 2) {
+        socket.emit('roomError', 'Room is full');
+        return;
+      }
+
       socket.join(roomId);
       room.players.push(socket.id);
       room.readyState.set(socket.id, false);
+      
+      // Initialize nicknames Map if it doesn't exist
+      room.nicknames = room.nicknames || new Map();
 
-      // Store roomId on socket object
-      socket.roomId = roomId;
-
-      console.log('Player joined room:', {
-        roomId,
-        playerId: socket.id,
-        players: room.players,
-        readyState: Array.from(room.readyState.entries()),
-        socketRoomId: socket.roomId // Log to verify
-      });
-
-      // Notify other players
+      // Notify other players with nicknames
       socket.to(roomId).emit('playerJoined', {
         playerId: socket.id,
-        readyState: Array.from(room.readyState.entries())
+        readyState: Array.from(room.readyState.entries()),
+        nicknames: Array.from(room.nicknames.entries())
       });
 
-      // Send join confirmation
+      // Send join confirmation with all nicknames
       socket.emit('roomJoined', {
         roomId,
         role: 'client',
-        readyState: Array.from(room.readyState.entries())
+        readyState: Array.from(room.readyState.entries()),
+        nicknames: Array.from(room.nicknames.entries())
       });
+
     } catch (error) {
       console.error('Error joining room:', error);
       socket.emit('roomError', 'Failed to join room');
