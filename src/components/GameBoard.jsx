@@ -26,9 +26,6 @@ const PADDLE_BOUNDARIES = {
   bottom: BOARD_HEIGHT - PADDLE_HEIGHT
 };
 
-const VERSION = '1.0.1';
-const BUILD_DATE = new Date().toISOString();
-
 function GameBoard() {
   // Move these state declarations to the top with other state
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +34,6 @@ function GameBoard() {
     quality: 'good'
   });
   const [connectionError, setConnectionError] = useState(null);
-  const [debugMode] = useState(true);
 
   // Group ALL refs together at the top
   const frameIdRef = useRef(null);
@@ -731,32 +727,14 @@ function GameBoard() {
 
   // Add pause button UI
   const renderPauseButton = () => {
-    console.log('Rendering pause button with state:', {
-      isGameStarted,
-      isPaused,
-      isMultiplayer,
-      role
-    });
-
     if (!isGameStarted) return null;
 
     return (
       <button 
-        id="debug-pause-button"
-        style={{
-          position: 'fixed',
-          top: '10px',
-          right: '10px',
-          zIndex: 10000,
-          padding: '10px',
-          background: 'red',
-          color: 'white',
-          border: '2px solid white',
-          cursor: 'pointer'
-        }}
+        className="pause-button"
         onClick={handlePause}
       >
-        {debugMode ? 'DEBUG PAUSE' : (isPaused ? 'Resume' : 'Pause')}
+        {isPaused ? 'Resume' : 'Pause'}
       </button>
     );
   };
@@ -782,25 +760,9 @@ function GameBoard() {
     });
   }, [isGameStarted, winner, isPaused, isMultiplayer, role]);
 
-  const renderDebugInfo = () => (
-    <div style={{
-      position: 'fixed',
-      bottom: '10px',
-      left: '10px',
-      color: 'white',
-      fontSize: '12px',
-      opacity: 0.5,
-      fontFamily: 'monospace',
-      zIndex: 9999
-    }}>
-      v{VERSION} ({BUILD_DATE.split('T')[0]})
-    </div>
-  );
-
   return (
     <div className="game-container">
       {renderPauseButton()}
-      {renderDebugInfo()}
       {isGameStarted ? (
         <>
           <div className="score-board">

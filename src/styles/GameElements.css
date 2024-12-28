@@ -509,7 +509,7 @@ body {
 }
 
 .pause-button {
-  position: fixed !important; /* Force fixed positioning */
+  position: fixed !important;
   top: 20px !important;
   right: 20px !important;
   padding: 10px 20px !important;
