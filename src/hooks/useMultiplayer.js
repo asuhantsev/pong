@@ -397,9 +397,16 @@ export function useMultiplayer({
         setScore(score);
       },
 
-      winnerUpdate: (winner) => {
-        console.log('Received winner update:', winner);
+      winnerUpdate: ({ winner, score }) => {
+        console.log('Received winner update:', { winner, score });
         onWinnerUpdate(winner);
+        setScore(score);
+        setIsGameStarted(false);
+        
+        // Ensure both players see the winner screen
+        requestAnimationFrame(() => {
+          setWinner(winner);
+        });
       },
 
       gameReady: () => {

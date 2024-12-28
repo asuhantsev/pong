@@ -229,10 +229,12 @@ function GameBoard() {
       const winnerName = playerNames[scorer];
       setWinner(winnerName);
       setIsGameStarted(false);
-      if (isMultiplayer) {
-        socket?.emit('gameWinner', {
+      if (isMultiplayer && socket?.connected) {
+        // Explicitly send winner update to all players
+        socket.emit('gameWinner', {
           winner: winnerName,
-          roomId
+          roomId,
+          score: newScore
         });
       }
       return;
@@ -247,7 +249,7 @@ function GameBoard() {
     setTimeout(() => {
       scoreProcessedRef.current = false;
     }, 1000);
-  }, [score, playerNames, isMultiplayer, socket, roomId]);
+  }, [score, playerNames, isMultiplayer, socket, roomId, sendScore]);
 
   // 5. Ball interpolation (used in game loop)
   const interpolateBall = useCallback((timestamp) => {

@@ -416,7 +416,7 @@ io.on('connection', (socket) => {
   });
 
   // Add winner handler
-  socket.on('gameWinner', ({ winner, roomId }) => {
+  socket.on('gameWinner', ({ winner, roomId, score }) => {
     if (!roomId) return;
     
     const room = rooms.get(roomId);
@@ -425,11 +425,15 @@ io.on('connection', (socket) => {
     console.log('Game winner:', {
       roomId,
       winner,
+      score,
       from: socket.id
     });
     
-    // Broadcast winner to all players in room
-    io.to(roomId).emit('winnerUpdate', winner);
+    // Broadcast winner to all players in room with score
+    io.to(roomId).emit('winnerUpdate', { 
+      winner,
+      score 
+    });
   });
 });
 
