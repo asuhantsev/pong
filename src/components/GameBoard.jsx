@@ -43,24 +43,8 @@ const PADDLE_BOUNDARIES = {
   bottom: BOARD_HEIGHT - PADDLE_HEIGHT
 };
 
-// Add connection recovery handler
-const handleConnectionRecovery = useCallback(() => {
-  console.log('Attempting connection recovery...');
-  setConnectionError(null);
-  
-  if (menuState.mode === 'multi') {
-    if (roomId) {
-      // Try to rejoin existing room
-      joinRoom(roomId);
-    } else {
-      // Reset to multiplayer menu
-      handleMenuTransition('multiplayer');
-    }
-  }
-}, [menuState.mode, roomId, joinRoom, handleMenuTransition]);
-
-// Add connection status component
-const ConnectionStatus = ({ error, onRetry }) => {
+// First, only define ConnectionStatus component outside
+const ConnectionStatus = ({ error, onRetry, onRecovery, mode }) => {
   if (!error) return null;
   
   return (
@@ -72,7 +56,7 @@ const ConnectionStatus = ({ error, onRetry }) => {
       {error.type === 'RETRY' ? (
         <div className="retry-message">
           <p>Retrying connection...</p>
-          <button onClick={handleConnectionRecovery}>
+          <button onClick={onRecovery}>
             Try Different Server
           </button>
         </div>
@@ -1048,11 +1032,29 @@ function GameBoard() {
     }
   }, [nickname, menuState.mode, socket?.connected, role, updateNickname]);
 
+  // Move handleConnectionRecovery inside the component
+  const handleConnectionRecovery = useCallback(() => {
+    console.log('Attempting connection recovery...');
+    setConnectionError(null);
+    
+    if (menuState.mode === 'multi') {
+      if (roomId) {
+        // Try to rejoin existing room
+        joinRoom(roomId);
+      } else {
+        // Reset to multiplayer menu
+        handleMenuTransition('multiplayer');
+      }
+    }
+  }, [menuState.mode, roomId, joinRoom, handleMenuTransition]);
+
   return (
     <div className="game-container">
       <ConnectionStatus 
         error={connectionError} 
         onRetry={handleRetryConnection}
+        onRecovery={handleConnectionRecovery}
+        mode={menuState.mode}
       />
       {renderPauseButton()}
       {renderPauseMenu()}
