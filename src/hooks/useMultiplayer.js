@@ -84,11 +84,11 @@ export function useMultiplayer({
     
     const newSocket = io(SOCKET_SERVER, SOCKET_OPTIONS);
     
-    // Try to connect after setup with longer delay
+    // Try to connect after setup
     const connectTimeout = setTimeout(() => {
       console.log('Attempting initial socket connection...');
       newSocket.connect();
-    }, 1500); // Increased delay further
+    }, 1000);
 
     newSocket.on('connect', () => {
       console.log('Socket connected successfully:', {
@@ -100,14 +100,13 @@ export function useMultiplayer({
       setRetryCount(0);
       setIsSocketReady(true);
       setIsReconnecting(false);
+      setMySocketId(newSocket.id);
     });
 
-    newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', {
-        error,
-        transport: newSocket.io.engine?.transport?.name
-      });
+    newSocket.on('disconnect', () => {
+      console.log('Socket disconnected');
       setIsSocketReady(false);
+      setMySocketId(null);
     });
 
     setSocket(newSocket);
@@ -120,6 +119,7 @@ export function useMultiplayer({
         socketRef.current.disconnect();
         socketRef.current = null;
         setIsSocketReady(false);
+        setMySocketId(null);
       }
     };
   }, []);
@@ -817,7 +817,7 @@ export function useMultiplayer({
 
   return {
     socket: socketRef.current,
-    mySocketId: socket?.id,
+    mySocketId: socket?.id || mySocketId,
     roomId,
     error,
     isReady,
@@ -839,7 +839,7 @@ export function useMultiplayer({
     paddleBuffer: paddleBufferRef.current,
     isCreatingRoom,
     isJoiningRoom,
-    isSocketReady,
+    isSocketReady: !!socket?.connected,
     playerNicknames
   };
 } 

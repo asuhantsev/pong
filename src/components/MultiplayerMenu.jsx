@@ -79,6 +79,11 @@ function MultiplayerMenu({
     onToggleReady(roomId);
   };
 
+  // Add connection status check
+  const isConnected = useCallback(() => {
+    return isSocketReady && mySocketId;
+  }, [isSocketReady, mySocketId]);
+
   const renderReadyButton = () => {
     if (!mySocketId) return null;
     
@@ -89,13 +94,15 @@ function MultiplayerMenu({
       isReady,
       bothConnected,
       isReconnecting,
+      isSocketReady,
+      mySocketId,
       playersReady: Array.from(playersReady.entries())
     });
     
     return (
       <button 
         onClick={handleToggleReady}
-        disabled={isReconnecting}
+        disabled={!isConnected() || isReconnecting}
         className={`ready-button ${isReady ? 'ready' : ''}`}
       >
         {isReady ? 'Ready!' : 'Click when Ready'}
@@ -213,9 +220,9 @@ function MultiplayerMenu({
           <button 
             className="start-button" 
             onClick={handleCreateRoom}
-            disabled={!isSocketReady || isCreatingRoom || isJoiningRoom}
+            disabled={!isConnected() || isCreatingRoom || isJoiningRoom}
           >
-            {!isSocketReady ? 'Connecting...' : 
+            {!isConnected() ? 'Connecting...' : 
              isCreatingRoom ? 'Creating Room...' : 
              'Create Room'}
           </button>
@@ -226,14 +233,14 @@ function MultiplayerMenu({
               onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
               placeholder="Enter Room Code"
               maxLength={6}
-              disabled={!isSocketReady || isCreatingRoom || isJoiningRoom}
+              disabled={!isConnected() || isCreatingRoom || isJoiningRoom}
             />
             <button 
               className="start-button"
               onClick={() => handleJoinRoom(joinRoomId)}
-              disabled={!isSocketReady || !joinRoomId || isCreatingRoom || isJoiningRoom}
+              disabled={!isConnected() || !joinRoomId || isCreatingRoom || isJoiningRoom}
             >
-              {!isSocketReady ? 'Connecting...' :
+              {!isConnected() ? 'Connecting...' :
                isJoiningRoom ? 'Joining...' : 
                'Join Room'}
             </button>
@@ -247,7 +254,7 @@ function MultiplayerMenu({
           </button>
           {localError && <div className="error-message">{localError}</div>}
           {socketError && <div className="error-message">{socketError}</div>}
-          {!isSocketReady && (
+          {!isConnected() && (
             <div className="connecting-message">
               Connecting to server...
             </div>
