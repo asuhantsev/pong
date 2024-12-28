@@ -5,10 +5,11 @@ import Ball from './Ball'
 import MultiplayerMenu from './MultiplayerMenu'
 import MainMenu from './MainMenu'
 import OptionsMenu from './OptionsMenu'
-import { useMultiplayer } from '../hooks/useMultiplayer'
 import ConnectionError from './ConnectionError'
 import NetworkStatus from './NetworkStatus'
+import { useMultiplayer } from '../hooks/useMultiplayer'
 import StorageManager from '../utils/StorageManager'
+import { isValidNickname, getNicknameError } from '../utils/validation'
 import { 
   PADDLE_SPEED,
   BALL_SIZE,
@@ -24,7 +25,6 @@ import {
   SPEED_INCREASE,
   NICKNAME_RULES
 } from '../constants/gameConstants'
-import { isValidNickname, getNicknameError } from '../utils/validation'
 
 // Group all constants at the top
 const PADDLE_BOUNDARIES = {

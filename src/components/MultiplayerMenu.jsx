@@ -8,34 +8,21 @@ const getReadyState = (socketId, role, playersReady) => {
   return playersReady.get(socketId) || false;
 };
 
-function MultiplayerMenu({ 
-  onCreateRoom, 
-  onJoinRoom, 
-  onToggleReady,
-  roomId, 
-  error: socketError,
-  playersReady, 
-  role,
-  mySocketId,
-  isReconnecting,
-  isCreatingRoom: isCreatingRoomProp,
-  isJoiningRoom: isJoiningRoomProp,
-  onBack,
-  myNickname
-}) {
+function MultiplayerMenu(props) {
+  // State declarations first
   const [joinRoomId, setJoinRoomId] = useState('');
   const [localError, setLocalError] = useState(null);
 
-  // Helper to check if both players are connected
+  // Then memoized values and callbacks
   const areBothPlayersConnected = useCallback(() => {
-    return playersReady instanceof Map && playersReady.size === 2;
-  }, [playersReady]);
+    return props.playersReady instanceof Map && props.playersReady.size === 2;
+  }, [props.playersReady]);
 
   // Helper to check if all players are ready
   const areAllPlayersReady = useCallback(() => {
     if (!areBothPlayersConnected()) return false;
-    return Array.from(playersReady.values()).every(ready => ready);
-  }, [playersReady, areBothPlayersConnected]);
+    return Array.from(props.playersReady.values()).every(ready => ready);
+  }, [props.playersReady, areBothPlayersConnected]);
 
   // Debug logging
   useEffect(() => {
@@ -45,21 +32,21 @@ function MultiplayerMenu({
       //   mySocketId
       // });
     };
-  }, [role, mySocketId, playersReady]);
+  }, [props.role, props.mySocketId, props.playersReady]);
 
   // Add debug logging
   useEffect(() => {
     console.log('MultiplayerMenu state:', {
-      roomId,
-      role,
-      mySocketId,
-      playersReady: playersReady instanceof Map ? Array.from(playersReady.entries()) : null
+      roomId: props.roomId,
+      role: props.role,
+      mySocketId: props.mySocketId,
+      playersReady: props.playersReady instanceof Map ? Array.from(props.playersReady.entries()) : null
     });
-  }, [roomId, role, mySocketId, playersReady]);
+  }, [props.roomId, props.role, props.mySocketId, props.playersReady]);
 
   const handleCreateRoom = async () => {
     try {
-      await onCreateRoom();
+      await props.onCreateRoom();
     } catch (err) {
       setLocalError(`Failed to create room: ${err.message}`);
     }
@@ -70,7 +57,7 @@ function MultiplayerMenu({
       if (!roomId?.trim()) {
         throw new Error('Room code is required');
       }
-      await onJoinRoom(roomId);
+      await props.onJoinRoom(roomId);
     } catch (err) {
       setLocalError(`Failed to join room: ${err.message}`);
     }
@@ -78,19 +65,19 @@ function MultiplayerMenu({
 
   const handleToggleReady = () => {
     console.log('Toggle ready clicked:', {
-      roomId,
-      mySocketId,
-      currentState: playersReady.get(mySocketId)
+      roomId: props.roomId,
+      mySocketId: props.mySocketId,
+      currentState: props.playersReady.get(props.mySocketId)
     });
-    onToggleReady(roomId);
+    props.onToggleReady(props.roomId);
   };
 
   const renderReadyButton = () => {
-    const isReady = playersReady.get(mySocketId);
+    const isReady = props.playersReady.get(props.mySocketId);
     return (
       <button 
         onClick={handleToggleReady}
-        disabled={isReconnecting}
+        disabled={props.isReconnecting}
         className={isReady ? 'ready-button ready' : 'ready-button'}
       >
         {isReady ? 'Ready' : 'Click when Ready'}
@@ -101,9 +88,9 @@ function MultiplayerMenu({
   const renderReadyStatus = () => {
     return (
       <div className="ready-status">
-        {Array.from(playersReady.entries()).map(([id, ready]) => (
+        {Array.from(props.playersReady.entries()).map(([id, ready]) => (
           <div key={id}>
-            Player {id === mySocketId ? '(You)' : '(Opponent)'}: {ready ? '✅' : '⏳'}
+            Player {id === props.mySocketId ? '(You)' : '(Opponent)'}: {ready ? '✅' : '⏳'}
           </div>
         ))}
       </div>
@@ -112,14 +99,14 @@ function MultiplayerMenu({
 
   return (
     <div className="multiplayer-menu">
-      {!roomId ? (
+      {!props.roomId ? (
         <div className="multiplayer-options">
           <button 
             className="start-button" 
             onClick={handleCreateRoom}
-            disabled={isCreatingRoomProp || isJoiningRoomProp}
+            disabled={props.isCreatingRoom || props.isJoiningRoom}
           >
-            {isCreatingRoomProp ? 'Creating Room...' : 'Create Room'}
+            {props.isCreatingRoom ? 'Creating Room...' : 'Create Room'}
           </button>
           <div className="join-room">
             <input
@@ -128,20 +115,20 @@ function MultiplayerMenu({
               onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
               placeholder="Enter Room Code"
               maxLength={6}
-              disabled={isCreatingRoomProp || isJoiningRoomProp}
+              disabled={props.isCreatingRoom || props.isJoiningRoom}
             />
             <button 
               className="start-button"
               onClick={() => handleJoinRoom(joinRoomId)}
-              disabled={!joinRoomId || isCreatingRoomProp || isJoiningRoomProp}
+              disabled={!joinRoomId || props.isCreatingRoom || props.isJoiningRoom}
             >
-              {isJoiningRoomProp ? 'Joining...' : 'Join Room'}
+              {props.isJoiningRoom ? 'Joining...' : 'Join Room'}
             </button>
           </div>
           <button 
             className="back-button"
-            onClick={onBack}
-            disabled={isCreatingRoomProp || isJoiningRoomProp}
+            onClick={props.onBack}
+            disabled={props.isCreatingRoom || props.isJoiningRoom}
           >
             Back
           </button>
@@ -150,7 +137,7 @@ function MultiplayerMenu({
       ) : (
         // Room info and ready state UI
         <div className="room-info">
-          <h3>Room Code: {roomId}</h3>
+          <h3>Room Code: {props.roomId}</h3>
           
           {areBothPlayersConnected() ? (
             <div className="ready-section">
@@ -164,11 +151,11 @@ function MultiplayerMenu({
         </div>
       )}
       <div className="players-list">
-        {Array.from(playersReady.entries()).map(([id, ready]) => (
-          <div key={id} className={`player-entry ${id === mySocketId ? 'my-player' : ''}`}>
+        {Array.from(props.playersReady.entries()).map(([id, ready]) => (
+          <div key={id} className={`player-entry ${id === props.mySocketId ? 'my-player' : ''}`}>
             <div className="player-nickname">
-              {id === mySocketId ? 
-                `${myNickname} (You)` : 
+              {id === props.mySocketId ? 
+                `${props.myNickname} (You)` : 
                 'Opponent'}
             </div>
             <div className="ready-status">
