@@ -1079,6 +1079,118 @@ function GameBoard() {
     });
   }, [socket, roomId, isPaused]);
 
+  // Add styles to the component
+  useEffect(() => {
+    const styles = document.createElement('style');
+    styles.textContent = `
+      .pause-button {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+        padding: 8px 16px;
+        font-size: 1em;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .pause-button:hover:not(:disabled) {
+        background: #45a049;
+        transform: scale(1.05);
+      }
+
+      .pause-button:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+
+      .pause-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .pause-menu {
+        background: #1a1a1a;
+        padding: 30px 50px;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      .pause-menu h2 {
+        color: white;
+        margin-bottom: 20px;
+        font-size: 2em;
+      }
+
+      .resume-button {
+        padding: 12px 24px;
+        font-size: 1.2em;
+        background: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .resume-button:hover {
+        background: #1976D2;
+        transform: scale(1.05);
+      }
+
+      .countdown-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .countdown {
+        font-size: 6em;
+        color: white;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        animation: countdownPulse 1s ease-in-out infinite;
+      }
+
+      @keyframes countdownPulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.2); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    `;
+    document.head.appendChild(styles);
+    
+    return () => {
+      document.head.removeChild(styles);
+    };
+  }, []);
+
   return (
     <div className="game-container">
       <ConnectionStatus 
