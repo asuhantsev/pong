@@ -7,6 +7,9 @@ const SOCKET_SERVER = import.meta.env.PROD
   : 'http://localhost:3001';
 const STORAGE_KEY = 'pong_session';
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000;
+
 export function useMultiplayer({ 
   setBallPos, 
   setBallVelocity, 
@@ -39,6 +42,7 @@ export function useMultiplayer({
   });
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isJoiningRoom, setIsJoiningRoom] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Keep only necessary refs
   const socketRef = useRef(null);
@@ -611,6 +615,53 @@ export function useMultiplayer({
       socket.off('roomRejoined', handleRoomRejoined);
     };
   }, [socket, isReconnecting, roomId, sessionId]);
+
+  const connectWithRetry = useCallback(async () => {
+    try {
+      if (retryCount >= MAX_RETRIES) {
+        setError({
+          message: 'Failed to connect after multiple attempts',
+          type: 'FATAL',
+          description: 'Please check your internet connection and try again later'
+        });
+        return;
+      }
+
+      console.log(`Attempting to connect (attempt ${retryCount + 1}/${MAX_RETRIES})...`);
+      await socket.connect();
+      setRetryCount(0); // Reset on successful connection
+      
+    } catch (error) {
+      setRetryCount(prev => prev + 1);
+      setError({
+        message: error.message || 'Connection failed',
+        type: 'RETRY',
+        description: `Retrying in ${RETRY_DELAY/1000} seconds...`
+      });
+      
+      setTimeout(connectWithRetry, RETRY_DELAY);
+    }
+  }, [retryCount, socket]);
+
+  // Update initialization
+  useEffect(() => {
+    if (!socket) return;
+    
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      connectWithRetry();
+    });
+
+    socket.on('connect_timeout', () => {
+      console.error('Socket connection timeout');
+      connectWithRetry();
+    });
+
+    return () => {
+      socket.off('connect_error');
+      socket.off('connect_timeout');
+    };
+  }, [socket, connectWithRetry]);
 
   return {
     socket: socketRef.current,

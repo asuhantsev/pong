@@ -43,6 +43,25 @@ const PADDLE_BOUNDARIES = {
   bottom: BOARD_HEIGHT - PADDLE_HEIGHT
 };
 
+// Add connection status component
+const ConnectionStatus = ({ error, onRetry }) => {
+  if (!error) return null;
+  
+  return (
+    <div className="connection-error">
+      <div className="error-message">
+        {error.message}
+        {error.description && <p>{error.description}</p>}
+      </div>
+      {error.type === 'RETRY' ? (
+        <div className="retry-message">Retrying connection...</div>
+      ) : (
+        <button onClick={onRetry}>Try Again</button>
+      )}
+    </div>
+  );
+};
+
 function GameBoard() {
   // Move these state declarations to the top with other state
   const [isLoading, setIsLoading] = useState(false);
@@ -1010,6 +1029,10 @@ function GameBoard() {
 
   return (
     <div className="game-container">
+      <ConnectionStatus 
+        error={connectionError} 
+        onRetry={handleRetryConnection}
+      />
       {renderPauseButton()}
       {renderPauseMenu()}
       {renderCountdown()}
