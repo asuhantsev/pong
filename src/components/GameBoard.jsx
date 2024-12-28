@@ -747,13 +747,15 @@ function GameBoard() {
     );
   };
 
-  // Add countdown display
+  // Update countdown display
   const renderCountdown = () => {
     if (!countdown) return null;
     
     return (
-      <div className="countdown">
-        {countdown}
+      <div className="pause-overlay">
+        <div className="countdown">
+          {countdown}
+        </div>
       </div>
     );
   };
