@@ -10,36 +10,26 @@ const app = express();
 const httpServer = createServer(app);
 
 // Define allowed origins
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://asuhantsev.github.io",
-  "https://asuhantsev.github.io/pong"
+const ALLOWED_ORIGINS = [
+  'https://asuhantsev.github.io',
+  'http://localhost:5173'
 ];
 
 // Basic middleware
 app.use(express.json());
-app.set('trust proxy', true);
-
-// Simple CORS middleware
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', '*');
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
-  next();
-});
+app.use(cors({
+  origin: ALLOWED_ORIGINS,
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS']
+}));
 
 // Configure Socket.IO
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? ['https://asuhantsev.github.io']
-      : ['http://localhost:5173'],
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST'],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type']
   },
   path: '/socket.io/',
   transports: ['polling', 'websocket'],
@@ -47,30 +37,23 @@ const io = new Server(httpServer, {
   pingInterval: 10000,
   upgradeTimeout: 10000,
   allowEIO3: true,
-  allowUpgrades: true
+  allowUpgrades: true,
+  cookie: {
+    name: 'io',
+    path: '/',
+    httpOnly: true,
+    sameSite: 'none',
+    secure: true
+  }
 });
-
-// Add WebSocket upgrade handler
-httpServer.on('upgrade', (request, socket, head) => {
-  console.log('WebSocket upgrade requested:', request.url);
-  io.engine.handleUpgrade(request, socket, head);
-});
-
-// Add health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', connections: io.engine.clientsCount });
-});
-
-// Add health check endpoint with CORS
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
 
 // Health check endpoint
-app.get('/', (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.send('Pong server is running');
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    connections: io.engine.clientsCount,
+    origins: ALLOWED_ORIGINS
+  });
 });
 
 // Store rooms and sessions

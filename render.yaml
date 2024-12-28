@@ -16,8 +16,10 @@ services:
           Access-Control-Allow-Methods: GET, POST, OPTIONS
           Access-Control-Allow-Headers: Content-Type
           Access-Control-Allow-Credentials: true
+          Strict-Transport-Security: max-age=31536000; includeSubDomains
     routes:
       - type: rewrite
         source: /socket.io/*
         destination: /socket.io/$1
+    healthCheckPath: /health
     websocket: true

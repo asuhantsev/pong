@@ -20,7 +20,8 @@ const SOCKET_OPTIONS = {
   autoConnect: false,
   reconnection: true,
   withCredentials: true,
-  secure: true
+  secure: true,
+  rejectUnauthorized: false
 };
 
 export function useMultiplayer({ 
@@ -84,7 +85,7 @@ export function useMultiplayer({
     const connectTimeout = setTimeout(() => {
       console.log('Attempting initial socket connection...');
       newSocket.connect();
-    }, 1000); // Increased delay
+    }, 1500); // Increased delay further
 
     newSocket.on('connect', () => {
       console.log('Socket connected successfully:', {
