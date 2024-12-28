@@ -719,47 +719,59 @@ function GameBoard() {
       return renderWinnerScreen();
     }
 
-    if (menuState.screen === 'multiplayer') {
-      return (
-        <MultiplayerMenu
-          onCreateRoom={createRoom}
-          onJoinRoom={joinRoom}
-          onToggleReady={toggleReady}
-          roomId={roomId}
-          error={socketError}
-          playersReady={playersReady}
-          role={role}
-          mySocketId={socket?.id}
-          isReconnecting={isReconnecting}
-          isCreatingRoom={isCreatingRoom}
-          isJoiningRoom={isJoiningRoom}
-          onBack={() => handleMenuTransition('main')}
-          myNickname={nickname}
-        />
-      );
-    }
+    switch (menuState.screen) {
+      case 'multiplayer':
+        return (
+          <MultiplayerMenu
+            onCreateRoom={createRoom}
+            onJoinRoom={joinRoom}
+            onToggleReady={toggleReady}
+            roomId={roomId}
+            error={socketError}
+            playersReady={playersReady}
+            role={role}
+            mySocketId={socket?.id}
+            isReconnecting={isReconnecting}
+            isCreatingRoom={isCreatingRoom}
+            isJoiningRoom={isJoiningRoom}
+            onBack={() => {
+              clearSession(); // Clear any existing session
+              disconnect(); // Disconnect socket
+              handleMenuTransition('main'); // Go back to main menu
+            }}
+            myNickname={nickname}
+          />
+        );
 
-    return menuState.screen === 'options' ? (
-      <OptionsMenu
-        currentNickname={nickname}
-        onNicknameChange={handleNicknameChange}
-        onBack={() => handleMenuTransition('main')}
-      />
-    ) : (
-      <MainMenu
-        nickname={nickname}
-        onMultiplayerClick={() => handleMenuTransition('multiplayer')}
-        onOptionsClick={() => handleMenuTransition('options')}
-        onSinglePlayerClick={() => {
-          handleMenuTransition('game', 'single');
-          setIsGameStarted(true);
-          setPlayerNames({
-            left: nickname,
-            right: 'Computer'
-          });
-        }}
-      />
-    );
+      case 'options':
+        return (
+          <OptionsMenu
+            currentNickname={nickname}
+            onNicknameChange={handleNicknameChange}
+            onBack={() => handleMenuTransition('main')}
+          />
+        );
+
+      default: // 'main' menu
+        return (
+          <MainMenu
+            nickname={nickname}
+            onMultiplayerClick={() => {
+              handleMenuTransition('multiplayer');
+              // Don't set mode here, wait for room creation/joining
+            }}
+            onOptionsClick={() => handleMenuTransition('options')}
+            onSinglePlayerClick={() => {
+              handleMenuTransition('game', 'single');
+              setIsGameStarted(true);
+              setPlayerNames({
+                left: nickname,
+                right: 'Computer'
+              });
+            }}
+          />
+        );
+    }
   };
 
   const updateGameState = useCallback((timestamp) => {

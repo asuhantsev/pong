@@ -12,9 +12,10 @@ export function useGameState() {
     
     let newMode = mode;
     if (screen === 'multiplayer') {
-      // Don't set mode until actually in a game
+      // Keep mode as null until game actually starts
       newMode = null;
     } else if (screen === 'game') {
+      // Set mode only when game starts
       newMode = mode || 'single';
     }
     
