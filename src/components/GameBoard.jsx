@@ -384,17 +384,9 @@ function GameBoard() {
   }, [isGameStarted, roomId, socket]);
 
   const handlePause = useCallback(() => {
-    if (!isGameStarted || !socket?.connected) return;
-    
-    const newPauseState = !isPaused;
-    setIsPaused(newPauseState);
-    
-    // Send pause update to server
-    socket.emit('pauseGame', {
-      isPaused: newPauseState,
-      countdownValue: newPauseState ? null : 3 // Start countdown when unpausing
-    });
-  }, [isPaused, isGameStarted, socket]);
+    if (!isGameStarted) return;
+    handlePauseChange(!isPaused);
+  }, [isPaused, isGameStarted, handlePauseChange]);
 
   const handleResume = useCallback(() => {
     if (!socket?.connected) return;
@@ -577,7 +569,6 @@ function GameBoard() {
   };
 
   const handlePauseMenuClick = (e) => {
-    // Prevent clicks from bubbling up
     e.stopPropagation();
   };
 
@@ -712,15 +703,17 @@ function GameBoard() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handlePause]);
 
-  // Update the pause menu render to allow both players to resume
+  // Update the pause menu render
   const renderPauseMenu = () => {
     if (!isPaused) return null;
     
     return (
-      <div className="pause-menu" onClick={handlePauseMenuClick}>
-        <h2>Game Paused</h2>
-        <button onClick={handleResume}>Resume</button>
-        <button onClick={handleExit}>Exit</button>
+      <div className="pause-overlay" onClick={handlePauseMenuClick}>
+        <div className="pause-menu">
+          <h2>Game Paused</h2>
+          <button onClick={() => handlePauseChange(false)}>Resume</button>
+          <button onClick={handleExit}>Exit</button>
+        </div>
       </div>
     );
   };
@@ -763,6 +756,7 @@ function GameBoard() {
   return (
     <div className="game-container">
       {renderPauseButton()}
+      {renderPauseMenu()}
       {isGameStarted ? (
         <>
           <div className="score-board">
