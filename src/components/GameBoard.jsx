@@ -218,21 +218,22 @@ function GameBoard() {
     if (scoreProcessedRef.current) return;
     scoreProcessedRef.current = true;
     
-    setScore(prev => ({
-      ...prev,
-      [scorer]: prev[scorer] + 1
-    }));
-
     const newScore = {
       ...score,
       [scorer]: score[scorer] + 1
     };
+    
+    setScore(newScore);
 
     if (newScore[scorer] >= WINNING_SCORE) {
-      setWinner(playerNames[scorer]);
+      const winnerName = playerNames[scorer];
+      setWinner(winnerName);
       setIsGameStarted(false);
       if (isMultiplayer) {
-        sendWinner(playerNames[scorer]);
+        socket?.emit('gameWinner', {
+          winner: winnerName,
+          roomId
+        });
       }
       return;
     }
@@ -246,7 +247,7 @@ function GameBoard() {
     setTimeout(() => {
       scoreProcessedRef.current = false;
     }, 1000);
-  }, [score, playerNames, isMultiplayer, sendScore, sendWinner]);
+  }, [score, playerNames, isMultiplayer, socket, roomId]);
 
   // 5. Ball interpolation (used in game loop)
   const interpolateBall = useCallback((timestamp) => {
@@ -868,47 +869,60 @@ function GameBoard() {
   // Update winner screen render
   const renderWinnerScreen = () => {
     if (!winner) return null;
+    // Determine if current player is winner
     const isWinner = winner === (role === 'host' ? playerNames.left : playerNames.right);
     
     return (
-      <div className="winner-screen">
-        <h2>{isWinner ? 'You Won!' : 'You Lost!'}</h2>
-        <p>{winner} is the winner!</p>
-        <div className="winner-buttons">
-          {isMultiplayer ? (
-            <>
-              {!rematchRequested ? (
+      <div className="pause-overlay">
+        <div className="winner-screen">
+          <h2>{isWinner ? 'You Won!' : 'You Lost!'}</h2>
+          <p className="winner-message">
+            {isWinner ? 'Congratulations!' : `${winner} won the game!`}
+          </p>
+          <div className="winner-buttons">
+            {isMultiplayer ? (
+              <>
+                {!rematchRequested ? (
+                  <button 
+                    className="rematch-button"
+                    onClick={handleRematchRequest}
+                  >
+                    Request Rematch
+                  </button>
+                ) : (
+                  <div className="waiting-message">
+                    Waiting for opponent...
+                  </div>
+                )}
                 <button 
-                  className="rematch-button"
-                  onClick={handleRematchRequest}
+                  className="exit-button"
+                  onClick={handleExit}
                 >
-                  Request Rematch
+                  Exit to Menu
                 </button>
-              ) : (
-                <div className="waiting-message">
-                  Waiting for opponent...
-                </div>
-              )}
-            </>
-          ) : (
-          <button 
-            className="start-button"
-            onClick={() => {
-              setWinner(null);
-              setScore({ left: 0, right: 0 });
-              setRematchRequested(false);
-              setRematchAccepted(false);
-            }}
-          >
-            Play Again
-          </button>
-          )}
-          <button 
-            className="exit-button"
-            onClick={handleExit}
-          >
-            Exit to Menu
-          </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  className="start-button"
+                  onClick={() => {
+                    setWinner(null);
+                    setScore({ left: 0, right: 0 });
+                    setRematchRequested(false);
+                    setRematchAccepted(false);
+                  }}
+                >
+                  Play Again
+                </button>
+                <button 
+                  className="exit-button"
+                  onClick={handleExit}
+                >
+                  Exit to Menu
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     );

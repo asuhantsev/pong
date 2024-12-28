@@ -424,6 +424,23 @@ io.on('connection', (socket) => {
       socket.to(roomId).emit('rematchDeclined');
     }
   });
+
+  // Add winner handler
+  socket.on('gameWinner', ({ winner, roomId }) => {
+    if (!roomId) return;
+    
+    const room = rooms.get(roomId);
+    if (!room) return;
+    
+    console.log('Game winner:', {
+      roomId,
+      winner,
+      from: socket.id
+    });
+    
+    // Broadcast winner to all players in room
+    io.to(roomId).emit('winnerUpdate', winner);
+  });
 });
 
 const PORT = process.env.PORT || 3001;
