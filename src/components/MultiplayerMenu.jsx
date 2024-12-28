@@ -60,6 +60,48 @@ function MultiplayerMenu({
     }
   };
 
+  // Add ready button handlers
+  const handleToggleReady = () => {
+    console.log('Toggle ready clicked:', {
+      roomId,
+      mySocketId,
+      currentState: playersReady.get(mySocketId)
+    });
+    onToggleReady(roomId);
+  };
+
+  const renderReadyButton = () => {
+    const isReady = playersReady.get(mySocketId);
+    return (
+      <button 
+        onClick={handleToggleReady}
+        disabled={isReconnecting}
+        className={isReady ? 'ready-button ready' : 'ready-button'}
+      >
+        {isReady ? 'Ready!' : 'Click when Ready'}
+      </button>
+    );
+  };
+
+  const renderReadyStatus = () => {
+    return (
+      <div className="ready-status">
+        {Array.from(playersReady.entries()).map(([id, ready]) => (
+          <div key={id} className={`player-entry ${id === mySocketId ? 'my-player' : ''}`}>
+            <div className="player-nickname">
+              {id === mySocketId ? 
+                `${myNickname} (You)` : 
+                'Opponent'}
+            </div>
+            <div className="ready-status">
+              {ready ? '✅' : '⏳'}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // Render initial multiplayer menu if no room
   if (!roomId) {
     return (
