@@ -11,14 +11,16 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
 
 const SOCKET_OPTIONS = {
-  transports: ['websocket', 'polling'],
-  reconnectionAttempts: 3,
+  transports: ['polling', 'websocket'],
+  reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   timeout: 20000,
   forceNew: true,
   path: '/socket.io/',
   autoConnect: false,
-  reconnection: true
+  reconnection: true,
+  withCredentials: true,
+  secure: true
 };
 
 export function useMultiplayer({ 
@@ -78,11 +80,11 @@ export function useMultiplayer({
     
     const newSocket = io(SOCKET_SERVER, SOCKET_OPTIONS);
     
-    // Try to connect after setup
+    // Try to connect after setup with longer delay
     const connectTimeout = setTimeout(() => {
       console.log('Attempting initial socket connection...');
       newSocket.connect();
-    }, 500);
+    }, 1000); // Increased delay
 
     newSocket.on('connect', () => {
       console.log('Socket connected successfully:', {
@@ -92,11 +94,15 @@ export function useMultiplayer({
       });
       setError(null);
       setRetryCount(0);
-      setIsSocketReady(true); // Set ready state when connected
+      setIsSocketReady(true);
     });
 
-    newSocket.on('disconnect', () => {
-      setIsSocketReady(false); // Reset ready state on disconnect
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', {
+        error,
+        transport: newSocket.io.engine?.transport?.name
+      });
+      setIsSocketReady(false);
     });
 
     setSocket(newSocket);
@@ -111,7 +117,7 @@ export function useMultiplayer({
         setIsSocketReady(false);
       }
     };
-  }, []); // Empty dependency array to create socket only once
+  }, []);
 
   // Load session from storage
   useEffect(() => {
