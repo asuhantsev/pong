@@ -13,6 +13,7 @@ function MultiplayerMenu({
   onJoinRoom,
   onToggleReady,
   roomId,
+  error: socketError,
   playersReady,
   role,
   mySocketId,
@@ -26,36 +27,18 @@ function MultiplayerMenu({
   const [joinRoomId, setJoinRoomId] = useState('');
   const [localError, setLocalError] = useState(null);
 
+  // Debug logging
+  console.log('MultiplayerMenu state:', {
+    roomId,
+    role,
+    mySocketId,
+    playersReady: Array.from(playersReady.entries())
+  });
+
   // Then memoized values and callbacks
   const areBothPlayersConnected = useCallback(() => {
     return playersReady instanceof Map && playersReady.size === 2;
   }, [playersReady]);
-
-  // Helper to check if all players are ready
-  const areAllPlayersReady = useCallback(() => {
-    if (!areBothPlayersConnected()) return false;
-    return Array.from(playersReady.values()).every(ready => ready);
-  }, [playersReady, areBothPlayersConnected]);
-
-  // Debug logging
-  useEffect(() => {
-    return () => {
-      // console.log('MultiplayerMenu unmounting:', {
-      //   role,
-      //   mySocketId
-      // });
-    };
-  }, [role, mySocketId, playersReady]);
-
-  // Add debug logging
-  useEffect(() => {
-    console.log('MultiplayerMenu state:', {
-      roomId: roomId,
-      role: role,
-      mySocketId: mySocketId,
-      playersReady: playersReady instanceof Map ? Array.from(playersReady.entries()) : null
-    });
-  }, [roomId, role, mySocketId, playersReady]);
 
   const handleCreateRoom = async () => {
     try {
@@ -76,43 +59,10 @@ function MultiplayerMenu({
     }
   };
 
-  const handleToggleReady = () => {
-    console.log('Toggle ready clicked:', {
-      roomId: roomId,
-      mySocketId: mySocketId,
-      currentState: playersReady.get(mySocketId)
-    });
-    onToggleReady(roomId);
-  };
-
-  const renderReadyButton = () => {
-    const isReady = playersReady.get(mySocketId);
+  // Render initial multiplayer menu if no room
+  if (!roomId) {
     return (
-      <button 
-        onClick={handleToggleReady}
-        disabled={isReconnecting}
-        className={isReady ? 'ready-button ready' : 'ready-button'}
-      >
-        {isReady ? 'Ready' : 'Click when Ready'}
-      </button>
-    );
-  };
-
-  const renderReadyStatus = () => {
-    return (
-      <div className="ready-status">
-        {Array.from(playersReady.entries()).map(([id, ready]) => (
-          <div key={id}>
-            Player {id === mySocketId ? '(You)' : '(Opponent)'}: {ready ? '✅' : '⏳'}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  return (
-    <div className="multiplayer-menu">
-      {!roomId ? (
+      <div className="multiplayer-menu">
         <div className="multiplayer-options">
           <button 
             className="start-button" 
@@ -146,36 +96,32 @@ function MultiplayerMenu({
             Back
           </button>
           {localError && <div className="error-message">{localError}</div>}
+          {socketError && <div className="error-message">{socketError}</div>}
         </div>
-      ) : (
-        // Room info and ready state UI
-        <div className="room-info">
-          <h3>Room Code: {roomId}</h3>
-          
-          {areBothPlayersConnected() ? (
-            <div className="ready-section">
-              <p>Both players connected!</p>
-              {renderReadyButton()}
-              {renderReadyStatus()}
-            </div>
-          ) : (
-            <p>Waiting for opponent...</p>
-          )}
-        </div>
-      )}
-      <div className="players-list">
-        {Array.from(playersReady.entries()).map(([id, ready]) => (
-          <div key={id} className={`player-entry ${id === mySocketId ? 'my-player' : ''}`}>
-            <div className="player-nickname">
-              {id === mySocketId ? 
-                `${myNickname} (You)` : 
-                'Opponent'}
-            </div>
-            <div className="ready-status">
-              {ready ? '✅' : '⏳'}
-            </div>
+      </div>
+    );
+  }
+
+  // Render room UI once in a room
+  return (
+    <div className="multiplayer-menu">
+      <div className="room-info">
+        <h3>Room Code: {roomId}</h3>
+        {areBothPlayersConnected() ? (
+          <div className="ready-section">
+            <p>Both players connected!</p>
+            {renderReadyButton()}
+            {renderReadyStatus()}
           </div>
-        ))}
+        ) : (
+          <p>Waiting for opponent...</p>
+        )}
+        <button 
+          className="back-button"
+          onClick={onBack}
+        >
+          Leave Room
+        </button>
       </div>
     </div>
   );
