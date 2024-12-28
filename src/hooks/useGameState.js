@@ -8,12 +8,16 @@ export function useGameState() {
   });
 
   const handleMenuTransition = useCallback((screen, mode = null) => {
+    console.log('Menu transition:', { screen, mode });
+    
     let newMode = mode;
     if (screen === 'multiplayer') {
-      newMode = 'multi';
-    } else if (screen === 'game' && !mode) {
-      newMode = 'single';
+      // Don't set mode until actually in a game
+      newMode = null;
+    } else if (screen === 'game') {
+      newMode = mode || 'single';
     }
+    
     setMenuState({ screen, mode: newMode });
   }, []);
 

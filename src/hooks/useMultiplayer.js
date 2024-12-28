@@ -14,7 +14,7 @@ const SOCKET_OPTIONS = {
   transports: ['websocket', 'polling'],
   reconnectionAttempts: 3,
   reconnectionDelay: 1000,
-  timeout: 10000,
+  timeout: 20000,
   forceNew: true,
   path: '/socket.io/',
   autoConnect: false,
@@ -68,49 +68,41 @@ export function useMultiplayer({
 
   // Move socket initialization to a separate effect
   useEffect(() => {
+    if (socketRef.current) {
+      console.log('Socket already exists, skipping initialization');
+      return;
+    }
+
     console.log('Initializing socket connection to:', SOCKET_SERVER);
     
     const newSocket = io(SOCKET_SERVER, SOCKET_OPTIONS);
     
     // Try to connect after setup
-    setTimeout(() => {
+    const connectTimeout = setTimeout(() => {
+      console.log('Attempting initial socket connection...');
       newSocket.connect();
-    }, 100);
+    }, 500);
 
     newSocket.on('connect', () => {
       console.log('Socket connected successfully:', {
         id: newSocket.id,
-        connected: newSocket.connected
+        connected: newSocket.connected,
+        transport: newSocket.io.engine.transport.name
       });
       setError(null);
       setRetryCount(0);
-    });
-
-    newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', {
-        error,
-        attempts: retryCount + 1
-      });
-      
-      if (retryCount >= MAX_RETRIES) {
-        setError({
-          message: 'Unable to connect to game server',
-          type: 'FATAL',
-          description: 'Please check your internet connection and try again'
-        });
-        return;
-      }
-      
-      setRetryCount(prev => prev + 1);
-      connectWithRetry();
     });
 
     setSocket(newSocket);
     socketRef.current = newSocket;
 
     return () => {
-      console.log('Cleaning up socket connection');
-      newSocket.close();
+      clearTimeout(connectTimeout);
+      if (socketRef.current) {
+        console.log('Cleaning up socket connection');
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
   }, []); // Empty dependency array to create socket only once
 
@@ -643,6 +635,33 @@ export function useMultiplayer({
       socket.off('connect_timeout');
     };
   }, [socket, connectWithRetry]);
+
+  // Add connection status monitoring
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleDisconnect = (reason) => {
+      console.log('Socket disconnected:', reason);
+      if (reason === 'io server disconnect') {
+        // Server disconnected, try to reconnect
+        socket.connect();
+      }
+    };
+
+    const handleReconnect = (attempt) => {
+      console.log('Socket reconnected after', attempt, 'attempts');
+      setError(null);
+      setRetryCount(0);
+    };
+
+    socket.on('disconnect', handleDisconnect);
+    socket.on('reconnect', handleReconnect);
+
+    return () => {
+      socket.off('disconnect', handleDisconnect);
+      socket.off('reconnect', handleReconnect);
+    };
+  }, [socket]);
 
   return {
     socket: socketRef.current,

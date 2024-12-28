@@ -719,7 +719,7 @@ function GameBoard() {
       return renderWinnerScreen();
     }
 
-    if (menuState.mode === 'multi') {
+    if (menuState.screen === 'multiplayer') {
       return (
         <MultiplayerMenu
           onCreateRoom={createRoom}
