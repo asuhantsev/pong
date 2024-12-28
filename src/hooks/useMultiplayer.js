@@ -473,18 +473,30 @@ export function useMultiplayer({
       },
 
       rematchAccepted: () => {
+        console.log('Rematch accepted, resetting game state');
         // Reset game state
         setWinner(null);
         setScore({ left: 0, right: 0 });
         setRematchRequested(false);
         setRematchAccepted(false);
+        
+        // Reset ready states
         setPlayersReady(new Map());
+        setIsReady(false);
+        
+        // Reset game flags
+        setIsGameStarted(false);
+        
+        // Notify game start handler
         onGameStart();
       },
 
       playerExited: () => {
         setError('Other player has left the game');
         onGameEnd();
+        setIsGameStarted(false);
+        setWinner(null);
+        
         // Auto cleanup after showing message
         setTimeout(() => {
           setError(null);

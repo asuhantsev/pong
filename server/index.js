@@ -461,6 +461,20 @@ io.on('connection', (socket) => {
     
     socket.to(roomId).emit('ballSpeedSync', { velocity });
   });
+
+  socket.on('rematchAccepted', ({ roomId }) => {
+    if (!roomId) return;
+    
+    const room = rooms.get(roomId);
+    if (!room) return;
+    
+    // Reset room state for new game
+    room.readyState = new Map(room.players.map(id => [id, false]));
+    room.score = { left: 0, right: 0 };
+    
+    // Notify all players
+    io.to(roomId).emit('rematchAccepted');
+  });
 });
 
 const PORT = process.env.PORT || 3001;

@@ -619,6 +619,10 @@ function GameBoard() {
   };
 
   const handleExit = useCallback(() => {
+    if (socket?.connected) {
+      socket.emit('playerExit', { roomId });
+    }
+    
     setWinner(null);
     setScore({ left: 0, right: 0 });
     setIsGameStarted(false);
@@ -635,7 +639,7 @@ function GameBoard() {
     });
     disconnect();
     clearSession();
-  }, [disconnect, clearSession]);
+  }, [socket, roomId, disconnect, clearSession]);
 
   // Add exit notification handler
   useEffect(() => {
@@ -900,7 +904,7 @@ function GameBoard() {
                     className="rematch-button"
                     onClick={handleRematchRequest}
                   >
-                    Request Rematch
+                    Play Again
                   </button>
                 ) : (
                   <div className="waiting-message">
