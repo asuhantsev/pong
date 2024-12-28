@@ -690,24 +690,6 @@ function GameBoard() {
     return () => socket.off('playerExited', handlePlayerExit);
   }, [socket, clearSession, handleMenuTransition]);
 
-  const handleMenuTransition = useCallback((screen, mode = null) => {
-    // Determine the correct mode based on screen
-    let newMode = mode;
-    if (screen === 'multiplayer') {
-      newMode = 'multi';
-    } else if (screen === 'game' && !mode) {
-      newMode = 'single';
-    }
-    
-    // Cleanup previous state
-    if (menuState.mode === 'multi' && newMode !== 'multi') {
-      clearSession();
-      disconnect();
-    }
-    
-    setMenuState({ screen, mode: newMode });
-  }, [menuState.mode, clearSession, disconnect]);
-
   const renderStartMenu = () => {
     if (winner) {
       return renderWinnerScreen();
