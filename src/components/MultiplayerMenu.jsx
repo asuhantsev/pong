@@ -83,11 +83,13 @@ function MultiplayerMenu({
     if (!mySocketId) return null;
     
     const isReady = playersReady.get(mySocketId) || false;
+    const bothConnected = playersReady.size === 2;
+    
     return (
       <button 
         onClick={handleToggleReady}
-        disabled={isReconnecting}
-        className={isReady ? 'ready-button ready' : 'ready-button'}
+        disabled={isReconnecting || !bothConnected}
+        className={`ready-button ${isReady ? 'ready' : ''} ${!bothConnected ? 'disabled' : ''}`}
       >
         {isReady ? 'Ready!' : 'Click when Ready'}
       </button>
@@ -159,11 +161,12 @@ function MultiplayerMenu({
         border: none;
         border-radius: 4px;
         color: white;
-        transition: background 0.3s;
+        transition: all 0.3s;
       }
 
-      .ready-button:hover {
+      .ready-button:not(:disabled):hover {
         background: #45a049;
+        transform: scale(1.02);
       }
 
       .ready-button.ready {
@@ -173,6 +176,11 @@ function MultiplayerMenu({
       .ready-button:disabled {
         background: #cccccc;
         cursor: not-allowed;
+        opacity: 0.7;
+      }
+
+      .ready-button.disabled {
+        background: #cccccc;
       }
     `;
     document.head.appendChild(styles);

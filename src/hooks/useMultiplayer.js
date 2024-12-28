@@ -473,7 +473,7 @@ export function useMultiplayer({
       playerJoined: ({ playerId, readyState, nicknames }) => {
         console.log('Player joined:', { playerId, readyState, nicknames });
         setPlayersReady(new Map(readyState));
-        if (nicknames) {
+        if (nicknames && nicknames.length > 0) {
           setPlayerNicknames(new Map(nicknames));
         }
       },
@@ -795,6 +795,22 @@ export function useMultiplayer({
     setWinner,
     setIsGameStarted
   ]);
+
+  // Add nickname sync on join
+  useEffect(() => {
+    if (!socket || !roomId || !nickname) return;
+
+    console.log('Syncing nickname:', {
+      roomId,
+      nickname,
+      socketId: socket.id
+    });
+
+    socket.emit('nicknameUpdate', {
+      roomId,
+      nickname
+    });
+  }, [socket, roomId, nickname]);
 
   return {
     socket: socketRef.current,

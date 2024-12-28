@@ -123,8 +123,18 @@ io.on('connection', (socket) => {
       room.players.push(socket.id);
       room.readyState.set(socket.id, false);
       
+      // Store roomId on socket object
+      socket.roomId = roomId;
+
       // Initialize nicknames Map if it doesn't exist
       room.nicknames = room.nicknames || new Map();
+
+      console.log('Player joined room:', {
+        roomId,
+        players: room.players,
+        readyState: Array.from(room.readyState.entries()),
+        nicknames: Array.from(room.nicknames.entries())
+      });
 
       // Notify other players with nicknames
       socket.to(roomId).emit('playerJoined', {
