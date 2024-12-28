@@ -445,15 +445,31 @@ export function useMultiplayer({
 
       playerJoined: ({ playerId, readyState, nickname }) => {
         console.log('Player joined:', { playerId, readyState, nickname });
-        setPlayersReady(new Map(readyState));
+        if (readyState) {
+          setPlayersReady(new Map(readyState));
+        }
         if (nickname) {
-          setPlayerNicknames(prev => new Map(prev).set(playerId, nickname));
+          setPlayerNicknames(prev => {
+            const newNicknames = new Map(prev);
+            newNicknames.set(playerId, nickname);
+            return newNicknames;
+          });
         }
       },
 
       readyStateUpdate: ({ readyState, nicknames }) => {
         console.log('Ready state update received:', { readyState, nicknames });
-        setPlayersReady(new Map(readyState));
+        if (readyState) {
+          const newReadyState = new Map(readyState);
+          setPlayersReady(newReadyState);
+          
+          // Check if all players are ready
+          const allReady = Array.from(newReadyState.values()).every(ready => ready);
+          if (allReady && newReadyState.size === 2) {
+            console.log('All players ready, starting game...');
+            onGameStart?.();
+          }
+        }
         if (nicknames) {
           setPlayerNicknames(new Map(nicknames));
         }
@@ -731,6 +747,7 @@ export function useMultiplayer({
     paddleBuffer: paddleBufferRef.current,
     isCreatingRoom,
     isJoiningRoom,
-    isSocketReady
+    isSocketReady,
+    playerNicknames
   };
 } 

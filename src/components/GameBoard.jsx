@@ -160,6 +160,7 @@ function GameBoard() {
     isCreatingRoom,
     isJoiningRoom,
     updateNickname, // new function
+    playerNicknames
   } = useMultiplayer({
     setBallPos,
     setBallVelocity,
@@ -743,6 +744,7 @@ function GameBoard() {
             }}
             myNickname={nickname}
             isSocketReady={isSocketReady}
+            playerNicknames={playerNicknames}
           />
         );
 
