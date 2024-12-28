@@ -159,7 +159,7 @@ function GameBoard() {
     paddleBuffer,
     isCreatingRoom,
     isJoiningRoom,
-    updateNickname, // new function
+    updateNickname,
     playerNicknames
   } = useMultiplayer({
     setBallPos,
@@ -182,11 +182,7 @@ function GameBoard() {
     onNetworkStatsUpdate: setNetworkStats,
     setWinner,
     setIsGameStarted,
-    nickname, // Add nickname
-    onNicknameUpdate: (newNickname) => {
-      setNickname(newNickname);
-      StorageManager.saveNickname(newNickname);
-    },
+    nickname
   });
 
   // Update connection error handler

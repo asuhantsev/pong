@@ -38,7 +38,8 @@ export function useMultiplayer({
   onLoadingChange,
   onNetworkStatsUpdate,
   setWinner,
-  setIsGameStarted
+  setIsGameStarted,
+  nickname
 }) {
   const [socket, setSocket] = useState(null);
   const [mySocketId, setMySocketId] = useState(null);
@@ -270,7 +271,8 @@ export function useMultiplayer({
     console.log('Toggling ready state:', {
       roomId,
       socketId: socket?.id,
-      currentReadyState: playersReady.get(socket?.id)
+      currentReadyState: playersReady.get(socket?.id),
+      nickname
     });
 
     if (!socket?.connected || !roomId) {
@@ -281,9 +283,9 @@ export function useMultiplayer({
     socket.emit('toggleReady', { 
       roomId,
       playerId: socket.id,
-      nickname: myNickname
+      nickname
     });
-  }, [socket, playersReady, myNickname]);
+  }, [socket, playersReady, nickname]);
 
   const sendWinner = (winner) => {
     if (role !== 'host') return;
