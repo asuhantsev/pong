@@ -588,16 +588,46 @@ function GameBoard() {
   };
 
   const handleExit = useCallback(() => {
+    // Notify other players before disconnecting
+    if (socket?.connected) {
+      socket.emit('playerExit', { roomId });
+    }
+    
     if (role === 'host') {
       socket?.emit('pauseGame', {
         isPaused: false,
         countdownValue: null
       });
     }
+    
+    // Clean up local state
     setIsGameStarted(false);
     setIsPaused(false);
+    setIsMultiplayer(false);
+    setScore({ left: 0, right: 0 });
     clearSession();
-  }, [role, socket, clearSession]);
+  }, [role, socket, clearSession, roomId]);
+
+  // Add exit notification handler
+  useEffect(() => {
+    if (!socket) return;
+    
+    const handlePlayerExit = () => {
+      setIsGameStarted(false);
+      setIsPaused(false);
+      setConnectionError('Other player has left the game');
+      
+      // Auto-cleanup after showing message
+      setTimeout(() => {
+        setConnectionError(null);
+        setIsMultiplayer(false);
+        clearSession();
+      }, 3000);
+    };
+    
+    socket.on('playerExited', handlePlayerExit);
+    return () => socket.off('playerExited', handlePlayerExit);
+  }, [socket, clearSession]);
 
   const renderStartMenu = () => {
     if (winner) {

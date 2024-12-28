@@ -5,13 +5,13 @@ function ConnectionError({ error, onRetry, onExit }) {
         <div className="connection-error">
           <h2>Connection Error</h2>
           <p>{error}</p>
-          <div className="button-group">
-            <button className="start-button" onClick={onRetry}>
-              Retry
-            </button>
-            <button className="back-button" onClick={onExit}>
-              Exit
-            </button>
+          <div className="error-buttons">
+            <button onClick={onRetry}>Retry Connection</button>
+            {error.includes('left the game') ? (
+              <button onClick={onExit}>Back to Menu</button>
+            ) : (
+              <button onClick={onExit}>Exit to Menu</button>
+            )}
           </div>
         </div>
       </div>

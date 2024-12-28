@@ -334,6 +334,42 @@ io.on('connection', (socket) => {
       from: socket.id
     });
   });
+
+  // Add player exit handler
+  socket.on('playerExit', ({ roomId }) => {
+    if (!roomId) {
+      console.log('No room found for player exit:', socket.id);
+      return;
+    }
+
+    const room = rooms.get(roomId);
+    if (!room) {
+      console.log('Room not found for player exit:', roomId);
+      return;
+    }
+
+    console.log('Player exiting room:', {
+      roomId,
+      playerId: socket.id
+    });
+
+    // Notify other players in the room
+    socket.to(roomId).emit('playerExited');
+
+    // Clean up room if it exists
+    if (room.players.includes(socket.id)) {
+      room.players = room.players.filter(id => id !== socket.id);
+      room.readyState.delete(socket.id);
+      
+      if (room.players.length === 0) {
+        rooms.delete(roomId);
+        console.log('Room deleted:', roomId);
+      }
+    }
+
+    // Leave the room
+    socket.leave(roomId);
+  });
 });
 
 const PORT = process.env.PORT || 3001;
