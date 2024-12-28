@@ -491,6 +491,12 @@ export function useMultiplayer({
           clearSession();
           disconnect();
         }, 3000);
+      },
+
+      ballSpeedSync: ({ velocity }) => {
+        if (role === 'client') {
+          setBallVelocity(velocity);
+        }
       }
     };
 
@@ -501,6 +507,7 @@ export function useMultiplayer({
 
     // Cleanup
     return () => {
+      clearInterval(pingInterval);
       Object.entries(handlers).forEach(([event, handler]) => {
         socket.off(event, handler);
       });
@@ -566,13 +573,6 @@ export function useMultiplayer({
       socket.off('roomRejoined', handleRoomRejoined);
     };
   }, [socket, isReconnecting, roomId, sessionId]);
-
-  // Add ball speed synchronization
-  socket.on('ballSpeedSync', ({ velocity }) => {
-    if (role === 'client') {
-      setBallVelocity(velocity);
-    }
-  });
 
   return {
     socket: socketRef.current,
