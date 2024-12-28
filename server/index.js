@@ -349,37 +349,27 @@ io.on('connection', (socket) => {
 
   // Add player exit handler
   socket.on('playerExit', ({ roomId }) => {
-    if (!roomId) {
-      console.log('No room found for player exit:', socket.id);
-      return;
-    }
-
+    if (!roomId) return;
+    
     const room = rooms.get(roomId);
-    if (!room) {
-      console.log('Room not found for player exit:', roomId);
-      return;
-    }
+    if (!room) return;
 
     console.log('Player exiting room:', {
       roomId,
       playerId: socket.id
     });
 
-    // Notify other players in the room
+    // Notify other players before cleanup
     socket.to(roomId).emit('playerExited');
 
-    // Clean up room if it exists
-    if (room.players.includes(socket.id)) {
-      room.players = room.players.filter(id => id !== socket.id);
-      room.readyState.delete(socket.id);
-      
-      if (room.players.length === 0) {
-        rooms.delete(roomId);
-        console.log('Room deleted:', roomId);
-      }
+    // Clean up room state
+    room.players = room.players.filter(id => id !== socket.id);
+    room.readyState.delete(socket.id);
+    
+    if (room.players.length === 0) {
+      rooms.delete(roomId);
     }
 
-    // Leave the room
     socket.leave(roomId);
   });
 

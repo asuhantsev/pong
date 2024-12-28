@@ -463,6 +463,27 @@ export function useMultiplayer({
         setError(error);
         setIsCreatingRoom(false);
         setIsJoiningRoom(false);
+      },
+
+      rematchAccepted: () => {
+        // Reset game state
+        setWinner(null);
+        setScore({ left: 0, right: 0 });
+        setRematchRequested(false);
+        setRematchAccepted(false);
+        setPlayersReady(new Map());
+        onGameStart();
+      },
+
+      playerExited: () => {
+        setError('Other player has left the game');
+        onGameEnd();
+        // Auto cleanup after showing message
+        setTimeout(() => {
+          setError(null);
+          clearSession();
+          disconnect();
+        }, 3000);
       }
     };
 
