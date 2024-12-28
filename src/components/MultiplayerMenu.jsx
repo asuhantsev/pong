@@ -21,7 +21,8 @@ function MultiplayerMenu({
   isCreatingRoom,
   isJoiningRoom,
   onBack,
-  myNickname
+  myNickname,
+  isSocketReady
 }) {
   // State declarations first
   const [joinRoomId, setJoinRoomId] = useState('');
@@ -67,9 +68,11 @@ function MultiplayerMenu({
           <button 
             className="start-button" 
             onClick={handleCreateRoom}
-            disabled={isCreatingRoom || isJoiningRoom}
+            disabled={!isSocketReady || isCreatingRoom || isJoiningRoom}
           >
-            {isCreatingRoom ? 'Creating Room...' : 'Create Room'}
+            {!isSocketReady ? 'Connecting...' : 
+             isCreatingRoom ? 'Creating Room...' : 
+             'Create Room'}
           </button>
           <div className="join-room">
             <input
@@ -78,14 +81,16 @@ function MultiplayerMenu({
               onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
               placeholder="Enter Room Code"
               maxLength={6}
-              disabled={isCreatingRoom || isJoiningRoom}
+              disabled={!isSocketReady || isCreatingRoom || isJoiningRoom}
             />
             <button 
               className="start-button"
               onClick={() => handleJoinRoom(joinRoomId)}
-              disabled={!joinRoomId || isCreatingRoom || isJoiningRoom}
+              disabled={!isSocketReady || !joinRoomId || isCreatingRoom || isJoiningRoom}
             >
-              {isJoiningRoom ? 'Joining...' : 'Join Room'}
+              {!isSocketReady ? 'Connecting...' :
+               isJoiningRoom ? 'Joining...' : 
+               'Join Room'}
             </button>
           </div>
           <button 
@@ -97,6 +102,11 @@ function MultiplayerMenu({
           </button>
           {localError && <div className="error-message">{localError}</div>}
           {socketError && <div className="error-message">{socketError}</div>}
+          {!isSocketReady && (
+            <div className="connecting-message">
+              Connecting to server...
+            </div>
+          )}
         </div>
       </div>
     );

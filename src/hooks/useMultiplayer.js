@@ -54,6 +54,7 @@ export function useMultiplayer({
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isJoiningRoom, setIsJoiningRoom] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [isSocketReady, setIsSocketReady] = useState(false);
 
   // Keep only necessary refs
   const socketRef = useRef(null);
@@ -91,6 +92,11 @@ export function useMultiplayer({
       });
       setError(null);
       setRetryCount(0);
+      setIsSocketReady(true); // Set ready state when connected
+    });
+
+    newSocket.on('disconnect', () => {
+      setIsSocketReady(false); // Reset ready state on disconnect
     });
 
     setSocket(newSocket);
@@ -102,6 +108,7 @@ export function useMultiplayer({
         console.log('Cleaning up socket connection');
         socketRef.current.disconnect();
         socketRef.current = null;
+        setIsSocketReady(false);
       }
     };
   }, []); // Empty dependency array to create socket only once
@@ -147,12 +154,13 @@ export function useMultiplayer({
   const createRoom = useCallback(() => {
     console.log('Creating room...', {
       socketConnected: socketRef.current?.connected,
-      socketId: socketRef.current?.id
+      socketId: socketRef.current?.id,
+      isSocketReady
     });
 
-    if (!socketRef.current?.connected) {
-      console.error('Cannot create room: Socket not connected');
-      setError('Not connected to server');
+    if (!isSocketReady) {
+      console.error('Cannot create room: Socket not ready');
+      setError('Connecting to server...');
       return;
     }
 
@@ -172,7 +180,7 @@ export function useMultiplayer({
     }, 5000);
 
     return () => clearTimeout(timeout);
-  }, [isCreatingRoom]);
+  }, [isSocketReady]);
 
   const joinRoom = useCallback((roomId) => {
     console.log('Attempting to join room:', roomId);
@@ -686,6 +694,7 @@ export function useMultiplayer({
     isConnected: !!socket?.connected,
     paddleBuffer: paddleBufferRef.current,
     isCreatingRoom,
-    isJoiningRoom
+    isJoiningRoom,
+    isSocketReady
   };
 } 
