@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Logger from '../utils/logger';
 
 const BOARD_WIDTH = 800;
@@ -18,6 +18,11 @@ const INITIAL_STATE = {
 
 export function usePhysics() {
   const [physics, setPhysics] = useState(INITIAL_STATE);
+
+  // Log state changes
+  useEffect(() => {
+    Logger.debug('Physics', 'State updated', physics);
+  }, [physics]);
 
   const resetBall = useCallback(() => {
     Logger.info('Physics', 'Resetting ball');
@@ -49,6 +54,8 @@ export function usePhysics() {
   }, []);
 
   const updatePhysics = useCallback((deltaTime) => {
+    Logger.debug('Physics', 'Updating physics', { deltaTime });
+    
     setPhysics(prev => {
       // Update ball position
       const newX = prev.ballPosition.x + prev.ballVelocity.x;
@@ -80,11 +87,14 @@ export function usePhysics() {
         newVelY = ((ballCenterY - (prev.rightPaddlePos + PADDLE_HEIGHT / 2)) / (PADDLE_HEIGHT / 2)) * 5;
       }
 
-      return {
+      const newState = {
         ...prev,
         ballPosition: { x: newX, y: newY },
         ballVelocity: { x: newVelX, y: newVelY }
       };
+
+      Logger.debug('Physics', 'New state calculated', newState);
+      return newState;
     });
   }, []);
 
