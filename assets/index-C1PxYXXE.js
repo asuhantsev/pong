@@ -118,4 +118,4 @@ Error generating stack: `+i.message+`
                 ${Hn.reloadButton}
                 ${Qn.scaleIn}
               `,children:"Reload Game"})]})}):this.props.children}}function M_(){return X.jsx(D_,{children:X.jsx(Zd,{children:X.jsx(rp,{children:X.jsx(th,{children:X.jsx(np,{children:X.jsx(L_,{})})})})})})}Xd.createRoot(document.getElementById("root")).render(X.jsx(Nc.StrictMode,{children:X.jsx(M_,{})}));
-//# sourceMappingURL=index-CFcIqjo3.js.map
+//# sourceMappingURL=index-C1PxYXXE.js.map
