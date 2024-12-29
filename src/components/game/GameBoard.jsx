@@ -11,8 +11,8 @@ import { MultiplayerGame } from './multiplayer/MultiplayerGame';
 import styles from '../../styles/components/game/GameBoard.module.css';
 import Logger from '../../utils/logger';
 
-export function GameBoard({ mode = 'single' }) {
-  Logger.debug('GameBoard', 'Component rendered', { mode });
+export function GameBoard() {
+  Logger.debug('GameBoard', 'Component rendered');
 
   const { state: { 
     isPaused, 
@@ -20,7 +20,7 @@ export function GameBoard({ mode = 'single' }) {
     winner,
     isGameStarted,
     countdown,
-    mode: gameMode
+    mode
   }, actions } = useGame();
 
   const { physics, updatePhysics, resetBall, resetGame: resetPhysics, movePaddle } = usePhysics();
@@ -118,6 +118,13 @@ export function GameBoard({ mode = 'single' }) {
     actions.startGame('single');
   }, [resetPhysics, actions]);
 
+  const handleStartMultiplayer = useCallback(() => {
+    Logger.info('GameBoard', 'Starting multiplayer game');
+    resetPhysics();
+    actions.setMode('multi');
+    actions.startGame('multi');
+  }, [resetPhysics, actions]);
+
   // Log state changes
   useEffect(() => {
     Logger.debug('GameBoard', 'State updated', { 
@@ -161,13 +168,13 @@ export function GameBoard({ mode = 'single' }) {
             </div>
           )}
           {winner && (
-            <button className={styles.playAgainButton} onClick={handleStartSinglePlayer}>
+            <button className={styles.playAgainButton} onClick={mode === 'single' ? handleStartSinglePlayer : handleStartMultiplayer}>
               Play Again
             </button>
           )}
         </>
       ) : (
-        mode === 'single' ? (
+        <div className={styles.menuButtons}>
           <button 
             className={styles.startButton} 
             onClick={handleStartSinglePlayer}
@@ -175,9 +182,14 @@ export function GameBoard({ mode = 'single' }) {
           >
             Start Single Player
           </button>
-        ) : (
-          <MultiplayerGame />
-        )
+          <button 
+            className={styles.startButton} 
+            onClick={handleStartMultiplayer}
+            style={{ cursor: 'pointer' }}
+          >
+            Start Multiplayer
+          </button>
+        </div>
       )}
       {isPaused && <PauseOverlay onResume={handlePause} />}
       {countdown && <CountdownOverlay count={countdown} />}
