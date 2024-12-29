@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useGameLoop } from '../../hooks/useGameLoop';
 import { usePhysics } from '../../hooks/usePhysics';
-import { useGameState } from '../../hooks/useGameState';
+import { useGame } from '../../contexts/GameContext';
 import { GameField } from './GameField';
 import { GameControls } from './controls/GameControls';
 import { PauseOverlay } from './controls/PauseOverlay';
@@ -11,15 +11,13 @@ import { MultiplayerGame } from './multiplayer/MultiplayerGame';
 import styles from '../../styles/components/game/GameBoard.module.css';
 
 export function GameBoard({ mode = 'single' }) {
-  const { 
+  const { state: { 
     isPaused, 
     score, 
     winner,
     isGameStarted,
-    updateGameState,
-    startGame,
-    resetGame: resetGameState 
-  } = useGameState();
+    countdown
+  }, actions } = useGame();
 
   const { physics, updatePhysics, resetBall, resetGame: resetPhysics, movePaddle } = usePhysics();
 
@@ -34,26 +32,20 @@ export function GameBoard({ mode = 'single' }) {
       // Check for scoring
       if (physics.ballPosition.x <= 0) {
         // Right player/computer scores
-        updateGameState({
-          score: { ...score, right: score.right + 1 }
-        });
+        actions.updateScore({ ...score, right: score.right + 1 });
         resetBall();
       } else if (physics.ballPosition.x >= 800 - 15) { // BOARD_WIDTH - BALL_SIZE
         // Left player scores
-        updateGameState({
-          score: { ...score, left: score.left + 1 }
-        });
+        actions.updateScore({ ...score, left: score.left + 1 });
         resetBall();
       }
 
       // Check for winner
       if (score.left >= 11 || score.right >= 11) {
-        updateGameState({
-          winner: score.left > score.right ? 'left' : 'right'
-        });
+        actions.setWinner(score.left > score.right ? 'left' : 'right');
       }
     }
-  }, [isPaused, winner, isGameStarted, physics.ballPosition, score, updateGameState, updatePhysics, resetBall]);
+  }, [isPaused, winner, isGameStarted, physics.ballPosition, score, actions, updatePhysics, resetBall]);
 
   // Start game loop
   useGameLoop(gameLoop);
@@ -91,16 +83,17 @@ export function GameBoard({ mode = 'single' }) {
   }, [isGameStarted, isPaused, winner, physics.leftPaddlePos, physics.rightPaddlePos, movePaddle, mode]);
 
   const handlePause = useCallback(() => {
-    updateGameState({ isPaused: !isPaused });
-  }, [isPaused, updateGameState]);
+    actions.togglePause(3); // 3 second countdown
+  }, [actions]);
 
   const handleStartSinglePlayer = useCallback(() => {
     console.log('Starting single player game...');
-    resetGameState();
     resetPhysics();
-    startGame();
-    updateGameState({ isGameStarted: true });
-  }, [resetGameState, resetPhysics, startGame, updateGameState]);
+    actions.startGame();
+  }, [resetPhysics, actions]);
+
+  // Add debug log for render
+  console.log('GameBoard render:', { isGameStarted, mode, winner, isPaused });
 
   return (
     <div className={styles.gameContainer}>
@@ -140,7 +133,11 @@ export function GameBoard({ mode = 'single' }) {
         </>
       ) : (
         mode === 'single' ? (
-          <button className={styles.startButton} onClick={handleStartSinglePlayer}>
+          <button 
+            className={styles.startButton} 
+            onClick={handleStartSinglePlayer}
+            style={{ cursor: 'pointer' }}
+          >
             Start Single Player
           </button>
         ) : (
@@ -148,7 +145,7 @@ export function GameBoard({ mode = 'single' }) {
         )
       )}
       {isPaused && <PauseOverlay onResume={handlePause} />}
-      <CountdownOverlay count={3} />
+      {countdown && <CountdownOverlay count={countdown} />}
     </div>
   );
 } 
