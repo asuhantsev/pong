@@ -1,0 +1,99 @@
+/* Fade Animations */
+.fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.fadeOut {
+  animation: fadeOut 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Slide Animations */
+.slideIn {
+  animation: slideIn 0.3s ease-in-out;
+}
+
+.slideOut {
+  animation: slideOut 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+
+/* Scale Animations */
+.scaleIn {
+  animation: scaleIn 0.3s ease-in-out;
+}
+
+.scaleOut {
+  animation: scaleOut 0.3s ease-in-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Game-specific animations */
+.bounce {
+  animation: bounce 0.3s cubic-bezier(0.36, 0, 0.66, -0.56);
+}
+
+@keyframes bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.slide {
+  animation: slide 0.3s ease-in-out;
+}
+
+@keyframes slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+} 

@@ -1,0 +1,38 @@
+.network-status {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: var(--z-controls);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+}
+
+.status-indicator.good {
+  border-left: 4px solid var(--color-success);
+}
+
+.status-indicator.poor {
+  border-left: 4px solid var(--color-warning);
+}
+
+.status-indicator.bad {
+  border-left: 4px solid var(--color-error);
+}
+
+.latency {
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.quality-label {
+  font-size: 0.8em;
+  text-transform: uppercase;
+} 

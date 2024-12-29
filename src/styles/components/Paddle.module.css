@@ -1,0 +1,17 @@
+/* Base paddle styles */
+.paddle {
+  position: absolute;
+  width: var(--paddle-width);
+  height: var(--paddle-height);
+  background: var(--color-primary);
+  will-change: transform;
+  contain: layout;
+}
+
+.left {
+  left: var(--paddle-offset);
+}
+
+.right {
+  right: var(--paddle-offset);
+} 

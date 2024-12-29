@@ -1,0 +1,40 @@
+.heading1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-6);
+  color: var(--color-primary);
+}
+
+.heading2 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: var(--space-5);
+  color: var(--color-primary);
+}
+
+.heading3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+  color: var(--color-primary);
+}
+
+.text {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-secondary);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.center {
+  text-align: center;
+}
+
+.uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+} 

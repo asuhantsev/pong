@@ -1,17 +1,25 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import '../styles/GameElements.css'
+import styles from '../styles/components/GameBoard.module.css'
+import containerStyles from '../styles/components/shared/Container.module.css'
+import cardStyles from '../styles/components/shared/Card.module.css'
+import typographyStyles from '../styles/components/shared/Typography.module.css'
+import errorStyles from '../styles/components/shared/ErrorMessage.module.css'
+import animationStyles from '../styles/components/shared/Animations.module.css'
+import buttonStyles from '../styles/components/shared/Button.module.css'
+import gameAnimations from '../styles/components/game/animations.module.css'
+import gridStyles from '../styles/components/shared/Grid.module.css'
 
 // Core components first
 import Ball from './Ball'
 import Paddle from './Paddle'
 
 // Menu components
-import MainMenu from './MainMenu'
-import OptionsMenu from './OptionsMenu'
-import MultiplayerMenu from './MultiplayerMenu'
+import { MainMenu } from './menu/MainMenu'
+import { OptionsMenu } from './menu/OptionsMenu'
+import { MultiplayerMenu } from './multiplayer/MultiplayerMenu'
 
 // Utility components
-import ConnectionError from './ConnectionError'
+import { ConnectionError } from './error/ConnectionError'
 import NetworkStatus from './NetworkStatus'
 
 // Hooks and utils
@@ -43,1083 +51,128 @@ const PADDLE_BOUNDARIES = {
   bottom: BOARD_HEIGHT - PADDLE_HEIGHT
 };
 
-// First, only define ConnectionStatus component outside
-const ConnectionStatus = ({ error, onRetry, onRecovery, mode }) => {
-  if (!error) return null;
-  
-  return (
-    <div className="connection-error">
-      <div className="error-message">
-        <h3>{error.message}</h3>
-        {error.description && <p>{error.description}</p>}
-      </div>
-      {error.type === 'RETRY' ? (
-        <div className="retry-message">
-          <p>Retrying connection...</p>
-          <button onClick={onRecovery}>
-            Try Different Server
-          </button>
-        </div>
-      ) : (
-        <button onClick={onRetry}>Try Again</button>
-      )}
-    </div>
-  );
-};
+// Add imports at the top
+import { PauseOverlay } from './game/ui/overlays/PauseOverlay';
+import { CountdownOverlay } from './game/ui/overlays/CountdownOverlay';
+import { ScoreBoard } from './game/ui/ScoreBoard';
+import { GameControls } from './game/controls/GameControls';
 
-function GameBoard() {
-  // Move these state declarations to the top with other state
-  const [isLoading, setIsLoading] = useState(false);
-  const [networkStats, setNetworkStats] = useState({
-    latency: 0,
-    quality: 'good'
-  });
-  const [connectionError, setConnectionError] = useState(null);
-
-  // Group ALL refs together at the top
-  const frameIdRef = useRef(null);
-  const ballBufferRef = useRef([]);
-  const scoreProcessedRef = useRef(false);
-  const countdownIntervalRef = useRef(null);
-
-  // State for paddle positions
-  const [leftPaddlePos, setLeftPaddlePos] = useState(250)
-  const [rightPaddlePos, setRightPaddlePos] = useState(250)
-  
-  // State to track which keys are currently pressed
-  const [keysPressed, setKeysPressed] = useState(new Set());
-  
-  // Add ball state
-  const [ballPos, setBallPos] = useState({
-    x: 400, // Center of board (800/2)
-    y: 300  // Center of board (600/2)
-  })
-
-  // Add score state
-  const [score, setScore] = useState({
-    left: 0,
-    right: 0
-  })
-
-  // Update initial ball velocity state
-  const [ballVelocity, setBallVelocity] = useState({
-    x: BALL_SPEED.initial.x,
-    y: BALL_SPEED.initial.y
-  })
-
-  // Add game state
-  const [isGameStarted, setIsGameStarted] = useState(false)
-
-  // Add state for scoring delay
-  const [isScoreDelay, setIsScoreDelay] = useState(false)
-
-  // Add winning state
-  const [winner, setWinner] = useState(null)
-
-  // Add player names state
-  const [playerNames, setPlayerNames] = useState({
-    left: 'Player 1',
-    right: 'Player 2'
-  })
-
-  // Add pause state
-  const [isPaused, setIsPaused] = useState(false)
-
-  // Add countdown state
-  const [countdown, setCountdown] = useState(null)
-
-  // Add multiplayer state
-  const [rematchRequested, setRematchRequested] = useState(false);
-  const [rematchAccepted, setRematchAccepted] = useState(false);
-
-  // Add nickname state
-  const [nickname, setNickname] = useState(StorageManager.getNickname());
-  const { menuState, handleMenuTransition } = useGameState();
-
+export function GameBoard() {
+  // Replace individual state with context hooks
+  const { state: gameState, actions: gameActions } = useGame();
   const { 
-    socket, 
-    roomId, 
-    error: socketError,
-    isSocketReady,
-    createRoom,
-    joinRoom,
-    role,
-    sendPaddleMove,
-    sendBallMove,
-    sendScore,
-    playersReady,
-    toggleReady,
-    isReconnecting,
-    disconnect,
-    clearSession,
-    sendWinner,
-    serverTimeOffset,
-    networkStats: currentNetworkStats,
-    isConnected,
-    paddleBuffer,
-    isCreatingRoom,
-    isJoiningRoom,
-    updateNickname,
-    playerNicknames
-  } = useMultiplayer({
-    setBallPos,
-    setBallVelocity,
-    setLeftPaddlePos,
-    setRightPaddlePos,
-    setScore,
-    onPauseUpdate: ({ isPaused: newPauseState, countdownValue }) => {
-      setIsPaused(newPauseState);
-      setCountdown(countdownValue);
-    },
-    onGameStart: () => setIsGameStarted(true),
-    onGameEnd: () => setIsGameStarted(false),
-    onWinnerUpdate: (winner) => {
-      console.log('Winner update received:', winner);
-      setWinner(winner);
-      setIsGameStarted(false);
-    },
-    onLoadingChange: setIsLoading,
-    onNetworkStatsUpdate: setNetworkStats,
-    setWinner,
-    setIsGameStarted,
-    nickname
-  });
-
-  // Update connection error handler
-  useEffect(() => {
-    if (socketError) {
-      setConnectionError(socketError);
-      // Try to reconnect after a delay
-      if (menuState.mode === 'multi') {
-        const timer = setTimeout(() => {
-          if (socket) {
-            console.log('Attempting to reconnect...');
-            socket.connect();
-          }
-        }, 2000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [socketError, socket, menuState.mode]);
-
-  // Add retry handler
-  const handleRetryConnection = () => {
-    setConnectionError(null);
-    if (roomId) {
-      // Attempt to rejoin the room
-      joinRoom(roomId);
-    }
-  };
-
-  // 1. Basic utility functions that don't depend on other functions
-  const clearCountdown = () => {
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current)
-      countdownIntervalRef.current = null
-    }
-    setCountdown(null)
-  }
-
-  const handleNameChange = (player, value) => {
-    const trimmedValue = value.trim()
-    setPlayerNames(prev => ({
-      ...prev,
-      [player]: trimmedValue === '' ? `Player ${player === 'left' ? '1' : '2'}` : value
-    }))
-  }
-
-  // 2. Collision detection (used by updateBallPhysics)
-  const checkCollision = useCallback((ballPos, paddlePos, isLeftPaddle) => {
-    const paddleX = isLeftPaddle ? PADDLE_OFFSET : BOARD_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH;
-    return (
-      ballPos.x < paddleX + PADDLE_WIDTH &&
-      ballPos.x + BALL_SIZE > paddleX &&
-      ballPos.y < paddlePos + PADDLE_HEIGHT &&
-      ballPos.y + BALL_SIZE > paddlePos
-    );
-  }, []);
-
-  // 3. Ball reset (used by handleScoring)
-  const resetBallWithDelay = (direction) => {
-    setIsScoreDelay(true);
-    const totalScore = score.left + score.right;
-    
-    // Calculate new speed with 1.5 increase per goal, capped at max speed
-    const newSpeed = Math.min(
-      BALL_SPEED.initial.x + (totalScore * SPEED_INCREASE),
-      BALL_SPEED.max
-    );
-    
-    setTimeout(() => {
-      setBallPos({
-        x: BOARD_WIDTH / 2,
-        y: BOARD_HEIGHT / 2
-      });
-      setBallVelocity({
-        x: direction * newSpeed,
-        y: (Math.random() * 2 - 1) * newSpeed // Randomize y direction with same speed
-      });
-      setIsScoreDelay(false);
-    }, 1000);
-  };
-
-  // 4. Scoring handler (used by updateBallPhysics)
-  const handleScoring = useCallback((scorer) => {
-    if (scoreProcessedRef.current) return;
-    scoreProcessedRef.current = true;
-    
-    const newScore = {
-      ...score,
-      [scorer]: score[scorer] + 1
-    };
-    
-    setScore(newScore);
-
-    if (newScore[scorer] >= WINNING_SCORE) {
-      const winnerName = playerNames[scorer];
-      console.log('Game won by:', winnerName, 'Score:', newScore);
-      
-      setWinner(winnerName);
-      setIsGameStarted(false);
-      
-      if (menuState.mode === 'multi' && socket?.connected) {
-        socket.emit('gameWinner', {
-          winner: winnerName,
-          roomId,
-          score: newScore
-        });
-      }
-      return;
-    }
-
-    resetBallWithDelay(scorer === 'left' ? 1 : -1);
-    
-    if (menuState.mode === 'multi') {
-      sendScore(newScore, scorer);
-    }
-
-    setTimeout(() => {
-      scoreProcessedRef.current = false;
-    }, 1000);
-  }, [score, playerNames, menuState.mode, socket, roomId, sendScore]);
-
-  // 5. Ball interpolation (used in game loop)
-  const interpolateBall = useCallback((timestamp) => {
-    const buffer = ballBufferRef.current;
-    if (buffer.length < 2) return;
-
-    const currentTime = timestamp + serverTimeOffset;
-    const [prev, next] = buffer;
-    
-    const progress = (currentTime - prev.timestamp) / 
-                    (next.timestamp - prev.timestamp);
-    
-    if (progress <= 1) {
-      setBallPos({
-        x: prev.pos.x + (next.pos.x - prev.pos.x) * progress,
-        y: prev.pos.y + (next.pos.y - prev.pos.y) * progress
-      });
-    }
-
-    while (buffer.length > 2 && buffer[0].timestamp < currentTime - 100) {
-      buffer.shift();
-    }
-  }, [serverTimeOffset]);
-
-  // 6. Ball physics (uses handleScoring and checkCollision)
-  const updateBallPhysics = useCallback((deltaTime) => {
-      const newBallPos = {
-        x: ballPos.x + ballVelocity.x,
-        y: ballPos.y + ballVelocity.y
-      };
-
-      if (newBallPos.x <= 0 || newBallPos.x >= BOARD_WIDTH) {
-      handleScoring(newBallPos.x <= 0 ? 'right' : 'left');
-        return;
-      }
-
-      if (newBallPos.y <= 0 || newBallPos.y >= BOARD_HEIGHT - BALL_SIZE) {
-        setBallVelocity(prev => ({ ...prev, y: -prev.y }));
-      return;
-      }
-
-      if (checkCollision(newBallPos, leftPaddlePos, true) || 
-          checkCollision(newBallPos, rightPaddlePos, false)) {
-        setBallVelocity(prev => ({ ...prev, x: -prev.x }));
-      return;
-      }
-
-      setBallPos(newBallPos);
-      sendBallMove(newBallPos, ballVelocity);
-  }, [ballPos, ballVelocity, leftPaddlePos, rightPaddlePos, sendBallMove, handleScoring, checkCollision]);
-
-  // 7. Paddle movement and interpolation functions
-  const updateLocalPaddle = useCallback((deltaTime, side, [upKey, downKey]) => {
-    if (!keysPressed.has(upKey) && !keysPressed.has(downKey)) return;
-
-    const moveAmount = (PADDLE_SPEED * deltaTime) / PHYSICS_STEP;
-    const isMovingDown = keysPressed.has(downKey);
-    const currentPos = side === 'left' ? leftPaddlePos : rightPaddlePos;
-    const setPosition = side === 'left' ? setLeftPaddlePos : setRightPaddlePos;
-
-    // Calculate new position
-    let newPosition = currentPos + (isMovingDown ? moveAmount : -moveAmount);
-    
-    // Clamp position to boundaries
-    newPosition = Math.max(0, Math.min(BOARD_HEIGHT - PADDLE_HEIGHT, newPosition));
-
-    // Only update if position has changed significantly
-    if (Math.abs(newPosition - currentPos) > 0.5) {
-      setPosition(newPosition);
-      sendPaddleMove(newPosition, side);
-    }
-  }, [keysPressed, leftPaddlePos, rightPaddlePos, sendPaddleMove]);
-
-  const interpolateOpponentPaddle = useCallback((timestamp) => {
-    const side = role === 'host' ? 'right' : 'left';
-    const buffer = paddleBuffer[side];
-    
-    if (buffer.length < 2) return;
-
-    const [prev, next] = buffer.slice(-2);  // Get the last two positions
-    const currentTime = performance.now();
-    
-    if (!prev?.timestamp || !next?.timestamp) return;
-    
-    // Ensure timestamps are in correct order
-    if (prev.timestamp >= next.timestamp) return;
-    
-    const timeDiff = next.timestamp - prev.timestamp;
-    const progress = Math.min(1, Math.max(0, 
-      (currentTime - prev.timestamp) / timeDiff
-    ));
-
-    // Only interpolate if we haven't reached the target
-    if (progress < 1) {
-      const interpolatedPosition = Math.max(
-        0,
-        Math.min(
-          BOARD_HEIGHT - PADDLE_HEIGHT,
-          prev.position + (next.position - prev.position) * progress
-        )
-      );
-
-      if (side === 'left') {
-        setLeftPaddlePos(interpolatedPosition);
-      } else {
-        setRightPaddlePos(interpolatedPosition);
-      }
-    } else {
-      // If we've reached the target, just set to the final position
-      if (side === 'left') {
-        setLeftPaddlePos(next.position);
-      } else {
-        setRightPaddlePos(next.position);
-      }
-    }
-
-    // Clean up old positions
-    if (buffer.length > 2 && currentTime - buffer[0].timestamp > 1000) {
-          buffer.shift();
-        }
-  }, [role, paddleBuffer]);
-
-  // 8. Pause/resume handlers
-  const handlePauseChange = useCallback((shouldPause) => {
-    if (!isGameStarted || !roomId) return;
-    
-    if (shouldPause) {
-      setIsPaused(true);
-      socket?.emit('pauseGame', { roomId, isPaused: true });
-    } else {
-      // Start countdown
-      let count = 3;
-      setCountdown(count);
-
-      const countdownInterval = setInterval(() => {
-        count--;
-        if (count > 0) {
-          setCountdown(count);
-          socket?.emit('countdown', { roomId, count });
-        } else {
-          clearInterval(countdownInterval);
-    setCountdown(null);
-          setIsPaused(false);
-          socket?.emit('pauseGame', { roomId, isPaused: false });
-        }
-      }, 1000);
-
-      countdownIntervalRef.current = countdownInterval;
-    }
-  }, [isGameStarted, roomId, socket]);
-
-  const handlePause = useCallback(() => {
-    if (!isGameStarted) return;
-    
-    const newPauseState = !isPaused;
-    
-    if (menuState.mode === 'multi' && socket?.connected) {
-      console.log('Sending pause update:', { newPauseState });
-      try {
-        socket.emit('pauseGame', {
-          isPaused: newPauseState,
-          countdownValue: newPauseState ? null : 3
-        });
-      } catch (error) {
-        console.error('Error sending pause update:', error);
-      }
-    }
-    // Always update local state
-    setIsPaused(newPauseState);
-  }, [isGameStarted, isPaused, socket, menuState.mode]);
-
-  const handleResume = useCallback(() => {
-    if (!socket?.connected) return;
-    
-    // Start countdown
-    let count = 3;
-    
-    // Send initial countdown state
-    socket.emit('pauseGame', {
-      isPaused: true,
-      countdownValue: count
-    });
-    
-    const countdownInterval = setInterval(() => {
-      count--;
-      
-      if (count > 0) {
-        socket.emit('pauseGame', {
-          isPaused: true,
-          countdownValue: count
-        });
-      } else {
-        clearInterval(countdownInterval);
-        socket.emit('pauseGame', {
-          isPaused: false,
-          countdownValue: null
-        });
-      }
-    }, 1000);
-
-    // Store interval reference for cleanup
-    countdownIntervalRef.current = countdownInterval;
-  }, [socket]);
-
-  // Update game loop to include paddle interpolation
-  useEffect(() => {
-    if (!isGameStarted || !roomId || isPaused || countdown) {
-      // Clean up any existing animation frame
-      if (frameIdRef.current) {
-        cancelAnimationFrame(frameIdRef.current);
-        frameIdRef.current = null;
-      }
-      return;
-    }
-
-    let lastFrameTime = performance.now();
-    console.log(`Setting up game loop for ${role}`);
-
-    const gameLoop = (timestamp) => {
-      if (!isGameStarted || isPaused) {
-        // Exit the loop if game is no longer active
-        return;
-      }
-
-      const deltaTime = timestamp - lastFrameTime;
-      
-      if (deltaTime >= PHYSICS_STEP) {
-        if (role === 'host') {
-          // Host: Update ball physics and left paddle
-          updateBallPhysics(deltaTime);
-          updateLocalPaddle(deltaTime, 'left', ['w', 's']);
-          interpolateOpponentPaddle(timestamp); // Interpolate right paddle
-        } else {
-          // Client: Interpolate ball and update right paddle
-          interpolateBall(timestamp);
-          updateLocalPaddle(deltaTime, 'right', ['ArrowUp', 'ArrowDown']);
-          interpolateOpponentPaddle(timestamp); // Interpolate left paddle
-        }
-
-        lastFrameTime = timestamp;
-      }
-
-      frameIdRef.current = requestAnimationFrame(gameLoop);
-    };
-
-    frameIdRef.current = requestAnimationFrame(gameLoop);
-
-    return () => {
-      if (frameIdRef.current) {
-        cancelAnimationFrame(frameIdRef.current);
-        frameIdRef.current = null;
-      }
-    };
-  }, [
-    isGameStarted,
+    nickname, 
+    isReady, 
+    role, 
+    paddlePosition,
+    updatePaddlePosition 
+  } = usePlayer();
+  const {
     roomId,
-    isPaused,
-    countdown,
-    role,
-    updateBallPhysics,
-    updateLocalPaddle,
-    interpolateBall,
-    interpolateOpponentPaddle
-  ]);
+    playersReady,
+    playerNicknames,
+    isReconnecting,
+    createRoom,
+    joinRoom
+  } = useRoom();
+  const { physics, updatePhysics, resetBall } = usePhysics();
+  const { socket, isConnected } = useSocket();
+  const { errors, setError } = useError();
 
-  // Single cleanup effect for all animations and intervals
+  // Game loop using physics context
   useEffect(() => {
+    let frameId;
+    const gameLoop = (timestamp) => {
+      updatePhysics(timestamp);
+      frameId = requestAnimationFrame(gameLoop);
+    };
+
+    if (gameState.isGameStarted && !gameState.isPaused) {
+      frameId = requestAnimationFrame(gameLoop);
+    }
+
     return () => {
-      // Clean up the single animation frame
-      if (frameIdRef.current) {
-        cancelAnimationFrame(frameIdRef.current);
-        frameIdRef.current = null;
-      }
-      
-      // Clear intervals
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
-      }
-      
-      // Reset game state
-    setIsGameStarted(false);
-    setIsPaused(false);
-    setCountdown(null);
-      
-      // Clear buffers
-      ballBufferRef.current = [];
-    };
-  }, []);
-
-  // Single keyboard handling effect
-  useEffect(() => {
-    const validKeys = new Set(['w', 's', 'ArrowUp', 'ArrowDown', 'Escape']);
-    
-    const handleKeyDown = (e) => {
-      // Ignore if typing in an input field
-      if (e.target.tagName.toLowerCase() === 'input') return;
-      
-      const key = e.key;
-      if (!validKeys.has(key)) return;
-      
-      e.preventDefault();
-      setKeysPressed(prev => new Set([...prev, key]));
-
-      // Handle pause/resume with Escape
-      if (key === 'Escape' && isGameStarted) {
-    if (countdown) {
-          clearInterval(countdownIntervalRef.current);
-          setCountdown(null);
-          handlePauseChange(true);
-        } else {
-          handlePauseChange(!isPaused);
-        }
+      if (frameId) {
+        cancelAnimationFrame(frameId);
       }
     };
+  }, [gameState.isGameStarted, gameState.isPaused, updatePhysics]);
 
-    const handleKeyUp = (e) => {
-      const key = e.key;
-      if (validKeys.has(key)) {
-        setKeysPressed(prev => {
-          const newKeys = new Set([...prev]);
-          newKeys.delete(key);
-          return newKeys;
-        });
-      }
-    };
-
-    // Add event listeners
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [isGameStarted, isPaused, countdown, handlePauseChange]);
-
-  // 9. Render functions
-  const renderReconnectingOverlay = () => {
-    if (!isReconnecting) return null;
-
-    return (
-      <div className="reconnecting-overlay">
-        <div className="reconnecting-message">
-          Reconnecting...
-        </div>
-      </div>
-    );
-  };
-
-  const handlePauseMenuClick = (e) => {
-    e.stopPropagation();
-  };
-
-  const resetGameState = useCallback(() => {
-    // Reset game progress
-    setWinner(null);
-    setScore({ left: 0, right: 0 });
-    setIsGameStarted(false);
-    setRematchRequested(false);
-    setRematchAccepted(false);
-    setIsReady(false);
+  // Handle pause
+  const handlePause = useCallback(() => {
+    if (!isConnected || !roomId) return;
     
-    // Reset ball state
-    setBallPos({
-      x: BOARD_WIDTH / 2,
-      y: BOARD_HEIGHT / 2
-    });
-    setBallVelocity({
-      x: BALL_SPEED.initial.x,
-      y: BALL_SPEED.initial.y
-    });
-    
-    // Reset menu state
-    handleMenuTransition('main');
-    
-    // Clear any errors
-    setConnectionError(null);
-  }, [handleMenuTransition]);
+    gameActions.togglePause(3); // Start 3 second countdown
+  }, [isConnected, roomId, gameActions]);
 
-  const handleExit = useCallback(() => {
-    if (menuState.mode === 'multi' && socket?.connected) {
-      socket.emit('playerExit', { roomId });
-      disconnect();
-      clearSession();
-    }
-    resetGameState();
-  }, [menuState.mode, socket, roomId, disconnect, clearSession, resetGameState]);
-
-  // Add exit notification handler
-  useEffect(() => {
-    if (!socket) return;
-    
-    const handlePlayerExit = () => {
-      setIsGameStarted(false);
-      setIsPaused(false);
-      setConnectionError('Other player has left the game');
-      
-      // Auto-cleanup after showing message
-      setTimeout(() => {
-        setConnectionError(null);
-        handleMenuTransition('main');
-        clearSession();
-      }, 3000);
-    };
-    
-    socket.on('playerExited', handlePlayerExit);
-    return () => socket.off('playerExited', handlePlayerExit);
-  }, [socket, clearSession, handleMenuTransition]);
-
-  const renderStartMenu = () => {
-    if (winner) {
-      return renderWinnerScreen();
-    }
-
-    switch (menuState.screen) {
-      case 'multiplayer':
-        return (
-          <MultiplayerMenu
-            onCreateRoom={createRoom}
-            onJoinRoom={joinRoom}
-            onToggleReady={toggleReady}
-            roomId={roomId}
-            error={socketError}
-            playersReady={playersReady}
-            role={role}
-            mySocketId={socket?.id}
-            isReconnecting={isReconnecting}
-            isCreatingRoom={isCreatingRoom}
-            isJoiningRoom={isJoiningRoom}
-            onBack={() => {
-              clearSession(); // Clear any existing session
-              disconnect(); // Disconnect socket
-              handleMenuTransition('main'); // Go back to main menu
-            }}
-            myNickname={nickname}
-            isSocketReady={isSocketReady}
-            playerNicknames={playerNicknames}
-          />
-        );
-
-      case 'options':
-        return (
-          <OptionsMenu
-            currentNickname={nickname}
-            onNicknameChange={handleNicknameChange}
-            onBack={() => handleMenuTransition('main')}
-          />
-        );
-
-      default: // 'main' menu
-        return (
-          <MainMenu
-            nickname={nickname}
-            onMultiplayerClick={() => {
-              handleMenuTransition('multiplayer');
-              // Don't set mode here, wait for room creation/joining
-            }}
-            onOptionsClick={() => handleMenuTransition('options')}
-            onSinglePlayerClick={() => {
-              handleMenuTransition('game', 'single');
-              setIsGameStarted(true);
-              setPlayerNames({
-                left: nickname,
-                right: 'Computer'
-              });
-            }}
-          />
-        );
-    }
-  };
-
-  const updateGameState = useCallback((timestamp) => {
-    if (!isGameStarted || isPaused) return;
-
-    // Update ball position (only if host)
-      if (role === 'host') {
-      const newBallPos = {
-        x: ballPos.x + ballVelocity.x,
-        y: ballPos.y + ballVelocity.y
-      };
-
-      // Ball collision with top and bottom
-      if (newBallPos.y <= 0 || newBallPos.y >= BOARD_HEIGHT - BALL_SIZE) {
-        setBallVelocity(prev => ({
-          ...prev,
-          y: -prev.y
-        }));
-        newBallPos.y = newBallPos.y <= 0 ? 0 : BOARD_HEIGHT - BALL_SIZE;
-      }
-
-      // Send ball update before setting state
-      sendBallMove(newBallPos, ballVelocity);
-      
-      // Update local state after sending
-      setBallPos(newBallPos);
-    }
-
-    // Update paddle positions
-    if (keysPressed.has('w') || keysPressed.has('ArrowUp')) {
-      const newPos = Math.max(0, (role === 'host' ? leftPaddlePos : rightPaddlePos) - PADDLE_SPEED);
-      if (role === 'host') {
-        setLeftPaddlePos(newPos);
-        sendPaddleMove(newPos, 'left');
-      } else {
-        setRightPaddlePos(newPos);
-        sendPaddleMove(newPos, 'right');
-      }
-    }
-    // ... similar for other paddle movements
-  }, [isGameStarted, isPaused, ballPos, ballVelocity, role, sendBallMove, keysPressed, leftPaddlePos, rightPaddlePos, sendPaddleMove]);
-
-  // Add keydown handler for pause
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' || e.key === 'p') {
-        handlePause();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlePause]);
-
-  // Update the pause menu render
-  const renderPauseMenu = () => {
-    if (!isPaused || !isGameStarted) return null;
-
-    return (
-      <div className="pause-overlay">
-        <div className="pause-menu">
-          <h2>Game Paused</h2>
-          <button 
-            className="resume-button"
-            onClick={handlePauseGame}
-          >
-            Resume Game
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // Add pause button UI
-  const renderPauseButton = () => {
-    if (!isGameStarted || menuState.mode !== 'multi') return null;
-
-    return (
-      <button 
-        className="pause-button"
-        onClick={handlePauseGame}
-        disabled={!!winner}
-      >
-        {isPaused ? 'Resume' : 'Pause'}
-      </button>
-    );
-  };
-
-  // Add countdown render function
-  const renderCountdown = () => {
-    if (!countdown || !isGameStarted) return null;
-
-    return (
-      <div className="countdown-overlay">
-        <div className="countdown">
-          {countdown}
-        </div>
-      </div>
-    );
-  };
-
-  useEffect(() => {
-    console.log('GameBoard state:', {
-      isGameStarted,
-      winner,
-      isPaused,
-      mode: menuState.mode,
-      role
-    });
-  }, [isGameStarted, winner, isPaused, menuState.mode, role]);
-
-  // Add reconnection handler
-  useEffect(() => {
-    if (socket && !socket.connected && 
-        menuState.mode === 'multi') {
-      console.log('Attempting to reconnect socket...');
-      socket.connect();
-    }
-  }, [socket, menuState.mode]);
-
-  // Add pause event handler
-  useEffect(() => {
-    if (!socket) return;
-    
-    const handlePauseUpdate = (data) => {
-      console.log('Received pause update:', data);
-      
-      // Clear any existing countdown interval
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
-      }
-      
-      setIsPaused(data.isPaused);
-      
-      if (data.countdownValue) {
-        let count = data.countdownValue;
-        setCountdown(count);
-        
-        countdownIntervalRef.current = setInterval(() => {
-          count--;
-          if (count > 0) {
-            setCountdown(count);
-          } else {
-            clearInterval(countdownIntervalRef.current);
-            countdownIntervalRef.current = null;
-            setCountdown(null);
-            setIsPaused(false);
-          }
-        }, 1000);
-      }
-    };
-    
-    socket.on('pauseUpdate', handlePauseUpdate);
-    return () => {
-      socket.off('pauseUpdate', handlePauseUpdate);
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
-    };
-  }, [socket]);
-
-  // Update winner screen render
-  const renderWinnerScreen = () => {
-    if (!winner) return null;
-    const isWinner = winner === (role === 'host' ? playerNames.left : playerNames.right);
-    
-    return (
-      <div className="pause-overlay">
-        <div className="winner-screen">
-          <h2>{isWinner ? 'You Won!' : 'You Lost!'}</h2>
-          <div className="winner-message">
-            {isWinner ? 'Congratulations!' : `${winner} won the game!`}
-          </div>
-          <div className="winner-buttons">
-            <button 
-              className="rematch-button"
-              onClick={handleRematchRequest}
-              disabled={rematchRequested}
-            >
-              {rematchRequested ? 'Waiting...' : 'Play Again'}
-            </button>
-            <button 
-              className="exit-button"
-              onClick={handleExit}
-            >
-              Exit to Menu
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Add rematch handlers
-  const handleRematchRequest = useCallback(() => {
-    if (!socket?.connected) return;
-    
-    setRematchRequested(true);
-    setIsReady(false); // Ensure players start unready
-    socket.emit('rematchRequest', { roomId });
-  }, [socket, roomId]);
-
-  // Add rematch effect handler
-  useEffect(() => {
-    if (!socket) return;
-    
-    const handleRematchRequest = () => {
-      setConnectionError(`Opponent wants a rematch!`);
-    };
-    
-    const handleRematchAccepted = () => {
-      console.log('Rematch accepted, resetting game state');
-      setRematchAccepted(true);
-      setRematchRequested(false);
-      setWinner(null);
-      setScore({ left: 0, right: 0 });
-      setConnectionError(null);
-      setIsGameStarted(true);
-      
-      // Reset game state for rematch with initial speed
-      setBallPos({
-        x: BOARD_WIDTH / 2,
-        y: BOARD_HEIGHT / 2
-      });
-      setBallVelocity({
-        x: BALL_SPEED.initial.x,
-        y: BALL_SPEED.initial.y
-      });
-    };
-    
-    const handleRematchDeclined = () => {
-      setRematchRequested(false);
-      setConnectionError('Opponent declined rematch');
-      setTimeout(() => setConnectionError(null), 3000);
-    };
-    
-    socket.on('rematchRequest', handleRematchRequest);
-    socket.on('rematchAccepted', handleRematchAccepted);
-    socket.on('rematchDeclined', handleRematchDeclined);
-    
-    return () => {
-      socket.off('rematchRequest', handleRematchRequest);
-      socket.off('rematchAccepted', handleRematchAccepted);
-      socket.off('rematchDeclined', handleRematchDeclined);
-    };
-  }, [socket, setBallPos, setBallVelocity]);
-
-  // Update nickname change handler
-  const handleNicknameChange = useCallback((newNickname) => {
-    try {
-      if (!isValidNickname(newNickname)) {
-        throw new Error(getNicknameError(newNickname));
-      }
-
-      setNickname(newNickname);
-      StorageManager.saveNickname(newNickname);
-
-    } catch (error) {
-      setConnectionError(error.message);
-      setTimeout(() => setConnectionError(null), 3000);
-    }
-  }, []);
-
-  // Add useEffect for nickname sync with multiplayer
-  useEffect(() => {
-    if (menuState.mode === 'multi' && socket?.connected) {
-      updateNickname(nickname);
-      
-      // Update player names based on role
-      setPlayerNames(prev => ({
-        ...prev,
-        [role === 'host' ? 'left' : 'right']: nickname
-      }));
-    }
-  }, [nickname, menuState.mode, socket?.connected, role, updateNickname]);
-
-  // Move handleConnectionRecovery inside the component
-  const handleConnectionRecovery = useCallback(() => {
-    console.log('Attempting connection recovery...');
-    setConnectionError(null);
-    
-    if (menuState.mode === 'multi') {
-      if (roomId) {
-        // Try to rejoin existing room
-        joinRoom(roomId);
-      } else {
-        // Reset to multiplayer menu
-        handleMenuTransition('multiplayer');
-      }
-    }
-  }, [menuState.mode, roomId, joinRoom, handleMenuTransition]);
-
-  // Add pause handlers
-  const handlePauseGame = useCallback(() => {
-    if (!socket?.connected || !roomId) return;
-    
-    const newPauseState = !isPaused;
-    setIsPaused(newPauseState);
-    socket.emit('pauseGame', {
-      roomId,
-      isPaused: newPauseState,
-      countdownValue: newPauseState ? 3 : null
-    });
-  }, [socket, roomId, isPaused]);
+  // Handle game reset
+  const handleReset = useCallback(() => {
+    resetBall();
+    gameActions.startGame();
+  }, [resetBall, gameActions]);
 
   return (
-    <div className="game-container">
-      <ConnectionStatus 
-        error={connectionError} 
-        onRetry={handleRetryConnection}
-        onRecovery={handleConnectionRecovery}
-        mode={menuState.mode}
-      />
-      {renderPauseButton()}
-      {renderPauseMenu()}
-      {renderCountdown()}
-      {isGameStarted ? (
+    <div className={`${containerStyles.container} ${containerStyles.game} ${animationStyles.fadeIn}`}>
+      {gameState.isGameStarted ? (
         <>
-          <div className="score-board">
-            <div className="player-score">
-              <div className="player-name">{playerNames.left}</div>
-              <div className="score">{score.left}</div>
-            </div>
-            <div className="player-score">
-              <div className="player-name">{playerNames.right}</div>
-              <div className="score">{score.right}</div>
-            </div>
+          <div className={styles.gameField}>
+            <div className={styles.centerLine} />
+            <Ball 
+              position={physics.ballPosition} 
+              className={gameAnimations.bounce}
+            />
+            <Paddle 
+              position="left" 
+              top={role === 'left' ? paddlePosition : physics.leftPaddlePos}
+              className={gameAnimations.slide}
+            />
+            <Paddle 
+              position="right" 
+              top={role === 'right' ? paddlePosition : physics.rightPaddlePos} 
+              className={gameAnimations.slide}
+            />
           </div>
-          <div className="game-board-wrapper" style={{ 
-            position: 'relative',
-            background: '#333333'
-          }}>
-          <div className="game-board">
-            <Paddle position="left" top={leftPaddlePos} />
-            <Paddle position="right" top={rightPaddlePos} />
-            <Ball position={ballPos} />
-                      </div>
-                </div>
+          <div className={`${styles.controls} ${gridStyles.grid} ${gridStyles.gap3}`}>
+            <GameControls 
+              onPause={handlePause}
+              disabled={!!gameState.winner}
+              isPaused={gameState.isPaused}
+            />
+          </div>
+          <div className={styles.score}>
+            <ScoreBoard 
+              score={gameState.score}
+              playerNames={gameState.playerNames}
+            />
+          </div>
+          {gameState.isPaused && <PauseOverlay onResume={handlePause} />}
+          {gameState.countdown && <CountdownOverlay count={gameState.countdown} />}
         </>
       ) : (
-        <div className="start-menu">
-          {renderStartMenu()}
-        </div>
+        <MultiplayerGame
+          onCreateRoom={createRoom}
+          onJoinRoom={joinRoom}
+          roomId={roomId}
+          playersReady={playersReady}
+          playerNicknames={playerNicknames}
+          isReconnecting={isReconnecting}
+          nickname={nickname}
+          isReady={isReady}
+          role={role}
+          error={errors.room}
+          onReset={handleReset}
+        />
       )}
+      {errors.socket && (
+        <ConnectionError 
+          error={errors.socket}
+          onRetry={() => socket.connect()}
+          onRecovery={handleServerChange}
+        />
+      )}
+      <NetworkStatus />
     </div>
-  )
+  );
 }
 
 export default GameBoard 

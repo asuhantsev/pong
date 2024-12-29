@@ -1,0 +1,15 @@
+.controls {
+  position: fixed;
+  top: var(--space-5);
+  right: var(--space-5);
+  z-index: var(--z-controls);
+}
+
+.pauseButton {
+  min-width: 120px;
+}
+
+.pauseButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+} 

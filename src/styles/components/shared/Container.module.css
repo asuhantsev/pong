@@ -1,0 +1,30 @@
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.default {
+  max-width: 1200px;
+}
+
+.narrow {
+  max-width: 800px;
+}
+
+.wide {
+  max-width: 1600px;
+}
+
+.game {
+  max-width: var(--board-width);
+  padding: var(--space-5) 0;
+}
+
+.centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+} 

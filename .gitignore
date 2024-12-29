@@ -24,3 +24,5 @@ dist-ssr
 
 # But allow env template
 !.env.template
+# Environment variables
+server/.env

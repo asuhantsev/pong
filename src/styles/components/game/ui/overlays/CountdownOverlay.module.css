@@ -1,0 +1,32 @@
+.overlay {
+  z-index: var(--z-overlay);
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.content {
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.countdown {
+  font-size: var(--font-size-6xl);
+  color: var(--color-text-primary);
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .content {
+    padding: var(--space-4);
+  }
+
+  .countdown {
+    font-size: var(--font-size-5xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .countdown {
+    font-size: var(--font-size-7xl);
+  }
+} 

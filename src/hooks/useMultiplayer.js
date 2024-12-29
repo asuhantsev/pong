@@ -30,16 +30,11 @@ export function useMultiplayer({
   setBallVelocity, 
   setLeftPaddlePos, 
   setRightPaddlePos,
-  setScore,
-  onPauseUpdate,
+  updateGameState,
   onCountdownUpdate,
   onGameStart,
   onGameEnd,
-  onWinnerUpdate,
-  onLoadingChange,
   onNetworkStatsUpdate,
-  setWinner,
-  setIsGameStarted,
   nickname
 }) {
   const [socket, setSocket] = useState(null);
@@ -318,6 +313,26 @@ export function useMultiplayer({
     });
   }, [socket, roomId]);
 
+  // Add countdown handler
+  const handleCountdown = useCallback((countdownValue) => {
+    if (!countdownValue) return;
+
+    let count = countdownValue;
+    updateGameState({ countdown: count });
+    
+    const countdownInterval = setInterval(() => {
+      count--;
+      updateGameState({ countdown: count });
+      
+      if (count <= 0) {
+        clearInterval(countdownInterval);
+        updateGameState({ countdown: null });
+      }
+    }, 1000);
+
+    return () => clearInterval(countdownInterval);
+  }, [updateGameState]);
+
   // Consolidate ALL socket event handlers in one effect
   useEffect(() => {
     if (!socket) return;
@@ -419,19 +434,15 @@ export function useMultiplayer({
         }
       },
 
-      scoreUpdate: ({ score, scorer, timestamp }) => {
-        console.log('Received score update:', { score, scorer, timestamp });
-        setScore(score);
+      scoreUpdate: (newScore) => {
+        updateGameState({ score: newScore });
       },
 
-      winnerUpdate: ({ winner, score }) => {
-        console.log('Received winner update:', { winner, score });
-        setScore(score);
-        setWinner(winner);
-        if (setIsGameStarted) {
-          setIsGameStarted(false);
-        }
-        onWinnerUpdate?.(winner);
+      winnerUpdate: (winner) => {
+        updateGameState({
+          winner,
+          isGameStarted: false
+        });
       },
 
       gameReady: () => {
@@ -571,33 +582,11 @@ export function useMultiplayer({
         socket.to(roomId).emit('rematchRequest');
       },
 
-      pauseUpdate: ({ isPaused, countdownValue, timestamp, from }) => {
-        console.log('Received pause update:', {
-          isPaused,
-          countdownValue,
-          timestamp,
-          from
-        });
+      pauseUpdate: ({ isPaused, countdownValue }) => {
+        updateGameState({ isPaused });
         
-        onPauseUpdate?.({
-          isPaused,
-          countdownValue
-        });
-
-        // Start countdown if game is resuming
         if (!isPaused && countdownValue) {
-          let count = countdownValue;
-          onCountdownUpdate?.(count);
-          
-          const countdownInterval = setInterval(() => {
-            count--;
-            onCountdownUpdate?.(count);
-            
-            if (count <= 0) {
-              clearInterval(countdownInterval);
-              onCountdownUpdate?.(null);
-            }
-          }, 1000);
+          handleCountdown(countdownValue);
         }
       },
 

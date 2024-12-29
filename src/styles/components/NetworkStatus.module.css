@@ -1,0 +1,60 @@
+.container {
+  top: var(--space-4);
+  right: var(--space-4);
+  pointer-events: none;
+}
+
+.statusCard {
+  border-radius: var(--radius-lg);
+  min-width: 300px;
+  pointer-events: auto;
+}
+
+.statGroup {
+  text-align: center;
+}
+
+.statValue {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  margin-top: var(--space-1);
+}
+
+/* Connection quality indicators */
+.good {
+  border-left: 4px solid var(--color-success);
+}
+
+.fair {
+  border-left: 4px solid var(--color-warning);
+}
+
+.poor {
+  border-left: 4px solid var(--color-error);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .container {
+    top: var(--space-2);
+    right: var(--space-2);
+  }
+
+  .statusCard {
+    min-width: 250px;
+  }
+
+  .statValue {
+    font-size: var(--font-size-base);
+  }
+}
+
+@media (min-width: 1024px) {
+  .statusCard {
+    min-width: 350px;
+  }
+
+  .statValue {
+    font-size: var(--font-size-xl);
+  }
+} 

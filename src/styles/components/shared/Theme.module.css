@@ -1,0 +1,62 @@
+/* Theme Colors */
+.primary {
+  color: var(--color-primary);
+  background-color: var(--color-primary-bg);
+}
+
+.secondary {
+  color: var(--color-secondary);
+  background-color: var(--color-secondary-bg);
+}
+
+.accent {
+  color: var(--color-accent);
+  background-color: var(--color-accent-bg);
+}
+
+.success {
+  color: var(--color-success);
+  background-color: var(--color-success-bg);
+}
+
+.warning {
+  color: var(--color-warning);
+  background-color: var(--color-warning-bg);
+}
+
+.error {
+  color: var(--color-error);
+  background-color: var(--color-error-bg);
+}
+
+/* Theme Variants */
+.light {
+  --text-color: var(--color-gray-900);
+  --bg-color: var(--color-gray-100);
+}
+
+.dark {
+  --text-color: var(--color-gray-100);
+  --bg-color: var(--color-gray-900);
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glassDark {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Theme Transitions */
+.themeTransition {
+  transition: background-color 0.3s ease,
+              color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+} 

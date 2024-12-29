@@ -1,0 +1,47 @@
+.scoreContainer {
+  min-width: 120px;
+  border-radius: var(--radius-md);
+  transition: transform 0.2s ease;
+}
+
+.scoreContainer:hover {
+  transform: scale(1.05);
+}
+
+.playerName {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.score {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .scoreContainer {
+    min-width: 100px;
+  }
+
+  .playerName {
+    font-size: var(--font-size-base);
+  }
+
+  .score {
+    font-size: var(--font-size-2xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .scoreContainer {
+    min-width: 150px;
+  }
+
+  .score {
+    font-size: var(--font-size-4xl);
+  }
+} 

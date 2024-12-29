@@ -1,0 +1,22 @@
+:root {
+  /* Colors */
+  --color-background: #000;
+  --color-primary: #fff;
+  --color-secondary: #666;
+  --color-accent: #0066ff;
+  --color-error: #ff4444;
+  --color-success: #44ff44;
+  --color-warning: #ffaa44;
+
+  /* Game Elements */
+  --board-width: 800px;
+  --board-height: 600px;
+  --paddle-width: 15px;
+  --paddle-height: 90px;
+  
+  /* Z-index layers */
+  --z-game: 1;
+  --z-controls: 10;
+  --z-overlay: 100;
+  --z-modal: 1000;
+} 

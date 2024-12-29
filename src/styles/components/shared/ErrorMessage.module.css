@@ -1,0 +1,16 @@
+.error {
+  color: var(--color-error);
+  padding: 8px;
+  background: rgba(255, 0, 0, 0.1);
+  border-radius: 4px;
+  margin-top: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+.withIcon {
+  composes: error;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+} 

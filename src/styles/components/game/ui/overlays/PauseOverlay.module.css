@@ -1,0 +1,47 @@
+.overlay {
+  z-index: var(--z-overlay);
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.content {
+  border-radius: var(--radius-lg);
+  min-width: 300px;
+  text-align: center;
+}
+
+.resumeButton {
+  min-width: 200px;
+  transition: all 0.2s ease;
+}
+
+.resumeButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.resumeButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .content {
+    min-width: 250px;
+    padding: var(--space-4);
+  }
+
+  .resumeButton {
+    min-width: 160px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .content {
+    min-width: 400px;
+  }
+
+  .resumeButton {
+    min-width: 240px;
+  }
+} 

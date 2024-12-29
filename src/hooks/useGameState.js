@@ -1,29 +1,37 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import StorageManager from '../utils/StorageManager';
 
 export function useGameState() {
-  const [menuState, setMenuState] = useState({
-    screen: 'main',
-    mode: null
+  const [gameState, setGameState] = useState(() => {
+    // Try to load saved state
+    const saved = localStorage.getItem('gameState');
+    return saved ? JSON.parse(saved) : {
+      winner: null,
+      playerNames: {
+        left: 'Player 1',
+        right: 'Player 2'
+      },
+      isPaused: false,
+      countdown: null,
+      score: { left: 0, right: 0 },
+      isGameStarted: false
+    };
   });
 
-  const handleMenuTransition = useCallback((screen, mode = null) => {
-    console.log('Menu transition:', { screen, mode });
-    
-    let newMode = mode;
-    if (screen === 'multiplayer') {
-      // Keep mode as null until game actually starts
-      newMode = null;
-    } else if (screen === 'game') {
-      // Set mode only when game starts
-      newMode = mode || 'single';
-    }
-    
-    setMenuState({ screen, mode: newMode });
+  // Save state changes
+  useEffect(() => {
+    localStorage.setItem('gameState', JSON.stringify(gameState));
+  }, [gameState]);
+
+  const updateGameState = useCallback((updates) => {
+    setGameState(prev => ({
+      ...prev,
+      ...updates
+    }));
   }, []);
 
   return {
-    menuState,
-    handleMenuTransition
+    ...gameState,
+    updateGameState
   };
 } 

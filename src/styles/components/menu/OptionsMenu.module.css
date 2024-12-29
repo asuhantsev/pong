@@ -1,0 +1,83 @@
+.menuContainer {
+  width: 100%;
+  max-width: 800px;
+  border-radius: var(--radius-lg);
+  margin: 0 auto;
+}
+
+.optionsGrid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.optionCard {
+  border-radius: var(--radius-md);
+  transition: transform 0.2s ease;
+}
+
+.optionCard:hover {
+  transform: translateY(-2px);
+}
+
+.optionHeader {
+  text-align: center;
+}
+
+.optionDescription {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-2);
+}
+
+.optionControls {
+  flex-wrap: wrap;
+}
+
+.optionButton {
+  min-width: 80px;
+}
+
+.backButton {
+  min-width: 200px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .menuContainer {
+    max-width: 100%;
+    margin: var(--space-2);
+    padding: var(--space-4);
+  }
+
+  .optionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .optionCard {
+    padding: var(--space-3);
+  }
+
+  .optionButton {
+    min-width: 60px;
+    font-size: var(--font-size-sm);
+  }
+}
+
+@media (min-width: 1024px) {
+  .menuContainer {
+    max-width: 1000px;
+  }
+
+  .optionsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  }
+
+  .optionButton {
+    min-width: 100px;
+  }
+
+  .backButton {
+    min-width: 240px;
+  }
+} 

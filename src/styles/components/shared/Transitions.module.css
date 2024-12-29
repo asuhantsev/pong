@@ -1,0 +1,11 @@
+.fade {
+  transition: opacity var(--transition-normal);
+}
+
+.scale {
+  transition: transform var(--transition-normal);
+}
+
+.slide {
+  transition: transform var(--transition-normal);
+} 

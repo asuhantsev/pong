@@ -1,0 +1,29 @@
+.gameField {
+  position: relative;
+  width: var(--board-width);
+  height: var(--board-height);
+  border: 2px solid var(--color-primary);
+  background-color: var(--color-background);
+  overflow: hidden;
+}
+
+.centerLine {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-primary);
+  opacity: 0.3;
+}
+
+.controls {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  z-index: var(--z-controls);
+}
+
+.score {
+  margin-bottom: var(--space-5);
+} 

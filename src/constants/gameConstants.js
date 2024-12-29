@@ -29,4 +29,8 @@ export const NICKNAME_ERRORS = {
   TOO_LONG: 'Nickname cannot exceed 14 characters',
   INVALID_CHARS: 'Only letters and numbers are allowed',
   REQUIRED: 'Nickname is required'
-}; 
+};
+
+export const INPUT_BUFFER_SIZE = 5;
+export const JITTER_BUFFER_TIME = 50;
+export const SMOOTHING_FACTOR = 0.5; 

@@ -1,0 +1,18 @@
+.readySection {
+  margin: var(--space-5) 0;
+}
+
+.playerInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+}
+
+.currentPlayer {
+  border: 1px solid var(--color-primary);
+}
+
+.readyIndicator {
+  font-size: 1.2em;
+} 

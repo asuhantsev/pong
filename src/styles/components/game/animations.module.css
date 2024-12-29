@@ -1,0 +1,18 @@
+.bounce {
+  animation: bounce 0.3s cubic-bezier(0.36, 0, 0.66, -0.56) forwards;
+}
+
+.slide {
+  animation: slide 0.3s ease-out forwards;
+}
+
+@keyframes bounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+} 

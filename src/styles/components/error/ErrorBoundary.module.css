@@ -1,0 +1,101 @@
+.errorContainer {
+  width: 100%;
+  max-width: 600px;
+  border-radius: var(--radius-lg);
+  margin: 0 auto;
+  border-left: 4px solid var(--color-error);
+}
+
+.errorIcon {
+  font-size: var(--font-size-6xl);
+  margin-bottom: var(--space-4);
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.errorTitle {
+  color: var(--color-error);
+  text-align: center;
+}
+
+.errorMessage {
+  text-align: center;
+  color: var(--color-text-secondary);
+  max-width: 80%;
+}
+
+.errorDetails {
+  background: rgba(0, 0, 0, 0.2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  width: 100%;
+  overflow-x: auto;
+}
+
+.errorDetails pre {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.reloadButton {
+  min-width: 200px;
+  transition: all 0.2s ease;
+}
+
+.reloadButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.reloadButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .errorContainer {
+    max-width: 100%;
+    margin: var(--space-2);
+    padding: var(--space-4);
+  }
+
+  .errorIcon {
+    font-size: var(--font-size-5xl);
+  }
+
+  .errorMessage {
+    max-width: 100%;
+  }
+
+  .errorDetails {
+    padding: var(--space-3);
+  }
+
+  .reloadButton {
+    min-width: 160px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .errorContainer {
+    max-width: 800px;
+  }
+
+  .errorIcon {
+    font-size: var(--font-size-7xl);
+  }
+
+  .reloadButton {
+    min-width: 240px;
+  }
+} 

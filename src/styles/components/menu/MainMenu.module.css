@@ -1,0 +1,87 @@
+.menuContainer {
+  width: 100%;
+  max-width: 500px;
+  border-radius: var(--radius-lg);
+  margin: 0 auto;
+}
+
+.title {
+  font-size: var(--font-size-7xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.nicknameSection {
+  width: 100%;
+  max-width: 400px;
+}
+
+.nicknameInput {
+  width: 100%;
+  text-align: center;
+  font-size: var(--font-size-lg);
+}
+
+.nicknameHint {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.menuOptions {
+  width: 100%;
+  max-width: 300px;
+}
+
+.menuButton {
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.menuButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.menuButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .menuContainer {
+    max-width: 100%;
+    margin: var(--space-2);
+    padding: var(--space-4);
+  }
+
+  .title {
+    font-size: var(--font-size-5xl);
+  }
+
+  .nicknameInput {
+    font-size: var(--font-size-base);
+  }
+
+  .menuOptions {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .menuContainer {
+    max-width: 600px;
+  }
+
+  .title {
+    font-size: var(--font-size-8xl);
+  }
+
+  .menuOptions {
+    max-width: 400px;
+  }
+} 

@@ -1,5 +1,8 @@
 import React from 'react';
-import '../styles/ErrorBoundary.css';
+import styles from '../styles/components/ErrorBoundary.module.css';
+import layoutStyles from '../styles/components/shared/Layout.module.css';
+import buttonStyles from '../styles/components/shared/Button.module.css';
+import errorStyles from '../styles/components/shared/ErrorMessage.module.css';
 
 class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null };
@@ -20,12 +23,19 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="error-screen">
-          <h2>Something went wrong</h2>
-          <p>{this.state.error?.message || 'Unknown error occurred'}</p>
-          <button onClick={this.handleRestart}>
-            Restart Game
-          </button>
+        <div className={layoutStyles.fullScreen}>
+          <div className={layoutStyles.container}>
+            <h2 className={styles.heading}>Something went wrong</h2>
+            <div className={errorStyles.error}>
+              {this.state.error?.message || 'Unknown error occurred'}
+            </div>
+            <button 
+              className={buttonStyles.large}
+              onClick={this.handleRestart}
+            >
+              Restart Game
+            </button>
+          </div>
         </div>
       );
     }

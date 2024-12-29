@@ -1,0 +1,21 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  margin: var(--space-5) 0;
+}
+
+.playerInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.readyIndicator {
+  font-size: 1.2em;
+}
+
+.currentPlayer {
+  border: 1px solid var(--color-primary);
+} 
