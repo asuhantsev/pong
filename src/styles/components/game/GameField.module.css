@@ -2,7 +2,8 @@
   position: relative;
   width: 800px;
   height: 600px;
-  background-color: #000;
+  background-color: var(--color-background);
+  border: 2px solid var(--color-primary);
   overflow: hidden;
 }
 
@@ -12,23 +13,23 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(to bottom, #fff 50%, transparent 50%);
+  background: linear-gradient(to bottom, var(--color-primary) 50%, transparent 50%);
   background-size: 20px 20px;
   transform: translateX(-50%);
+  opacity: 0.5;
 }
 
 .ball {
   position: absolute;
-  width: 15px;
-  height: 15px;
-  background-color: #fff;
+  background-color: var(--color-primary);
   will-change: transform;
+  transition: transform 16ms linear;
 }
 
 .paddle {
   position: absolute;
   width: 15px;
-  height: 100px;
-  background-color: #fff;
+  background-color: var(--color-primary);
   will-change: transform;
+  transition: top 16ms linear;
 } 

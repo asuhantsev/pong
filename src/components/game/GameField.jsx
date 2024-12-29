@@ -10,7 +10,9 @@ export function GameField({ ballPos, leftPaddlePos, rightPaddlePos }) {
       <div 
         className={styles.ball}
         style={{
-          transform: `translate(${ballPos.x}px, ${ballPos.y}px)`
+          transform: `translate(${ballPos.x}px, ${ballPos.y}px)`,
+          width: '15px',  // Square ball
+          height: '15px'  // Square ball
         }}
       />
       
@@ -19,14 +21,16 @@ export function GameField({ ballPos, leftPaddlePos, rightPaddlePos }) {
         className={styles.paddle}
         style={{
           left: 0,
-          top: leftPaddlePos
+          top: leftPaddlePos,
+          height: '100px'
         }}
       />
       <div 
         className={styles.paddle}
         style={{
           right: 0,
-          top: rightPaddlePos
+          top: rightPaddlePos,
+          height: '100px'
         }}
       />
     </div>

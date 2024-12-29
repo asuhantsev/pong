@@ -14,7 +14,7 @@ export default function App() {
         <NetworkProvider>
           <SocketProvider>
             <GameProvider>
-              <GameBoard mode="single" />
+              <GameBoard />
             </GameProvider>
           </SocketProvider>
         </NetworkProvider>

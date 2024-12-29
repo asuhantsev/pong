@@ -1,113 +1,95 @@
-import { useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
+import Logger from '../utils/logger';
 
-// Constants
 const BOARD_WIDTH = 800;
 const BOARD_HEIGHT = 600;
-const PADDLE_HEIGHT = 100;
-const PADDLE_WIDTH = 15;
 const BALL_SIZE = 15;
-const INITIAL_BALL_SPEED = 300; // Initial speed of 3 * 100 (for better control)
-const BALL_SPEED_MULTIPLIER = 1.5;
-const PADDLE_SPEED = 400;
+const PADDLE_HEIGHT = 100;
+const INITIAL_BALL_SPEED = 3;
+const SPEED_MULTIPLIER = 1.5;
 
 const INITIAL_STATE = {
-  ballPosition: { x: BOARD_WIDTH / 2, y: BOARD_HEIGHT / 2 },
+  ballPosition: { x: BOARD_WIDTH / 2 - BALL_SIZE / 2, y: BOARD_HEIGHT / 2 - BALL_SIZE / 2 },
   ballVelocity: { x: INITIAL_BALL_SPEED, y: 0 },
   leftPaddlePos: BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2,
   rightPaddlePos: BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2,
-  currentBallSpeed: INITIAL_BALL_SPEED
+  currentSpeed: INITIAL_BALL_SPEED
 };
 
 export function usePhysics() {
-  const physicsState = useRef({ ...INITIAL_STATE });
+  const [physics, setPhysics] = useState(INITIAL_STATE);
 
-  const resetBall = useCallback((shouldIncreaseBallSpeed = true) => {
-    const direction = Math.random() > 0.5 ? 1 : -1;
-    const angle = (Math.random() - 0.5) * Math.PI / 4; // Random angle between -45 and 45 degrees
-
-    // Update ball speed if needed
-    if (shouldIncreaseBallSpeed) {
-      physicsState.current.currentBallSpeed *= BALL_SPEED_MULTIPLIER;
-    }
-
-    physicsState.current.ballPosition = { 
-      x: BOARD_WIDTH / 2, 
-      y: BOARD_HEIGHT / 2 
-    };
-    physicsState.current.ballVelocity = {
-      x: Math.cos(angle) * physicsState.current.currentBallSpeed * direction,
-      y: Math.sin(angle) * physicsState.current.currentBallSpeed
-    };
+  const resetBall = useCallback(() => {
+    Logger.info('Physics', 'Resetting ball');
+    setPhysics(prev => ({
+      ...prev,
+      ballPosition: { x: BOARD_WIDTH / 2 - BALL_SIZE / 2, y: BOARD_HEIGHT / 2 - BALL_SIZE / 2 },
+      ballVelocity: { 
+        x: prev.currentSpeed * (Math.random() > 0.5 ? 1 : -1),
+        y: (Math.random() - 0.5) * 2
+      },
+      currentSpeed: prev.currentSpeed * SPEED_MULTIPLIER
+    }));
   }, []);
 
   const resetGame = useCallback(() => {
-    physicsState.current = { ...INITIAL_STATE };
-    resetBall(false);
-  }, [resetBall]);
-
-  const movePaddle = useCallback((newPosition, side) => {
-    // Clamp paddle position to board boundaries
-    const clampedPosition = Math.max(0, Math.min(newPosition, BOARD_HEIGHT - PADDLE_HEIGHT));
-    
-    if (side === 'left') {
-      physicsState.current.leftPaddlePos = clampedPosition;
-    } else {
-      physicsState.current.rightPaddlePos = clampedPosition;
-    }
+    Logger.info('Physics', 'Resetting game');
+    setPhysics(INITIAL_STATE);
   }, []);
 
-  const checkPaddleCollision = useCallback((ballPos, ballVel) => {
-    const { leftPaddlePos, rightPaddlePos, currentBallSpeed } = physicsState.current;
-
-    // Left paddle collision
-    if (ballPos.x <= PADDLE_WIDTH && 
-        ballPos.y >= leftPaddlePos && 
-        ballPos.y <= leftPaddlePos + PADDLE_HEIGHT) {
-      return {
-        x: Math.abs(ballVel.x),
-        y: 0 // Classic Pong has no angle on bounce
-      };
-    }
-
-    // Right paddle collision
-    if (ballPos.x >= BOARD_WIDTH - PADDLE_WIDTH - BALL_SIZE && 
-        ballPos.y >= rightPaddlePos && 
-        ballPos.y <= rightPaddlePos + PADDLE_HEIGHT) {
-      return {
-        x: -Math.abs(ballVel.x),
-        y: 0 // Classic Pong has no angle on bounce
-      };
-    }
-
-    return null;
+  const movePaddle = useCallback((newPos, side) => {
+    Logger.debug('Physics', 'Moving paddle', { side, newPos });
+    // Clamp paddle position
+    const clampedPos = Math.max(0, Math.min(BOARD_HEIGHT - PADDLE_HEIGHT, newPos));
+    
+    setPhysics(prev => ({
+      ...prev,
+      [side === 'left' ? 'leftPaddlePos' : 'rightPaddlePos']: clampedPos
+    }));
   }, []);
 
   const updatePhysics = useCallback((deltaTime) => {
-    const state = physicsState.current;
-    
-    // Update ball position
-    const newBallPos = {
-      x: state.ballPosition.x + state.ballVelocity.x * deltaTime,
-      y: state.ballPosition.y + state.ballVelocity.y * deltaTime
-    };
+    setPhysics(prev => {
+      // Update ball position
+      const newX = prev.ballPosition.x + prev.ballVelocity.x;
+      const newY = prev.ballPosition.y + prev.ballVelocity.y;
 
-    // Check wall collisions
-    if (newBallPos.y <= 0 || newBallPos.y >= BOARD_HEIGHT - BALL_SIZE) {
-      state.ballVelocity.y = -state.ballVelocity.y;
-      newBallPos.y = Math.max(0, Math.min(newBallPos.y, BOARD_HEIGHT - BALL_SIZE));
-    }
+      // Ball collision with top and bottom walls
+      let newVelY = prev.ballVelocity.y;
+      if (newY <= 0 || newY >= BOARD_HEIGHT - BALL_SIZE) {
+        newVelY = -prev.ballVelocity.y;
+      }
 
-    // Check paddle collisions
-    const newVelocity = checkPaddleCollision(newBallPos, state.ballVelocity);
-    if (newVelocity) {
-      state.ballVelocity = newVelocity;
-    }
+      // Ball collision with paddles
+      let newVelX = prev.ballVelocity.x;
+      const ballCenterY = newY + BALL_SIZE / 2;
 
-    state.ballPosition = newBallPos;
-  }, [checkPaddleCollision]);
+      // Left paddle collision
+      if (newX <= 15 && // Paddle width
+          ballCenterY >= prev.leftPaddlePos &&
+          ballCenterY <= prev.leftPaddlePos + PADDLE_HEIGHT) {
+        newVelX = Math.abs(prev.ballVelocity.x);
+        newVelY = ((ballCenterY - (prev.leftPaddlePos + PADDLE_HEIGHT / 2)) / (PADDLE_HEIGHT / 2)) * 5;
+      }
+
+      // Right paddle collision
+      if (newX >= BOARD_WIDTH - BALL_SIZE - 15 &&
+          ballCenterY >= prev.rightPaddlePos &&
+          ballCenterY <= prev.rightPaddlePos + PADDLE_HEIGHT) {
+        newVelX = -Math.abs(prev.ballVelocity.x);
+        newVelY = ((ballCenterY - (prev.rightPaddlePos + PADDLE_HEIGHT / 2)) / (PADDLE_HEIGHT / 2)) * 5;
+      }
+
+      return {
+        ...prev,
+        ballPosition: { x: newX, y: newY },
+        ballVelocity: { x: newVelX, y: newVelY }
+      };
+    });
+  }, []);
 
   return {
-    physics: physicsState.current,
+    physics,
     updatePhysics,
     resetBall,
     resetGame,
