@@ -1,27 +1,20 @@
+import React from 'react';
 import { ErrorProvider } from '../contexts/ErrorContext';
-import { NetworkProvider } from '../contexts/NetworkContext';
 import { GameProvider } from '../contexts/GameContext';
+import { NetworkProvider } from '../contexts/NetworkContext';
 import { SocketProvider } from '../contexts/SocketContext';
-import { RoomProvider } from '../contexts/RoomContext';
-import { PlayerProvider } from '../contexts/PlayerContext';
-import { PhysicsProvider } from '../contexts/PhysicsContext';
-import ErrorBoundary from './ErrorBoundary';
+import { MainMenu } from './menu/MainMenu';
+import { ErrorBoundary } from './error/ErrorBoundary';
 
-export function App() {
+export default function App() {
   return (
     <ErrorBoundary>
       <ErrorProvider>
         <NetworkProvider>
           <SocketProvider>
-            <RoomProvider>
-              <GameProvider>
-                <PlayerProvider>
-                  <PhysicsProvider>
-                    <GameBoard />
-                  </PhysicsProvider>
-                </PlayerProvider>
-              </GameProvider>
-            </RoomProvider>
+            <GameProvider>
+              <MainMenu />
+            </GameProvider>
           </SocketProvider>
         </NetworkProvider>
       </ErrorProvider>
