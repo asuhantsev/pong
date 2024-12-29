@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, useCallback } from 'react';
+import Logger from '../utils/logger';
 
 const GameContext = createContext(null);
 
@@ -14,52 +15,93 @@ const initialState = {
 };
 
 function gameReducer(state, action) {
+  Logger.debug('GameReducer', `Processing action: ${action.type}`, { 
+    currentState: state,
+    action 
+  });
+
+  let newState;
   switch (action.type) {
     case 'START_GAME':
-      return {
+      newState = {
         ...state,
         isGameStarted: true,
         winner: null,
         score: { left: 0, right: 0 }
       };
+      break;
     case 'END_GAME':
-      return {
+      newState = {
         ...state,
         isGameStarted: false,
         isPaused: false
       };
+      break;
     case 'UPDATE_SCORE':
-      return {
+      newState = {
         ...state,
         score: action.payload
       };
+      break;
     case 'SET_WINNER':
-      return {
+      newState = {
         ...state,
         winner: action.payload,
         isGameStarted: false
       };
+      break;
     case 'TOGGLE_PAUSE':
-      return {
+      newState = {
         ...state,
         isPaused: !state.isPaused,
         countdown: action.payload
       };
+      break;
     default:
+      Logger.warn('GameReducer', `Unknown action type: ${action.type}`);
       return state;
   }
+
+  Logger.debug('GameReducer', 'State updated', { 
+    previousState: state,
+    action,
+    newState 
+  });
+
+  return newState;
 }
 
 export function GameProvider({ children }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
   const gameActions = {
-    startGame: () => dispatch({ type: 'START_GAME' }),
-    endGame: () => dispatch({ type: 'END_GAME' }),
-    updateScore: (score) => dispatch({ type: 'UPDATE_SCORE', payload: score }),
-    setWinner: (winner) => dispatch({ type: 'SET_WINNER', payload: winner }),
-    togglePause: (countdown) => dispatch({ type: 'TOGGLE_PAUSE', payload: countdown })
+    startGame: useCallback(() => {
+      Logger.info('GameActions', 'Starting game');
+      dispatch({ type: 'START_GAME' });
+    }, []),
+
+    endGame: useCallback(() => {
+      Logger.info('GameActions', 'Ending game');
+      dispatch({ type: 'END_GAME' });
+    }, []),
+
+    updateScore: useCallback((score) => {
+      Logger.info('GameActions', 'Updating score', { score });
+      dispatch({ type: 'UPDATE_SCORE', payload: score });
+    }, []),
+
+    setWinner: useCallback((winner) => {
+      Logger.info('GameActions', 'Setting winner', { winner });
+      dispatch({ type: 'SET_WINNER', payload: winner });
+    }, []),
+
+    togglePause: useCallback((countdown) => {
+      Logger.info('GameActions', 'Toggling pause', { countdown });
+      dispatch({ type: 'TOGGLE_PAUSE', payload: countdown });
+    }, [])
   };
+
+  Logger.debug('GameProvider', 'Current state', { state });
 
   return (
     <GameContext.Provider value={{ state, actions: gameActions }}>
@@ -68,4 +110,11 @@ export function GameProvider({ children }) {
   );
 }
 
-export const useGame = () => useContext(GameContext); 
+export const useGame = () => {
+  const context = useContext(GameContext);
+  if (!context) {
+    Logger.error('useGame', 'useGame must be used within a GameProvider');
+    throw new Error('useGame must be used within a GameProvider');
+  }
+  return context;
+}; 

@@ -9,8 +9,11 @@ import { ScoreBoard } from './ui/ScoreBoard';
 import { CountdownOverlay } from './ui/CountdownOverlay';
 import { MultiplayerGame } from './multiplayer/MultiplayerGame';
 import styles from '../../styles/components/game/GameBoard.module.css';
+import Logger from '../../utils/logger';
 
 export function GameBoard({ mode = 'single' }) {
+  Logger.debug('GameBoard', 'Component rendered', { mode });
+
   const { state: { 
     isPaused, 
     score, 
@@ -27,22 +30,36 @@ export function GameBoard({ mode = 'single' }) {
   // Game loop callback
   const gameLoop = useCallback((deltaTime) => {
     if (!isPaused && !winner && isGameStarted) {
+      Logger.debug('GameLoop', 'Updating game state', { 
+        deltaTime,
+        ballPosition: physics.ballPosition,
+        score
+      });
+
       updatePhysics(deltaTime);
 
       // Check for scoring
       if (physics.ballPosition.x <= 0) {
-        // Right player/computer scores
+        Logger.info('GameLoop', 'Right player scored', { 
+          ballPosition: physics.ballPosition,
+          newScore: { ...score, right: score.right + 1 }
+        });
         actions.updateScore({ ...score, right: score.right + 1 });
         resetBall();
       } else if (physics.ballPosition.x >= 800 - 15) { // BOARD_WIDTH - BALL_SIZE
-        // Left player scores
+        Logger.info('GameLoop', 'Left player scored', {
+          ballPosition: physics.ballPosition,
+          newScore: { ...score, left: score.left + 1 }
+        });
         actions.updateScore({ ...score, left: score.left + 1 });
         resetBall();
       }
 
       // Check for winner
       if (score.left >= 11 || score.right >= 11) {
-        actions.setWinner(score.left > score.right ? 'left' : 'right');
+        const winner = score.left > score.right ? 'left' : 'right';
+        Logger.info('GameLoop', 'Game won', { winner, finalScore: score });
+        actions.setWinner(winner);
       }
     }
   }, [isPaused, winner, isGameStarted, physics.ballPosition, score, actions, updatePhysics, resetBall]);
@@ -59,6 +76,12 @@ export function GameBoard({ mode = 'single' }) {
       if (mode === 'single' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
         return;
       }
+
+      Logger.debug('GameBoard', 'Key pressed', { 
+        key: e.key,
+        leftPaddlePos: physics.leftPaddlePos,
+        rightPaddlePos: physics.rightPaddlePos
+      });
 
       switch (e.key) {
         case 'w':
@@ -83,17 +106,26 @@ export function GameBoard({ mode = 'single' }) {
   }, [isGameStarted, isPaused, winner, physics.leftPaddlePos, physics.rightPaddlePos, movePaddle, mode]);
 
   const handlePause = useCallback(() => {
+    Logger.info('GameBoard', 'Game paused/resumed');
     actions.togglePause(3); // 3 second countdown
   }, [actions]);
 
   const handleStartSinglePlayer = useCallback(() => {
-    console.log('Starting single player game...');
+    Logger.info('GameBoard', 'Starting single player game');
     resetPhysics();
     actions.startGame();
   }, [resetPhysics, actions]);
 
-  // Add debug log for render
-  console.log('GameBoard render:', { isGameStarted, mode, winner, isPaused });
+  // Log state changes
+  useEffect(() => {
+    Logger.debug('GameBoard', 'State updated', { 
+      isGameStarted,
+      isPaused,
+      winner,
+      score,
+      countdown
+    });
+  }, [isGameStarted, isPaused, winner, score, countdown]);
 
   return (
     <div className={styles.gameContainer}>
