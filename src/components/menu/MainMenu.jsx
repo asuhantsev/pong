@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGame } from '../../contexts/GameContext';
 import { OptionsMenu } from './OptionsMenu';
 import '../../styles/MainMenu.css';
@@ -7,6 +7,15 @@ export function MainMenu() {
   const { state, actions } = useGame();
   const [nickname, setNickname] = useState(localStorage.getItem('nickname') || 'Guest');
   const [currentMenu, setCurrentMenu] = useState('main');
+
+  // Update nickname when it changes in localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setNickname(localStorage.getItem('nickname') || 'Guest');
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const handleStartSinglePlayer = () => {
     actions.startGame();
@@ -22,6 +31,8 @@ export function MainMenu() {
   };
 
   const handleBackToMain = () => {
+    // Update nickname when returning from options
+    setNickname(localStorage.getItem('nickname') || 'Guest');
     setCurrentMenu('main');
   };
 
@@ -32,10 +43,7 @@ export function MainMenu() {
   return (
     <div className="main-menu">
       <div className="nickname-header">
-        Playing as: {' '}
-        <span className="current-nickname">
-          {nickname}
-        </span>
+        Playing as: <span className="nickname-display">{nickname}</span>
       </div>
 
       <div className="menu-buttons">
