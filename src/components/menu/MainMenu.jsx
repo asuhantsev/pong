@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useGame } from '../../contexts/GameContext';
 import styles from '../../styles/components/menu/MainMenu.module.css';
 import layoutStyles from '../../styles/components/shared/Layout.module.css';
 import themeStyles from '../../styles/components/shared/Theme.module.css';
@@ -8,14 +10,47 @@ import spacingStyles from '../../styles/components/shared/Spacing.module.css';
 import animationStyles from '../../styles/components/shared/Animation.module.css';
 import errorStyles from '../../styles/components/shared/Error.module.css';
 
-export function MainMenu({
-  nickname,
-  onNicknameChange,
-  onStartSinglePlayer,
-  onStartMultiplayer,
-  onOpenOptions,
-  nicknameError
-}) {
+export function MainMenu() {
+  const { state, actions } = useGame();
+  const [nickname, setNickname] = useState('');
+  const [nicknameError, setNicknameError] = useState('');
+
+  const validateNickname = (value) => {
+    if (!value.trim()) {
+      return 'Nickname is required';
+    }
+    if (value.length < 3) {
+      return 'Nickname must be at least 3 characters';
+    }
+    if (value.length > 15) {
+      return 'Nickname must be less than 15 characters';
+    }
+    return '';
+  };
+
+  const handleNicknameChange = (value) => {
+    setNickname(value);
+    setNicknameError(validateNickname(value));
+  };
+
+  const handleStartSinglePlayer = () => {
+    if (!nicknameError && nickname) {
+      actions.startGame();
+    }
+  };
+
+  const handleStartMultiplayer = () => {
+    if (!nicknameError && nickname) {
+      // Handle multiplayer start
+      console.log('Starting multiplayer');
+    }
+  };
+
+  const handleOpenOptions = () => {
+    // Handle options menu
+    console.log('Opening options');
+  };
+
   return (
     <div className={`
       ${layoutStyles.flexColumn}
@@ -38,7 +73,7 @@ export function MainMenu({
           ${spacingStyles.mb4}
           ${animationStyles.scaleIn}
         `}>
-          PONG
+          Playing as: {nickname || 'Guest'}
         </h1>
 
         <div className={`
@@ -51,7 +86,7 @@ export function MainMenu({
           <input
             type="text"
             value={nickname}
-            onChange={(e) => onNicknameChange(e.target.value)}
+            onChange={(e) => handleNicknameChange(e.target.value)}
             placeholder="Enter your nickname"
             maxLength={15}
             className={`
@@ -65,12 +100,6 @@ export function MainMenu({
               {nicknameError}
             </div>
           )}
-          <p className={`
-            ${typographyStyles.text}
-            ${styles.nicknameHint}
-          `}>
-            Your nickname will be visible to other players
-          </p>
         </div>
 
         <div className={`
@@ -80,7 +109,7 @@ export function MainMenu({
           ${animationStyles.fadeIn}
         `}>
           <button
-            onClick={onStartSinglePlayer}
+            onClick={handleStartSinglePlayer}
             className={`
               ${buttonStyles.large}
               ${styles.menuButton}
@@ -91,10 +120,9 @@ export function MainMenu({
           </button>
 
           <button
-            onClick={onStartMultiplayer}
+            onClick={handleStartMultiplayer}
             className={`
               ${buttonStyles.large}
-              ${buttonStyles.secondary}
               ${styles.menuButton}
             `}
             disabled={!nickname || !!nicknameError}
@@ -103,7 +131,7 @@ export function MainMenu({
           </button>
 
           <button
-            onClick={onOpenOptions}
+            onClick={handleOpenOptions}
             className={`
               ${buttonStyles.large}
               ${buttonStyles.secondary}
