@@ -1,0 +1,63 @@
+.gameContainer {
+  position: relative;
+  width: 800px;
+  height: 600px;
+  background-color: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.playerNames {
+  position: absolute;
+  top: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 40px;
+  color: #fff;
+  font-size: 24px;
+  z-index: 1;
+}
+
+.leftPlayer, .rightPlayer {
+  text-transform: uppercase;
+}
+
+.winnerOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 20px 40px;
+  border-radius: 8px;
+  font-size: 32px;
+  text-align: center;
+  z-index: 2;
+}
+
+.startButton, .playAgainButton {
+  padding: 15px 30px;
+  font-size: 24px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 0.3s;
+}
+
+.startButton:hover, .playAgainButton:hover {
+  background-color: #45a049;
+}
+
+.playAgainButton {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+} 
