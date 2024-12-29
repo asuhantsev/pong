@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useGame } from '../../contexts/GameContext';
 import { OptionsMenu } from './OptionsMenu';
+import { MultiplayerMenu } from './MultiplayerMenu';
 import '../../styles/MainMenu.css';
 
 export function MainMenu() {
@@ -22,8 +23,7 @@ export function MainMenu() {
   };
 
   const handleStartMultiplayer = () => {
-    // Handle multiplayer start
-    console.log('Starting multiplayer');
+    setCurrentMenu('multiplayer');
   };
 
   const handleOpenOptions = () => {
@@ -38,6 +38,10 @@ export function MainMenu() {
 
   if (currentMenu === 'options') {
     return <OptionsMenu onBack={handleBackToMain} />;
+  }
+
+  if (currentMenu === 'multiplayer') {
+    return <MultiplayerMenu onBack={handleBackToMain} />;
   }
 
   return (
