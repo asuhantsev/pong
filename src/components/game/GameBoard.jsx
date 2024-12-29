@@ -28,7 +28,7 @@ export function GameBoard({ mode = 'single' }) {
 
   // Game loop callback
   const gameLoop = useCallback((deltaTime) => {
-    if (!isPaused && !winner) {
+    if (!isPaused && !winner && isGameStarted) {
       updatePhysics(deltaTime);
 
       // Check for scoring
@@ -53,7 +53,7 @@ export function GameBoard({ mode = 'single' }) {
         });
       }
     }
-  }, [isPaused, winner, physics.ballPosition, score, updateGameState, updatePhysics, resetBall]);
+  }, [isPaused, winner, isGameStarted, physics.ballPosition, score, updateGameState, updatePhysics, resetBall]);
 
   // Start game loop
   useGameLoop(gameLoop);
@@ -95,10 +95,12 @@ export function GameBoard({ mode = 'single' }) {
   }, [isPaused, updateGameState]);
 
   const handleStartSinglePlayer = useCallback(() => {
+    console.log('Starting single player game...');
     resetGameState();
     resetPhysics();
     startGame();
-  }, [resetGameState, resetPhysics, startGame]);
+    updateGameState({ isGameStarted: true });
+  }, [resetGameState, resetPhysics, startGame, updateGameState]);
 
   return (
     <div className={styles.gameContainer}>
