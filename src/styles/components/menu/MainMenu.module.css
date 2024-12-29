@@ -1,28 +1,32 @@
 .menuContainer {
   width: 100%;
   max-width: 500px;
-  border-radius: var(--radius-lg);
+  border-radius: 10px;
   margin: 0 auto;
+  background: rgba(0, 0, 0, 0.9);
+  padding: 2rem;
+  color: white;
 }
 
 .title {
-  font-size: var(--font-size-7xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 1.2rem;
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
 .nicknameSection {
   width: 100%;
   max-width: 400px;
+  margin-bottom: 2rem;
 }
 
 .nicknameInput {
   width: 100%;
   text-align: center;
   font-size: var(--font-size-lg);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 .nicknameHint {
@@ -34,21 +38,33 @@
 .menuOptions {
   width: 100%;
   max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .menuButton {
   width: 100%;
+  padding: 1rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.1rem;
+  cursor: pointer;
   transition: all 0.2s ease;
+  background: var(--color-primary);
+  color: white;
 }
 
 .menuButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: var(--color-primary-hover);
 }
 
-.menuButton:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.menuButton:last-child {
+  background: var(--color-secondary);
+}
+
+.menuButton:last-child:hover {
+  background: #555;
 }
 
 /* Responsive adjustments */
@@ -60,7 +76,7 @@
   }
 
   .title {
-    font-size: var(--font-size-5xl);
+    font-size: 1rem;
   }
 
   .nicknameInput {
@@ -78,7 +94,7 @@
   }
 
   .title {
-    font-size: var(--font-size-8xl);
+    font-size: 1.4rem;
   }
 
   .menuOptions {

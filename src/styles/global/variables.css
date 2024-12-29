@@ -2,8 +2,10 @@
   /* Colors */
   --color-primary: #4CAF50;
   --color-primary-hover: #45a049;
-  --color-secondary: #2196F3;
-  --color-secondary-hover: #1976D2;
+  --color-secondary: #666;
+  --color-accent: #4CAF50;
+  --color-background: #000;
+  --color-text: #fff;
   --color-disabled: #cccccc;
   --color-success: #4CAF50;
   --color-warning: #FFC107;

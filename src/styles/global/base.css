@@ -9,16 +9,20 @@ body {
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #000;
-  color: #fff;
+  background: var(--color-background);
+  color: var(--color-text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 button {
   cursor: pointer;
   border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: 1rem;
+  border-radius: 5px;
+  font-size: 1.1rem;
   background: var(--color-primary);
   color: white;
   transition: var(--transition-quick);
