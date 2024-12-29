@@ -25,6 +25,7 @@ function gameReducer(state, action) {
     case 'START_GAME':
       newState = {
         ...state,
+        mode: action.payload?.mode || state.mode,
         isGameStarted: true,
         winner: null,
         score: { left: 0, right: 0 }
@@ -35,6 +36,12 @@ function gameReducer(state, action) {
         ...state,
         isGameStarted: false,
         isPaused: false
+      };
+      break;
+    case 'SET_MODE':
+      newState = {
+        ...state,
+        mode: action.payload
       };
       break;
     case 'UPDATE_SCORE':
@@ -75,14 +82,19 @@ export function GameProvider({ children }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
   const gameActions = {
-    startGame: useCallback(() => {
-      Logger.info('GameActions', 'Starting game');
-      dispatch({ type: 'START_GAME' });
+    startGame: useCallback((mode) => {
+      Logger.info('GameActions', 'Starting game', { mode });
+      dispatch({ type: 'START_GAME', payload: { mode } });
     }, []),
 
     endGame: useCallback(() => {
       Logger.info('GameActions', 'Ending game');
       dispatch({ type: 'END_GAME' });
+    }, []),
+
+    setMode: useCallback((mode) => {
+      Logger.info('GameActions', 'Setting game mode', { mode });
+      dispatch({ type: 'SET_MODE', payload: mode });
     }, []),
 
     updateScore: useCallback((score) => {

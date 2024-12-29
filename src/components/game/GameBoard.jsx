@@ -19,7 +19,8 @@ export function GameBoard({ mode = 'single' }) {
     score, 
     winner,
     isGameStarted,
-    countdown
+    countdown,
+    mode: gameMode
   }, actions } = useGame();
 
   const { physics, updatePhysics, resetBall, resetGame: resetPhysics, movePaddle } = usePhysics();
@@ -113,7 +114,8 @@ export function GameBoard({ mode = 'single' }) {
   const handleStartSinglePlayer = useCallback(() => {
     Logger.info('GameBoard', 'Starting single player game');
     resetPhysics();
-    actions.startGame();
+    actions.setMode('single');
+    actions.startGame('single');
   }, [resetPhysics, actions]);
 
   // Log state changes
@@ -123,9 +125,10 @@ export function GameBoard({ mode = 'single' }) {
       isPaused,
       winner,
       score,
-      countdown
+      countdown,
+      mode
     });
-  }, [isGameStarted, isPaused, winner, score, countdown]);
+  }, [isGameStarted, isPaused, winner, score, countdown, mode]);
 
   return (
     <div className={styles.gameContainer}>
