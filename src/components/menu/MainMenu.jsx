@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useGame } from '../../contexts/GameContext';
+import { OptionsMenu } from './OptionsMenu';
 import '../../styles/MainMenu.css';
 
 export function MainMenu() {
   const { state, actions } = useGame();
-  const [nickname, setNickname] = useState('');
+  const [nickname, setNickname] = useState(localStorage.getItem('nickname') || '');
   const [nicknameError, setNicknameError] = useState('');
+  const [currentMenu, setCurrentMenu] = useState('main');
 
   const validateNickname = (value) => {
     if (!value.trim()) {
@@ -22,7 +24,11 @@ export function MainMenu() {
 
   const handleNicknameChange = (value) => {
     setNickname(value);
-    setNicknameError(validateNickname(value));
+    const error = validateNickname(value);
+    setNicknameError(error);
+    if (!error) {
+      localStorage.setItem('nickname', value);
+    }
   };
 
   const handleStartSinglePlayer = () => {
@@ -39,9 +45,16 @@ export function MainMenu() {
   };
 
   const handleOpenOptions = () => {
-    // Handle options menu
-    console.log('Opening options');
+    setCurrentMenu('options');
   };
+
+  const handleBackToMain = () => {
+    setCurrentMenu('main');
+  };
+
+  if (currentMenu === 'options') {
+    return <OptionsMenu onBack={handleBackToMain} />;
+  }
 
   return (
     <div className="main-menu">
