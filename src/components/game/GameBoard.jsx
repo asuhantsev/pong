@@ -15,7 +15,6 @@ import performanceMonitor from '../../utils/performance';
 export function GameBoard() {
   // State selectors
   const gameState = useSelector(state => state.game);
-  const physicsState = useSelector(state => state.physics);
   const dispatch = useDispatch();
 
   const { physics, updatePhysics, resetBall, resetGame: resetPhysics, movePaddle } = usePhysics();
@@ -68,8 +67,8 @@ export function GameBoard() {
     updatePhysics(deltaTime);
 
     // Update ball position in store
-    dispatch(physicsActions.updateBallPosition(physics.current.ballPosition));
-    dispatch(physicsActions.updateBallVelocity(physics.current.ballVelocity));
+    dispatch(physicsActions.updateBallPosition(physics.ballPosition));
+    dispatch(physicsActions.updateBallVelocity(physics.ballVelocity));
 
     performanceMonitor.endMeasure('gameLoop', 'game');
   }, [gameState.isStarted, gameState.isPaused, gameState.countdown, physics, updatePhysics, dispatch]);
@@ -80,8 +79,11 @@ export function GameBoard() {
     <div className={styles.gameBoard}>
       <ScoreBoard score={gameState.score} />
       <GameField
-        ballPosition={physicsState.ball.position}
-        paddlePositions={physicsState.paddles}
+        ballPosition={physics.ballPosition}
+        paddlePositions={{
+          left: { y: physics.leftPaddlePos },
+          right: { y: physics.rightPaddlePos }
+        }}
       />
       <GameControls onPause={handlePause} />
       {gameState.isPaused && <PauseOverlay />}
