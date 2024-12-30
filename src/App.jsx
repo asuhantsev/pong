@@ -8,6 +8,7 @@ import { MainMenu } from './components/menu/MainMenu';
 import { ErrorBoundary } from './components/error/ErrorBoundary';
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext';
 import { FeatureFlagPanel } from './components/dev/FeatureFlagPanel';
+import { MonitoringOverlay } from './components/dev/MonitoringOverlay';
 
 export default function App() {
   return (
@@ -18,7 +19,12 @@ export default function App() {
             <SocketProvider>
               <GameProvider>
                 <MainMenu />
-                {import.meta.env.VITE_ENV === 'development' && <FeatureFlagPanel />}
+                {import.meta.env.VITE_ENV === 'development' && (
+                  <>
+                    <FeatureFlagPanel />
+                    <MonitoringOverlay />
+                  </>
+                )}
               </GameProvider>
             </SocketProvider>
           </NetworkProvider>

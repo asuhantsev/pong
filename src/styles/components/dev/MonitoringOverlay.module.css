@@ -1,0 +1,135 @@
+.overlay {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 16px;
+  color: white;
+  font-family: monospace;
+  z-index: 9999;
+  width: 400px;
+  max-height: 500px;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 8px;
+}
+
+.tabs button {
+  background: #333;
+  border: 1px solid #444;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.tabs button:hover {
+  background: #444;
+}
+
+.tabs button.active {
+  background: #666;
+  border-color: #888;
+}
+
+.content {
+  font-size: 12px;
+}
+
+.metricsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.category {
+  border-bottom: 1px solid #333;
+  padding-bottom: 8px;
+}
+
+.category h4 {
+  margin: 0 0 8px 0;
+  color: #aaa;
+  text-transform: uppercase;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.stateContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stateChange {
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.stateHeader {
+  display: flex;
+  justify-content: space-between;
+  color: #aaa;
+  margin-bottom: 4px;
+}
+
+.stateAction {
+  color: #888;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.change {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.from {
+  color: #ff6b6b;
+}
+
+.to {
+  color: #69db7c;
+}
+
+/* Scrollbar styling */
+.overlay::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overlay::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.overlay::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+.overlay::-webkit-scrollbar-thumb:hover {
+  background: #444;
+} 
