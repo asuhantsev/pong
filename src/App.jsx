@@ -6,19 +6,24 @@ import { NetworkProvider } from './contexts/NetworkContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { MainMenu } from './components/menu/MainMenu';
 import { ErrorBoundary } from './components/error/ErrorBoundary';
+import { FeatureFlagProvider } from './contexts/FeatureFlagContext';
+import { FeatureFlagPanel } from './components/dev/FeatureFlagPanel';
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <ErrorProvider>
-        <NetworkProvider>
-          <SocketProvider>
-            <GameProvider>
-              <MainMenu />
-            </GameProvider>
-          </SocketProvider>
-        </NetworkProvider>
-      </ErrorProvider>
-    </ErrorBoundary>
+    <FeatureFlagProvider>
+      <ErrorBoundary>
+        <ErrorProvider>
+          <NetworkProvider>
+            <SocketProvider>
+              <GameProvider>
+                <MainMenu />
+                {import.meta.env.VITE_ENV === 'development' && <FeatureFlagPanel />}
+              </GameProvider>
+            </SocketProvider>
+          </NetworkProvider>
+        </ErrorProvider>
+      </ErrorBoundary>
+    </FeatureFlagProvider>
   );
 }
