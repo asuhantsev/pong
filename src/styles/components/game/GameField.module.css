@@ -2,8 +2,10 @@
   position: relative;
   width: 800px;
   height: 600px;
-  background-color: var(--color-background);
-  border: 2px solid var(--color-primary);
+  border: 2px solid #646464;
+  background-image: linear-gradient(#646464 2px, transparent 2px), linear-gradient(to right, #646464 2px, transparent 2px);
+  background-size: 47px 47px;
+  background-color: #535353;
   overflow: hidden;
 }
 
@@ -21,15 +23,26 @@
 
 .ball {
   position: absolute;
-  background-color: var(--color-primary);
-  will-change: transform;
-  transition: transform 16ms linear;
+  width: 15px;
+  height: 15px;
+  background-color: #fff;
+  transform: translate(-50%, -50%);
 }
 
 .paddle {
   position: absolute;
   width: 15px;
-  background-color: var(--color-primary);
-  will-change: transform;
-  transition: top 16ms linear;
+  height: 100px;
+  background-color: #fff;
+  transform: translateY(-50%);
+}
+
+.leftPaddle {
+  composes: paddle;
+  left: 50px;
+}
+
+.rightPaddle {
+  composes: paddle;
+  right: 50px;
 } 

@@ -5,12 +5,10 @@ const GameContext = createContext(null);
 
 const initialState = {
   mode: null,
-  screen: 'main',
   isGameStarted: false,
   isPaused: false,
   winner: null,
   score: { left: 0, right: 0 },
-  playerNames: { left: 'Player 1', right: 'Player 2' },
   countdown: null
 };
 
@@ -24,18 +22,30 @@ function gameReducer(state, action) {
   switch (action.type) {
     case 'START_GAME':
       newState = {
-        ...state,
-        mode: action.payload?.mode || state.mode,
+        ...initialState,
+        mode: action.payload,
         isGameStarted: true,
+        isPaused: false,
         winner: null,
-        score: { left: 0, right: 0 }
+        score: { left: 0, right: 0 },
+        countdown: 3
+      };
+      break;
+    case 'UPDATE_COUNTDOWN':
+      newState = {
+        ...state,
+        countdown: action.payload
+      };
+      break;
+    case 'TOGGLE_PAUSE':
+      newState = {
+        ...state,
+        isPaused: !state.isPaused
       };
       break;
     case 'END_GAME':
       newState = {
-        ...state,
-        isGameStarted: false,
-        isPaused: false
+        ...initialState
       };
       break;
     case 'SET_MODE':
@@ -54,14 +64,7 @@ function gameReducer(state, action) {
       newState = {
         ...state,
         winner: action.payload,
-        isGameStarted: false
-      };
-      break;
-    case 'TOGGLE_PAUSE':
-      newState = {
-        ...state,
-        isPaused: !state.isPaused,
-        countdown: action.payload
+        isGameStarted: true
       };
       break;
     default:
@@ -84,7 +87,7 @@ export function GameProvider({ children }) {
   const gameActions = {
     startGame: useCallback((mode) => {
       Logger.info('GameActions', 'Starting game', { mode });
-      dispatch({ type: 'START_GAME', payload: { mode } });
+      dispatch({ type: 'START_GAME', payload: mode });
     }, []),
 
     endGame: useCallback(() => {
@@ -107,9 +110,14 @@ export function GameProvider({ children }) {
       dispatch({ type: 'SET_WINNER', payload: winner });
     }, []),
 
-    togglePause: useCallback((countdown) => {
-      Logger.info('GameActions', 'Toggling pause', { countdown });
-      dispatch({ type: 'TOGGLE_PAUSE', payload: countdown });
+    updateCountdown: useCallback((count) => {
+      Logger.info('GameActions', 'Updating countdown', { count });
+      dispatch({ type: 'UPDATE_COUNTDOWN', payload: count });
+    }, []),
+
+    togglePause: useCallback(() => {
+      Logger.info('GameActions', 'Toggling pause');
+      dispatch({ type: 'TOGGLE_PAUSE' });
     }, [])
   };
 

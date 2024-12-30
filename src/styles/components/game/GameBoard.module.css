@@ -31,31 +31,29 @@
   position: relative;
   width: 800px;
   height: 600px;
-  background-color: var(--color-background);
+  background: rgba(0, 0, 0, 0.9);
   border: 2px solid var(--color-primary);
+  border-radius: 8px;
+  margin: 2rem auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
 }
 
 .playerNames {
   position: absolute;
-  top: 20px;
-  width: 100%;
+  top: -40px;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: space-between;
   padding: 0 50px;
   color: var(--color-text);
-  font-size: 18px;
+  font-size: 1.2rem;
 }
 
-.leftPlayer {
-  text-align: left;
-}
-
-.rightPlayer {
-  text-align: right;
+.leftPlayer, .rightPlayer {
+  opacity: 0.8;
 }
 
 .winnerOverlay {
@@ -63,29 +61,30 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 36px;
-  color: var(--color-primary);
+  background: rgba(0, 0, 0, 0.9);
+  padding: 2rem;
+  border-radius: 8px;
+  border: 2px solid var(--color-primary);
   text-align: center;
-  background-color: rgba(0, 0, 0, 0.8);
-  padding: 20px 40px;
-  border-radius: 10px;
+  color: var(--color-primary);
+  font-size: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  z-index: 1000;
 }
 
 .playAgainButton {
-  position: absolute;
-  bottom: 100px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 15px 30px;
-  font-size: 18px;
-  background-color: var(--color-primary);
-  color: white;
+  padding: 0.8rem 2rem;
+  font-size: 1.2rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
+  background: var(--color-primary);
+  color: white;
   transition: background-color 0.2s;
 }
 
 .playAgainButton:hover {
-  background-color: var(--color-accent);
+  background: #45a049;
 } 

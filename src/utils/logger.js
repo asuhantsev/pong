@@ -1,89 +1,45 @@
-const LOG_LEVELS = {
-  DEBUG: 0,
-  INFO: 1,
-  WARN: 2,
-  ERROR: 3
+const lastLogTime = {
+  global: Date.now(),
+  components: {}
 };
+const LOG_THROTTLE = 250; // 4 updates per second max
 
-const CURRENT_LOG_LEVEL = LOG_LEVELS.DEBUG;
-
-class Logger {
-  static logs = [];
-  static maxLogs = 1000;
-
-  static formatMessage(level, component, message, data) {
-    const timestamp = new Date().toISOString();
-    const formattedData = data ? JSON.stringify(data, null, 2) : '';
-    return `[${timestamp}] [${level}] [${component}] ${message} ${formattedData}`;
+function shouldLog(component, level) {
+  const now = Date.now();
+  
+  // Global throttle across all components
+  if (now - lastLogTime.global < LOG_THROTTLE) {
+    return false;
   }
 
-  static storeLogs(logEntry) {
-    this.logs.push(logEntry);
-    if (this.logs.length > this.maxLogs) {
-      this.logs.shift();
-    }
-    // Also store in localStorage for persistence
-    try {
-      localStorage.setItem('app_logs', JSON.stringify(this.logs));
-    } catch (e) {
-      // If localStorage is full, clear it and try again
-      localStorage.clear();
-      localStorage.setItem('app_logs', JSON.stringify(this.logs));
-    }
+  // Component specific throttle
+  const key = `${component}-${level}`;
+  if (!lastLogTime.components[key] || now - lastLogTime.components[key] >= LOG_THROTTLE * 2) {
+    lastLogTime.components[key] = now;
+    lastLogTime.global = now;
+    return true;
   }
-
-  static debug(component, message, data = null) {
-    if (CURRENT_LOG_LEVEL <= LOG_LEVELS.DEBUG) {
-      const logEntry = this.formatMessage('DEBUG', component, message, data);
-      console.debug(logEntry);
-      this.storeLogs(logEntry);
-    }
-  }
-
-  static info(component, message, data = null) {
-    if (CURRENT_LOG_LEVEL <= LOG_LEVELS.INFO) {
-      const logEntry = this.formatMessage('INFO', component, message, data);
-      console.info(logEntry);
-      this.storeLogs(logEntry);
-    }
-  }
-
-  static warn(component, message, data = null) {
-    if (CURRENT_LOG_LEVEL <= LOG_LEVELS.WARN) {
-      const logEntry = this.formatMessage('WARN', component, message, data);
-      console.warn(logEntry);
-      this.storeLogs(logEntry);
-    }
-  }
-
-  static error(component, message, data = null) {
-    if (CURRENT_LOG_LEVEL <= LOG_LEVELS.ERROR) {
-      const logEntry = this.formatMessage('ERROR', component, message, data);
-      console.error(logEntry);
-      this.storeLogs(logEntry);
-    }
-  }
-
-  static getLogs() {
-    return this.logs;
-  }
-
-  static clearLogs() {
-    this.logs = [];
-    localStorage.removeItem('app_logs');
-  }
-
-  static downloadLogs() {
-    const logsBlob = new Blob([JSON.stringify(this.logs, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(logsBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pong-logs-${new Date().toISOString()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
+  return false;
 }
 
-export default Logger; 
+export default class Logger {
+  static debug(component, message, data) {
+    if (!shouldLog(component, 'debug')) return;
+    console.debug(`[${new Date().toISOString()}] [DEBUG] [${component}] ${message}`, data);
+  }
+
+  static info(component, message, data) {
+    if (!shouldLog(component, 'info')) return;
+    console.info(`[${new Date().toISOString()}] [INFO] [${component}] ${message}`, data);
+  }
+
+  static warn(component, message, data) {
+    // Don't throttle warnings
+    console.warn(`[${new Date().toISOString()}] [WARN] [${component}] ${message}`, data);
+  }
+
+  static error(component, message, data) {
+    // Don't throttle errors
+    console.error(`[${new Date().toISOString()}] [ERROR] [${component}] ${message}`, data);
+  }
+} 

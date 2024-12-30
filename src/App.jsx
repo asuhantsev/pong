@@ -4,7 +4,7 @@ import { ErrorProvider } from './contexts/ErrorContext';
 import { GameProvider } from './contexts/GameContext';
 import { NetworkProvider } from './contexts/NetworkContext';
 import { SocketProvider } from './contexts/SocketContext';
-import { GameBoard } from './components/game/GameBoard';
+import { MainMenu } from './components/menu/MainMenu';
 import { ErrorBoundary } from './components/error/ErrorBoundary';
 
 export default function App() {
@@ -14,7 +14,7 @@ export default function App() {
         <NetworkProvider>
           <SocketProvider>
             <GameProvider>
-              <GameBoard />
+              <MainMenu />
             </GameProvider>
           </SocketProvider>
         </NetworkProvider>
