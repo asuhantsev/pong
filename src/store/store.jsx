@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useCallback } from 'react';
-import { rootReducer } from './reducer';
+import { rootReducer } from './reducer.jsx';
 import { createActionMiddleware } from './actions';
 import Logger from '../utils/logger';
 import performanceMonitor from '../utils/performance';
