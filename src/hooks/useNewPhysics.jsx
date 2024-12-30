@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState } from 'react';
-import { useDispatch } from '../store/store';
-import { physicsActions } from '../store/actions';
+import { useDispatch } from '../store/store.jsx';
+import { physicsActions } from '../store/actions.jsx';
 import physicsSystem, { PhysicsConstants } from '../physics/PhysicsSystem';
 import { featureFlags, FeatureFlags } from '../utils/featureFlags';
 import Logger from '../utils/logger';

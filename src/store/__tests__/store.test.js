@@ -1,6 +1,6 @@
-import { rootReducer } from '../reducer';
+import { rootReducer } from '../reducer.jsx';
 import { ActionTypes } from '../types';
-import { gameActions, physicsActions } from '../actions';
+import { gameActions, physicsActions } from '../actions.jsx';
 
 describe('Store', () => {
   describe('Reducer', () => {

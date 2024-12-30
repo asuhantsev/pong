@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useStore, useDispatch, useSelector } from '../../store/store';
-import { gameActions, physicsActions } from '../../store/actions';
-import { usePhysics } from '../../hooks/usePhysics';
-import { useGameLoop } from '../../hooks/useGameLoop';
+import { useStore, useDispatch, useSelector } from '../../store/store.jsx';
+import { gameActions, physicsActions } from '../../store/actions.jsx';
+import { usePhysics } from '../../hooks/usePhysics.jsx';
+import { useGameLoop } from '../../hooks/useGameLoop.jsx';
 import { GameField } from './GameField';
 import { GameControls } from './controls/GameControls';
 import { PauseOverlay } from './controls/PauseOverlay';
