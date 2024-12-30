@@ -4,11 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --mode development",
+    "build:dev": "vite build --mode development",
+    "build:prod": "vite build --mode production",
+    "preview:dev": "vite preview --mode development",
+    "preview:prod": "vite preview --mode production",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "predeploy": "npm run build",
+    "predeploy": "npm run build:prod",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
