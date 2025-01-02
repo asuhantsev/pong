@@ -1,53 +1,84 @@
-.container {
-  background: var(--bg-overlay);
-  padding: var(--spacing-lg);
-  border-radius: var(--border-radius-lg);
-  color: var(--text-primary);
-  min-width: var(--min-width-menu);
+.pageContainer {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: var(--spacing-lg);
+  min-height: 100vh;
+  padding: var(--spacing-lg);
+  background: var(--bg-primary);
 }
 
-.header {
+.menuContainer {
+  background: var(--bg-overlay);
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  min-width: 320px;
+  max-width: 480px;
+  width: 100%;
+}
+
+.title {
   text-align: center;
-  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xl);
+  font-size: var(--font-size-xl);
 }
 
-.nicknameDisplay {
-  color: var(--color-success);
-  padding: var(--spacing-xs) var(--spacing-sm);
+.highlight {
+  color: var(--color-accent);
+  font-weight: bold;
 }
 
 .buttonContainer {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  width: 100%;
-  max-width: var(--max-width-menu);
 }
 
 .button {
-  padding: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
   border: none;
   border-radius: var(--border-radius-md);
   font-size: var(--font-size-md);
+  font-weight: 600;
   cursor: pointer;
-  transition: var(--transition-all);
-  background: var(--color-success);
-  color: var(--text-primary);
+  transition: all 0.2s ease;
+  text-align: center;
   width: 100%;
 }
 
-.button:hover {
-  background: var(--color-success-dark);
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.optionsButton {
-  background: var(--color-neutral);
+.primary {
+  background: var(--color-primary);
+  color: var(--text-light);
 }
 
-.optionsButton:hover {
-  background: var(--color-neutral-dark);
+.primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.secondary {
+  background: var(--color-secondary);
+  color: var(--text-light);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--color-secondary-dark);
+  transform: translateY(-1px);
+}
+
+/* Theme variations */
+.dark {
+  background: var(--bg-overlay-dark);
+  color: var(--text-light);
+}
+
+.light {
+  background: var(--bg-overlay-light);
+  color: var(--text-dark);
 } 

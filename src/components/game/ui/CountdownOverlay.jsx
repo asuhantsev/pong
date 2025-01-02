@@ -1,28 +1,28 @@
 import PropTypes from 'prop-types';
-import { GameOverlay } from '../../shared/GameOverlay';
+import { memo } from 'react';
 import styles from '../../../styles/components/game/ui/CountdownOverlay.module.css';
-import typographyStyles from '../../../styles/components/shared/Typography.module.css';
+import layoutStyles from '../../../styles/components/shared/Layout.module.css';
 import animationStyles from '../../../styles/components/shared/Animation.module.css';
 
-export function CountdownOverlay({ count }) {
-  if (count === null || count === undefined) return null;
+export const CountdownOverlay = memo(function CountdownOverlay({ countdown }) {
+  if (countdown === null || countdown < 0) return null;
 
   return (
-    <GameOverlay 
-      type="countdown"
-      animation="scaleIn"
-    >
+    <div className={`
+      ${styles.overlay}
+      ${layoutStyles.flexCenter}
+      ${animationStyles.fadeIn}
+    `}>
       <div className={`
         ${styles.countdown}
-        ${typographyStyles.heading1}
-        ${animationStyles.bounce}
+        ${animationStyles.scaleIn}
       `}>
-        {count}
+        {countdown === 0 ? 'GO!' : countdown}
       </div>
-    </GameOverlay>
+    </div>
   );
-}
+});
 
 CountdownOverlay.propTypes = {
-  count: PropTypes.number
+  countdown: PropTypes.number
 }; 

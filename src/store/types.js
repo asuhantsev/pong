@@ -5,11 +5,18 @@ export const ActionTypes = {
   END_GAME: 'game/end',
   PAUSE_GAME: 'game/pause',
   RESUME_GAME: 'game/resume',
+  TOGGLE_PAUSE: 'game/togglePause',
+  SET_PAUSED: 'game/setPaused',
   UPDATE_COUNTDOWN: 'game/updateCountdown',
   UPDATE_SCORE: 'game/updateScore',
   SET_WINNER: 'game/setWinner',
+  SET_GAME_STARTED: 'game/setGameStarted',
+  UPDATE_GAME_STATE: 'game/updateGameState',
+  UPDATE_LEFT_PADDLE_POSITION: 'game/updateLeftPaddlePosition',
+  UPDATE_RIGHT_PADDLE_POSITION: 'game/updateRightPaddlePosition',
   
   // Physics Actions
+  UPDATE_PHYSICS: 'physics/update',
   BATCH_PHYSICS_UPDATE: 'physics/batchUpdate',
   UPDATE_BALL_POSITION: 'physics/updateBallPosition',
   UPDATE_BALL_VELOCITY: 'physics/updateBallVelocity',
@@ -46,16 +53,16 @@ export const StateShape = {
       spin: 'number'
     },
     paddles: {
-      left: { y: 'number', velocity: 'number' },
-      right: { y: 'number', velocity: 'number' }
+      left: {
+        position: 'number',
+        velocity: 'number'
+      },
+      right: {
+        position: 'number',
+        velocity: 'number'
+      }
     },
     speedMultiplier: 'number',
-    currentSpeed: 'number',
-    time: {
-      lastUpdate: 'number',
-      lastPaddleUpdate: 'number',
-      deltaTime: 'number'
-    },
-    isActive: 'boolean'
+    time: 'number'
   }
 }; 

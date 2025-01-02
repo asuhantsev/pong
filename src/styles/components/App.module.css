@@ -8,6 +8,12 @@
   color: var(--text-primary);
   transition: background-color var(--transition-speed) var(--animation-curve),
               color var(--transition-speed) var(--animation-curve);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Ensure app takes full viewport height on mobile */

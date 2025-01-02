@@ -10,6 +10,13 @@ export const NICKNAME_RULES = {
   }
 };
 
+export const NICKNAME_ERRORS = {
+  REQUIRED: 'Nickname is required',
+  TOO_SHORT: NICKNAME_RULES.ERROR_MESSAGES.TOO_SHORT,
+  TOO_LONG: NICKNAME_RULES.ERROR_MESSAGES.TOO_LONG,
+  INVALID_CHARS: NICKNAME_RULES.ERROR_MESSAGES.INVALID_CHARS
+};
+
 // Game Physics
 export const PHYSICS_STEP = 1000 / 60; // 60 FPS
 export const MIN_DELTA_TIME = 1; // Minimum time step for physics calculations

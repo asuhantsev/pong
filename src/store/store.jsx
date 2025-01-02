@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
+import { createContext, useContext, useReducer, useCallback, useEffect, useMemo } from 'react';
 import { rootReducer } from './reducer.jsx';
 import { createActionMiddleware } from './actions.jsx';
 import Logger from '../utils/logger';
@@ -14,42 +14,37 @@ const applyMiddleware = (...middlewares) => (store) => {
 };
 
 export function StoreProvider({ children }) {
-  const [state, dispatch] = useReducer(rootReducer, undefined, () => {
+  const [state, baseDispatch] = useReducer(rootReducer, undefined, () => {
     // Initialize with a clean state
     const initialState = rootReducer(undefined, { type: '@INIT' });
     Logger.info('Store', 'Initializing with clean state', initialState);
     return initialState;
   });
 
-  // Initialize store on mount
-  useEffect(() => {
-    Logger.info('Store', 'Initializing store');
-    dispatch(systemActions.init());
-  }, []);
-
-  // Create store object
-  const store = {
+  // Create store object with memoized methods
+  const store = useMemo(() => ({
     getState: () => state,
     dispatch: action => {
       performanceMonitor.startMeasure(`dispatch_${action.type}`);
-      dispatch(action);
+      baseDispatch(action);
       performanceMonitor.endMeasure(`dispatch_${action.type}`, 'actions');
     }
-  };
+  }), [state]);
 
-  // Apply middleware
-  const enhancedDispatch = applyMiddleware(
-    createActionMiddleware
-  )(store)(store.dispatch);
+  // Apply middleware with memoization
+  const enhancedDispatch = useMemo(() => 
+    applyMiddleware(createActionMiddleware)(store)(store.dispatch),
+    [store]
+  );
 
-  // Memoize the context value
-  const value = {
-    state,
-    dispatch: enhancedDispatch
-  };
+  // Initialize store on mount
+  useEffect(() => {
+    Logger.info('Store', 'Initializing store');
+    enhancedDispatch(systemActions.init());
+  }, []); // Only run once on mount
 
   return (
-    <StoreContext.Provider value={value}>
+    <StoreContext.Provider value={{ state, dispatch: enhancedDispatch }}>
       {children}
     </StoreContext.Provider>
   );

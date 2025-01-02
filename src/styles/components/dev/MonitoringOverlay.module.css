@@ -76,9 +76,11 @@
 }
 
 .stateChange {
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 8px;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--border-radius-sm);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .stateHeader {
@@ -95,24 +97,32 @@
 }
 
 .changes {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  font-family: monospace;
+  font-size: var(--font-size-sm);
 }
 
 .change {
-  display: grid;
-  grid-template-columns: auto 1fr auto 1fr;
-  gap: 8px;
+  display: flex;
+  gap: var(--spacing-sm);
   align-items: center;
+  padding: var(--spacing-xs) 0;
+}
+
+.key {
+  color: var(--color-primary);
+  min-width: 80px;
 }
 
 .from {
-  color: #ff6b6b;
+  color: var(--color-error);
+}
+
+.arrow {
+  color: var(--color-text-muted);
 }
 
 .to {
-  color: #69db7c;
+  color: var(--color-success);
 }
 
 /* Scrollbar styling */
@@ -132,4 +142,46 @@
 
 .overlay::-webkit-scrollbar-thumb:hover {
   background: #444;
+}
+
+.stateChangesContainer {
+  padding: var(--spacing-md);
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: var(--border-radius-md);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.changeHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.timestamp {
+  color: var(--color-text-muted);
+}
+
+.component {
+  font-weight: bold;
+  color: var(--color-primary);
+}
+
+.action {
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-xs);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--border-radius-sm);
+  font-family: monospace;
+}
+
+.payload {
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-xs);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  white-space: pre-wrap;
 } 

@@ -1,75 +1,73 @@
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMultiplayer } from '../../contexts/MultiplayerContext';
+import { useDispatch, useSelector } from '../../store/store';
+import { gameActions, systemActions } from '../../store/actions';
+import { useMultiplayerContext } from '../../contexts/MultiplayerContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import styles from '../../styles/components/menu/MainMenu.module.css';
-import { useEffect, useCallback } from 'react';
-import { useDispatch, useSelector } from '../../store/store';
-import { gameActions, physicsActions, systemActions } from '../../store/actions';
-import { usePhysics } from '../../hooks/usePhysics';
 import Logger from '../../utils/logger';
 
 export function MainMenu() {
   const navigate = useNavigate();
-  const { nickname } = useMultiplayer();
+  const { nickname } = useMultiplayerContext();
   const { theme } = useTheme();
   const dispatch = useDispatch();
-  const gameStatus = useSelector(state => state.game.status);
-  const { resetPhysics } = usePhysics();
-
-  // Reset state when entering menu
-  useEffect(() => {
-    Logger.info('MainMenu', 'Initializing menu state');
-    
-    // Ensure we're in idle state
-    if (gameStatus !== 'idle') {
-      dispatch(gameActions.endGame());
-      dispatch(physicsActions.resetState());
-      resetPhysics();
-    }
-  }, [gameStatus, dispatch, resetPhysics]);
 
   const handleStartGame = useCallback(() => {
-    Logger.info('MainMenu', 'Starting single player game');
-    dispatch(gameActions.startGame('single'));
-    navigate('/game');
-  }, [dispatch, navigate]);
+    try {
+      // First dispatch game start
+      dispatch(gameActions.startGame('single'));
+      
+      // Then navigate to game route
+      navigate('/game', { 
+        replace: true,
+        state: { mode: 'single' }
+      });
+      
+      Logger.info('MainMenu', 'Starting single player game', { mode: 'single' });
+    } catch (error) {
+      Logger.error('MainMenu', 'Error starting game', error);
+      // Stay on menu if there's an error
+    }
+  }, [navigate, dispatch]);
 
   const handleMultiplayerClick = useCallback(() => {
     Logger.info('MainMenu', 'Navigating to multiplayer menu');
-    navigate('/multiplayer');
+    navigate('/multiplayer', { replace: true });
   }, [navigate]);
 
   const handleOptionsClick = useCallback(() => {
     Logger.info('MainMenu', 'Navigating to options menu');
-    navigate('/options');
+    navigate('/options', { replace: true });
   }, [navigate]);
 
   return (
-    <div className={`${styles.container} ${styles[theme]}`}>
-      <h1 className={styles.header}>
-        Welcome, <span className={styles.nicknameDisplay}>{nickname || 'Player'}</span>
-      </h1>
-      <div className={styles.buttonContainer}>
-        <button 
-          className={`${styles.button} ${styles.primary}`} 
-          onClick={handleStartGame}
-          disabled={gameStatus !== 'idle'}
-        >
-          Single Player
-        </button>
-        <button 
-          className={`${styles.button} ${styles.secondary}`} 
-          onClick={handleMultiplayerClick}
-          disabled={gameStatus !== 'idle'}
-        >
-          Multiplayer
-        </button>
-        <button 
-          className={`${styles.button} ${styles.tertiary}`} 
-          onClick={handleOptionsClick}
-        >
-          Options
-        </button>
+    <div className={styles.pageContainer}>
+      <div className={`${styles.menuContainer} ${styles[theme]}`}>
+        <h1 className={styles.title}>
+          Welcome, <span className={styles.highlight}>{nickname || 'Player'}</span>
+        </h1>
+        
+        <div className={styles.buttonContainer}>
+          <button
+            className={`${styles.button} ${styles.primary}`}
+            onClick={handleStartGame}
+          >
+            Single Player
+          </button>
+          <button
+            className={`${styles.button} ${styles.primary}`}
+            onClick={handleMultiplayerClick}
+          >
+            Multiplayer
+          </button>
+          <button
+            className={`${styles.button} ${styles.secondary}`}
+            onClick={handleOptionsClick}
+          >
+            Options
+          </button>
+        </div>
       </div>
     </div>
   );

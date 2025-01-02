@@ -59,22 +59,29 @@ export function MonitoringOverlay() {
   );
 
   const renderStateChanges = () => (
-    <div className={styles.stateContainer}>
+    <div className={styles.stateChangesContainer}>
       {stateChanges.map((change, index) => (
         <div key={index} className={styles.stateChange}>
-          <div className={styles.stateHeader}>
-            <span>{change.component}</span>
-            <span>{new Date(change.timestamp).toLocaleTimeString()}</span>
+          <div className={styles.changeHeader}>
+            <span className={styles.timestamp}>{new Date(change.timestamp).toLocaleTimeString()}</span>
+            <span className={styles.component}>{change.component}</span>
           </div>
-          <div className={styles.stateAction}>
-            {change.action && <span>Action: {change.action}</span>}
-          </div>
+          {change.action && (
+            <div className={styles.action}>
+              <span>Action: {change.action.type}</span>
+              {change.action.payload && (
+                <pre className={styles.payload}>
+                  {JSON.stringify(change.action.payload, null, 2)}
+                </pre>
+              )}
+            </div>
+          )}
           <div className={styles.changes}>
             {Object.entries(change.changes).map(([key, { from, to }]) => (
               <div key={key} className={styles.change}>
-                <span>{key}:</span>
+                <span className={styles.key}>{key}:</span>
                 <span className={styles.from}>{JSON.stringify(from)}</span>
-                <span>→</span>
+                <span className={styles.arrow}>→</span>
                 <span className={styles.to}>{JSON.stringify(to)}</span>
               </div>
             ))}

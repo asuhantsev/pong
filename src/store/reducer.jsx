@@ -1,5 +1,20 @@
 import { ActionTypes } from './types';
-import { BOARD_HEIGHT, BOARD_WIDTH, BALL_SIZE, PADDLE_HEIGHT, INITIAL_BALL_SPEED, MAX_BALL_SPEED, SPEED_INCREASE } from '../constants/gameConstants';
+import { 
+  BOARD_HEIGHT, 
+  BOARD_WIDTH, 
+  BALL_SIZE, 
+  PADDLE_HEIGHT,
+  PADDLE_WIDTH,
+  PADDLE_OFFSET,
+  INITIAL_BALL_SPEED, 
+  MAX_BALL_SPEED, 
+  SPEED_INCREASE,
+  SPEED_MULTIPLIER,
+  MAX_SPIN,
+  SPIN_DECAY,
+  MIN_DELTA_TIME,
+  PHYSICS_THRESHOLD
+} from '../constants/gameConstants';
 import Logger from '../utils/logger';
 
 const getInitialBallVelocity = (speed = INITIAL_BALL_SPEED) => {
@@ -60,6 +75,27 @@ const updateState = (state, path, value) => {
   return newState;
 };
 
+const handlePaddleCollision = (ball, paddle, isLeft, currentSpin) => {
+  const relativeIntersectY = (paddle.y + (PADDLE_HEIGHT / 2)) - (ball.position.y + (BALL_SIZE / 2));
+  const normalizedIntersectY = relativeIntersectY / (PADDLE_HEIGHT / 2);
+  const bounceAngle = normalizedIntersectY * Math.PI / 3;
+
+  const speed = Math.sqrt(ball.velocity.x * ball.velocity.x + ball.velocity.y * ball.velocity.y);
+  const newSpeed = Math.min(speed * SPEED_MULTIPLIER, MAX_BALL_SPEED);
+  
+  const paddleSpeed = paddle.velocity || 0;
+  const newSpin = (currentSpin * SPIN_DECAY) + (paddleSpeed * 0.2);
+  const clampedSpin = Math.max(Math.min(newSpin, MAX_SPIN), -MAX_SPIN);
+
+  return {
+    velocity: {
+      x: isLeft ? Math.abs(newSpeed * Math.cos(bounceAngle)) : -Math.abs(newSpeed * Math.cos(bounceAngle)),
+      y: newSpeed * Math.sin(bounceAngle) + clampedSpin
+    },
+    spin: clampedSpin
+  };
+};
+
 export function rootReducer(state = initialState, action) {
   Logger.debug('Reducer', 'Processing action:', { currentState: state, action });
   
@@ -94,9 +130,7 @@ export function rootReducer(state = initialState, action) {
       };
 
     case ActionTypes.START_GAME:
-      if (state.game.status === 'playing' || state.game.status === 'starting') {
-        return state;
-      }
+      Logger.info('Reducer', 'Starting game', { mode: action.payload });
       return {
         ...state,
         game: {
@@ -111,39 +145,33 @@ export function rootReducer(state = initialState, action) {
         },
         physics: {
           ...initialState.physics,
-          time: {
-            lastUpdate: performance.now(),
-            lastPaddleUpdate: performance.now(),
-            deltaTime: 0
-          }
-        }
-      };
-
-    case ActionTypes.END_GAME:
-      if (state.game.status === 'idle') {
-        return state;
-      }
-      return {
-        ...state,
-        game: {
-          ...initialState.game,
-          mode: null,
-          isStarted: false,
-          isPaused: false,
-          winner: null,
-          score: { left: 0, right: 0 },
-          countdown: null,
-          status: 'idle'
-        },
-        physics: {
-          ...initialState.physics,
+          ball: {
+            position: { x: BOARD_WIDTH / 2 - BALL_SIZE / 2, y: BOARD_HEIGHT / 2 - BALL_SIZE / 2 },
+            velocity: getInitialBallVelocity(),
+            spin: 0
+          },
+          paddles: {
+            left: { y: BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2, velocity: 0 },
+            right: { y: BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2, velocity: 0 }
+          },
           time: {
             lastUpdate: performance.now(),
             lastPaddleUpdate: performance.now(),
             deltaTime: 0
           },
-          isActive: false
+          isActive: true
         }
+      };
+
+    case ActionTypes.END_GAME:
+      Logger.info('Reducer', 'Ending game');
+      return {
+        ...state,
+        game: {
+          ...initialState.game,
+          mode: null
+        },
+        physics: initialState.physics
       };
 
     case ActionTypes.PAUSE_GAME:
@@ -154,12 +182,15 @@ export function rootReducer(state = initialState, action) {
 
     case ActionTypes.UPDATE_COUNTDOWN:
       const newCountdown = action.payload;
+      const newStatus = newCountdown === 0 ? 'playing' : 'starting';
+      Logger.info('Reducer', 'Updating countdown', { countdown: newCountdown, newStatus });
+      
       return {
         ...state,
         game: {
           ...state.game,
           countdown: newCountdown,
-          status: newCountdown === 0 ? 'playing' : 'starting'
+          status: newStatus
         },
         physics: {
           ...state.physics,
@@ -262,6 +293,88 @@ export function rootReducer(state = initialState, action) {
       return {
         ...state,
         physics: newPhysicsState
+      };
+
+    case ActionTypes.UPDATE_PHYSICS:
+      if (!state.physics.isActive) return state;
+
+      const deltaTime = action.payload;
+      const dt = Math.max(deltaTime, MIN_DELTA_TIME) / 1000;
+      const now = performance.now();
+      
+      // Calculate new ball state
+      const spinEffect = state.physics.ball.spin * 100;
+      let newVelX = state.physics.ball.velocity.x;
+      let newVelY = state.physics.ball.velocity.y + spinEffect * dt;
+      
+      let newX = state.physics.ball.position.x + newVelX * dt;
+      let newY = state.physics.ball.position.y + newVelY * dt;
+      let newSpin = state.physics.ball.spin * SPIN_DECAY;
+
+      // Wall collisions
+      if (newY <= 0) {
+        newVelY = Math.abs(newVelY);
+        newY = 0;
+        newSpin *= 0.8;
+      } else if (newY + BALL_SIZE >= BOARD_HEIGHT) {
+        newVelY = -Math.abs(newVelY);
+        newY = BOARD_HEIGHT - BALL_SIZE;
+        newSpin *= 0.8;
+      }
+
+      // Paddle collisions
+      const leftPaddleCollision = newX <= PADDLE_OFFSET + PADDLE_WIDTH && 
+        newY + BALL_SIZE >= state.physics.paddles.left.y && 
+        newY <= state.physics.paddles.left.y + PADDLE_HEIGHT;
+
+      const rightPaddleCollision = newX + BALL_SIZE >= BOARD_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH &&
+        newY + BALL_SIZE >= state.physics.paddles.right.y && 
+        newY <= state.physics.paddles.right.y + PADDLE_HEIGHT;
+
+      if (leftPaddleCollision || rightPaddleCollision) {
+        const paddleSide = leftPaddleCollision ? 'left' : 'right';
+        const paddle = state.physics.paddles[paddleSide];
+        
+        const { velocity, spin } = handlePaddleCollision(
+          { position: { x: newX, y: newY }, velocity: { x: newVelX, y: newVelY } },
+          paddle,
+          leftPaddleCollision,
+          newSpin
+        );
+
+        newVelX = velocity.x;
+        newVelY = velocity.y;
+        newSpin = spin;
+        newX = leftPaddleCollision ? 
+          PADDLE_OFFSET + PADDLE_WIDTH : 
+          BOARD_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH - BALL_SIZE;
+      }
+
+      // Only update if significant changes occurred
+      const hasChanged = 
+        Math.abs(newX - state.physics.ball.position.x) > PHYSICS_THRESHOLD || 
+        Math.abs(newY - state.physics.ball.position.y) > PHYSICS_THRESHOLD || 
+        Math.abs(newVelX - state.physics.ball.velocity.x) > PHYSICS_THRESHOLD || 
+        Math.abs(newVelY - state.physics.ball.velocity.y) > PHYSICS_THRESHOLD ||
+        Math.abs(newSpin - state.physics.ball.spin) > PHYSICS_THRESHOLD;
+
+      if (!hasChanged) return state;
+
+      return {
+        ...state,
+        physics: {
+          ...state.physics,
+          ball: {
+            position: { x: newX, y: newY },
+            velocity: { x: newVelX, y: newVelY },
+            spin: newSpin
+          },
+          time: {
+            lastUpdate: now,
+            deltaTime: dt,
+            lastPaddleUpdate: state.physics.time.lastPaddleUpdate
+          }
+        }
       };
 
     default:

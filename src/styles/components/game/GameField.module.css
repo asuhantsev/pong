@@ -1,11 +1,9 @@
 .gameField {
   position: relative;
-  width: 800px;
-  height: 600px;
-  border: 2px solid #646464;
-  background-image: linear-gradient(#646464 2px, transparent 2px), linear-gradient(to right, #646464 2px, transparent 2px);
-  background-size: 47px 47px;
-  background-color: #535353;
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -14,35 +12,79 @@
   left: 50%;
   top: 0;
   bottom: 0;
-  width: 4px;
-  background: linear-gradient(to bottom, var(--color-primary) 50%, transparent 50%);
-  background-size: 20px 20px;
+  width: 2px;
+  background-color: var(--text-secondary);
+  opacity: 0.3;
   transform: translateX(-50%);
-  opacity: 0.5;
 }
 
 .ball {
   position: absolute;
-  width: 15px;
-  height: 15px;
-  background-color: #fff;
-  transform: translate(-50%, -50%);
+  background-color: var(--text-primary);
+  border-radius: 50%;
+  transition: transform 16ms linear, opacity 300ms ease;
 }
 
 .paddle {
   position: absolute;
-  width: 15px;
-  height: 100px;
-  background-color: #fff;
-  transform: translateY(-50%);
+  width: 10px;
+  background-color: var(--text-primary);
+  border-radius: 4px;
+  transition: top 16ms linear;
 }
 
-.leftPaddle {
-  composes: paddle;
+.left {
   left: 50px;
 }
 
-.rightPaddle {
-  composes: paddle;
+.right {
   right: 50px;
+}
+
+.playerNames {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 100px;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.playerLeft, .playerRight {
+  padding: 8px 16px;
+  background-color: var(--bg-primary);
+  border-radius: 4px;
+  opacity: 0.9;
+}
+
+.countdown {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 6rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
 } 

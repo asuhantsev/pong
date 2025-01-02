@@ -1,33 +1,25 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMultiplayer } from '../../contexts/MultiplayerContext';
+import { useMultiplayerContext } from '../../contexts/MultiplayerContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import styles from '../../styles/components/menu/OptionsMenu.module.css';
+import Logger from '../../utils/logger';
 
 export function OptionsMenu() {
   const navigate = useNavigate();
-  const { nickname: currentNickname, updateNickname } = useMultiplayer();
-  const [nickname, setNickname] = useState(currentNickname);
+  const { nickname: currentNickname, updateNickname } = useMultiplayerContext();
+  const { theme } = useTheme();
+  const [nickname, setNickname] = useState(currentNickname || '');
   const [error, setError] = useState('');
-  const [isSaved, setIsSaved] = useState(false);
 
   const handleSave = () => {
     if (!nickname.trim()) {
       setError('Nickname cannot be empty');
       return;
     }
-    
-    if (nickname.length < 3) {
-      setError('Nickname must be at least 3 characters long');
-      return;
-    }
-
-    updateNickname(nickname);
-    setIsSaved(true);
-    setError('');
-
-    setTimeout(() => {
-      setIsSaved(false);
-    }, 2000);
+    Logger.info('OptionsMenu', 'Saving nickname', { nickname });
+    updateNickname(nickname.trim());
+    navigate('/');
   };
 
   const handleBack = () => {
@@ -35,39 +27,42 @@ export function OptionsMenu() {
   };
 
   return (
-    <div className={styles.container}>
-      <h2 className={styles.title}>Options</h2>
-
-      <div className={styles.nicknameSection}>
-        <label className={styles.label} htmlFor="nickname">
-          Nickname
-        </label>
-        <input
-          id="nickname"
-          type="text"
-          className={styles.input}
-          value={nickname}
-          onChange={(e) => {
-            setNickname(e.target.value);
-            setError('');
-            setIsSaved(false);
-          }}
-          maxLength={15}
-        />
-        {error && <div className={styles.error}>{error}</div>}
-      </div>
-
-      <div className={styles.buttonContainer}>
-        <button
-          className={`${styles.saveButton} ${isSaved ? styles.saved : ''}`}
-          onClick={handleSave}
-          disabled={nickname === currentNickname || !nickname.trim()}
-        >
-          {isSaved ? 'Saved!' : 'Save Changes'}
-        </button>
-        <button className={styles.backButton} onClick={handleBack}>
-          Back to Menu
-        </button>
+    <div className={styles.pageContainer}>
+      <div className={`${styles.menuContainer} ${styles[theme]}`}>
+        <h1 className={styles.title}>Options</h1>
+        
+        <div className={styles.nicknameSection}>
+          <label htmlFor="nickname" className={styles.label}>
+            Nickname
+          </label>
+          <input
+            id="nickname"
+            type="text"
+            value={nickname}
+            onChange={(e) => {
+              setNickname(e.target.value);
+              setError('');
+            }}
+            className={`${styles.input} ${error ? styles.error : ''}`}
+            placeholder="Enter your nickname"
+          />
+          {error && <p className={styles.errorMessage}>{error}</p>}
+        </div>
+        
+        <div className={styles.buttonContainer}>
+          <button
+            className={`${styles.button} ${styles.primary}`}
+            onClick={handleSave}
+          >
+            Save
+          </button>
+          <button
+            className={`${styles.button} ${styles.secondary}`}
+            onClick={handleBack}
+          >
+            Back
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -15,14 +15,23 @@ export const gameActions = {
   endGame: () => createAction(ActionTypes.END_GAME),
   pauseGame: () => createAction(ActionTypes.PAUSE_GAME),
   resumeGame: () => createAction(ActionTypes.RESUME_GAME),
+  togglePause: () => createAction(ActionTypes.TOGGLE_PAUSE),
+  setPaused: (isPaused) => createAction(ActionTypes.SET_PAUSED, isPaused),
   updateCountdown: (count) => createAction(ActionTypes.UPDATE_COUNTDOWN, count),
-  updateScore: (side, value) => createAction(ActionTypes.UPDATE_SCORE, { side, value }),
-  setWinner: (winner) => createAction(ActionTypes.SET_WINNER, winner)
+  updateScore: (score) => createAction(ActionTypes.UPDATE_SCORE, score),
+  setWinner: (winner) => createAction(ActionTypes.SET_WINNER, winner),
+  setGameStarted: (started) => createAction(ActionTypes.SET_GAME_STARTED, started),
+  updateGameState: (state) => createAction(ActionTypes.UPDATE_GAME_STATE, state),
+  updateBallPosition: (pos) => createAction(ActionTypes.UPDATE_BALL_POSITION, pos),
+  updateBallVelocity: (vel) => createAction(ActionTypes.UPDATE_BALL_VELOCITY, vel),
+  updateLeftPaddlePosition: (pos) => createAction(ActionTypes.UPDATE_LEFT_PADDLE_POSITION, pos),
+  updateRightPaddlePosition: (pos) => createAction(ActionTypes.UPDATE_RIGHT_PADDLE_POSITION, pos)
 };
 
 // Physics Actions
 export const physicsActions = {
   batchUpdate: (updates) => createAction(ActionTypes.BATCH_PHYSICS_UPDATE, updates),
+  updatePhysics: (deltaTime) => createAction(ActionTypes.UPDATE_PHYSICS, deltaTime),
   updatePaddlePosition: ({ side, position, velocity, time }) => 
     createAction(ActionTypes.UPDATE_PADDLE_POSITION, { side, position, velocity, time }),
   resetBall: () => createAction(ActionTypes.RESET_BALL),
@@ -46,7 +55,7 @@ export const createActionMiddleware = (store) => (next) => (action) => {
     'Store',
     prevState,
     nextState,
-    action.type
+    action
   );
   
   return result;

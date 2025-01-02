@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import Logger from '../utils/logger';
 import { useError } from './ErrorContext';
@@ -48,56 +48,46 @@ export function SocketProvider({ children }) {
       const handleConnect = () => {
         Logger.info('Socket', 'Connected to server');
         setIsConnecting(false);
-        reconnectAttemptsRef.current = 0;
         setSocket(socketInstance);
+        reconnectAttemptsRef.current = 0;
       };
 
       const handleConnectError = (error) => {
-        Logger.warn('Socket', 'Connection error', error.message);
+        Logger.warn('Socket', 'Connection error', error);
         setIsConnecting(false);
         
-        if (reconnectAttemptsRef.current >= RECONNECTION_ATTEMPTS) {
-          setError('socket', 'Failed to connect to server. Please check if the server is running.');
-          socketInstance.disconnect();
-          setSocket(null);
+        if (reconnectAttemptsRef.current < RECONNECTION_ATTEMPTS) {
+          reconnectAttemptsRef.current++;
+          setTimeout(connect, RECONNECTION_DELAY);
         } else {
-          reconnectAttemptsRef.current += 1;
-          const nextAttemptIn = RECONNECTION_DELAY / 1000;
-          setError('socket', `Connection failed. Retrying in ${nextAttemptIn} seconds...`);
-          
-          setTimeout(() => {
-            if (socketRef.current === socketInstance) {
-              Logger.info('Socket', `Attempting reconnection ${reconnectAttemptsRef.current}/${RECONNECTION_ATTEMPTS}`);
-              socketInstance.connect();
-            }
-          }, RECONNECTION_DELAY);
+          setError('Failed to connect to server. Please try again later.');
         }
       };
 
       const handleDisconnect = (reason) => {
         Logger.warn('Socket', 'Disconnected from server', reason);
+        setSocket(null);
         
-        // Don't clear socket state immediately on transport close
-        if (reason !== 'transport close') {
-          setSocket(null);
+        // Don't attempt to reconnect if the disconnect was intentional
+        if (reason === 'io client disconnect' || reason === 'io server disconnect') {
+          return;
         }
         
-        const shouldReconnect = ['transport close', 'transport error', 'ping timeout'].includes(reason);
-        
-        if (shouldReconnect && reconnectAttemptsRef.current < RECONNECTION_ATTEMPTS) {
-          setTimeout(() => {
-            if (socketRef.current === socketInstance) {
-              Logger.info('Socket', 'Attempting to reconnect after disconnect');
-              socketInstance.connect();
-            }
-          }, RECONNECTION_DELAY);
+        // Don't attempt to reconnect in single-player mode
+        const path = window.location.pathname;
+        if (path === '/game' && !window.location.search) {
+          return;
+        }
+
+        if (reconnectAttemptsRef.current < RECONNECTION_ATTEMPTS) {
+          reconnectAttemptsRef.current++;
+          setTimeout(connect, RECONNECTION_DELAY);
         }
       };
 
       const handleError = (error) => {
         Logger.error('Socket', 'Socket error', error);
-        setError('socket', 'Connection error occurred. Please check if the server is running.');
-        setSocket(null);
+        setError('An error occurred with the connection. Please try again.');
       };
 
       socketInstance.on('connect', handleConnect);
@@ -105,39 +95,40 @@ export function SocketProvider({ children }) {
       socketInstance.on('disconnect', handleDisconnect);
       socketInstance.on('error', handleError);
 
-      // Manually initiate connection
       socketInstance.connect();
 
-      return socketInstance;
     } catch (error) {
       Logger.error('Socket', 'Failed to create socket instance', error);
-      setError('socket', 'Failed to initialize connection. Please check if the server is running.');
       setIsConnecting(false);
-      return null;
+      setError('Failed to initialize connection. Please try again later.');
     }
   }, [setError]);
 
-  useEffect(() => {
-    const socketInstance = connect();
+  const disconnect = useCallback(() => {
+    if (socketRef.current) {
+      socketRef.current.removeAllListeners();
+      socketRef.current.disconnect();
+      socketRef.current = null;
+      setSocket(null);
+    }
+  }, []);
 
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       if (socketRef.current) {
-        Logger.info('Socket', 'Cleaning up socket connection');
         socketRef.current.removeAllListeners();
         socketRef.current.disconnect();
-        socketRef.current = null;
-        setSocket(null);
       }
     };
-  }, [connect]);
+  }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     socket,
     isConnecting,
-    isConnected: socket?.connected || false,
     connect,
-    reconnectAttempts: reconnectAttemptsRef.current
-  };
+    disconnect
+  }), [socket, isConnecting, connect, disconnect]);
 
   return (
     <SocketContext.Provider value={value}>

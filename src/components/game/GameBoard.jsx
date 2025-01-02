@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from '../../store/store.jsx';
-import { gameActions, physicsActions } from '../../store/actions.jsx';
-import { usePhysics } from '../../hooks/usePhysics.jsx';
+import { gameActions, physicsActions, systemActions } from '../../store/actions.jsx';
 import { useGameLoop } from '../../hooks/useGameLoop.jsx';
 import { GameField } from './GameField';
 import { GameControls } from './controls/GameControls';
@@ -12,192 +11,128 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import styles from '../../styles/components/game/GameBoard.module.css';
 import Logger from '../../utils/logger';
 import performanceMonitor from '../../utils/performance';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Custom error fallback for GameField
-const GameFieldErrorFallback = (error, resetError) => (
-  <div className={`${styles.errorFallback} ${styles.glass}`}>
-    <h3 className={styles.errorTitle}>Game Field Error</h3>
-    <p className={styles.errorMessage}>There was a problem rendering the game field.</p>
-    <button 
-      onClick={resetError}
-      className={styles.resetButton}
-    >
-      Reset Game Field
-    </button>
-  </div>
-);
+function GameFieldErrorFallback({ error, resetError }) {
+  const dispatch = useDispatch();
+  
+  const handleReset = useCallback(() => {
+    dispatch(physicsActions.resetState());
+    resetError();
+  }, [dispatch, resetError]);
+
+  return (
+    <div className={`${styles.errorFallback} ${styles.glass}`}>
+      <h3 className={styles.errorTitle}>Game Field Error</h3>
+      <p className={styles.errorMessage}>There was a problem rendering the game field.</p>
+      <button 
+        onClick={handleReset}
+        className={styles.resetButton}
+      >
+        Reset Game Field
+      </button>
+    </div>
+  );
+}
 
 export function GameBoard() {
-  const { 
-    isStarted, 
-    isPaused, 
-    countdown, 
-    winner, 
-    score, 
-    mode,
-    status 
-  } = useSelector(state => ({
-    isStarted: state.game.isStarted,
-    isPaused: state.game.isPaused,
-    countdown: state.game.countdown,
-    winner: state.game.winner,
-    score: state.game.score,
-    mode: state.game.mode,
-    status: state.game.status
-  }));
-  
   const dispatch = useDispatch();
-  const { physics, updatePhysics, movePaddle } = usePhysics();
   const navigate = useNavigate();
+  const location = useLocation();
+  const initRef = useRef(false);
 
-  // Initialize game on mount
+  // Use separate selectors to prevent unnecessary re-renders
+  const mode = useSelector(state => state.game.mode);
+  const isStarted = useSelector(state => state.game.isStarted);
+  const isPaused = useSelector(state => state.game.isPaused);
+  const countdown = useSelector(state => state.game.countdown);
+  const winner = useSelector(state => state.game.winner);
+  const score = useSelector(state => state.game.score);
+  const status = useSelector(state => state.game.status);
+
+  // Initialize game
   useEffect(() => {
-    Logger.info('GameBoard', 'Initializing game');
-    
-    // Only start if we have a mode and aren't already playing
-    if (mode && status !== 'playing' && status !== 'starting') {
-      dispatch(gameActions.startGame(mode));
+    try {
+      // Check if we have mode either in state or location
+      const gameMode = mode || location.state?.mode;
+      
+      if (!gameMode) {
+        Logger.info('GameBoard', 'No game mode found, returning to menu');
+        navigate('/', { replace: true });
+        return;
+      }
+
+      // Only initialize once and if not already started
+      if (!initRef.current && !isStarted) {
+        Logger.info('GameBoard', 'Initializing game', { mode: gameMode });
+        initRef.current = true;
+        dispatch(gameActions.startGame(gameMode));
+      }
+    } catch (error) {
+      Logger.error('GameBoard', 'Error initializing game', error);
+      navigate('/', { replace: true });
     }
 
+    // Cleanup on unmount
     return () => {
-      Logger.info('GameBoard', 'Cleaning up game');
-      dispatch(gameActions.endGame());
-    };
-  }, [mode, status]); // Re-run if mode or status changes
-
-  // Countdown management
-  useEffect(() => {
-    if (!isStarted || countdown === null || countdown < 0 || !mode) return;
-
-    Logger.info('GameBoard', 'Countdown update', { countdown });
-    const timer = setTimeout(() => {
-      if (countdown > 0) {
-        dispatch(gameActions.updateCountdown(countdown - 1));
+      if (initRef.current) {
+        Logger.info('GameBoard', 'Cleaning up game');
+        dispatch(gameActions.endGame());
+        initRef.current = false;
       }
+    };
+  }, [dispatch, navigate, mode, location.state?.mode, isStarted]);
+
+  // Handle countdown
+  useEffect(() => {
+    if (!isStarted || isPaused || countdown === null || countdown < 0) return;
+
+    const timer = setInterval(() => {
+      dispatch(gameActions.updateCountdown(countdown - 1));
     }, 1000);
 
-    return () => clearTimeout(timer);
-  }, [isStarted, countdown, mode, dispatch]);
-
-  // Redirect to main menu if no mode is set
-  useEffect(() => {
-    if (!mode && status === 'idle') {
-      Logger.info('GameBoard', 'No game mode set, redirecting to main menu');
-      navigate('/');
-    }
-  }, [mode, status, navigate]);
-
-  // Game loop
-  useGameLoop(
-    useCallback((deltaTime) => {
-      if (!isStarted || isPaused || status !== 'playing') return;
-      updatePhysics(deltaTime);
-    }, [isStarted, isPaused, status, updatePhysics])
-  );
-
-  // Keyboard input state
-  const [pressedKeys, setPressedKeys] = useState(new Set());
-
-  // Memoized game state to prevent unnecessary re-renders
-  const gameFieldProps = useMemo(() => ({
-    ballPosition: physics.ball?.position,
-    paddlePositions: {
-      left: { y: physics.paddles?.left?.y },
-      right: { y: physics.paddles?.right?.y }
-    }
-  }), [physics.ball?.position, physics.paddles?.left?.y, physics.paddles?.right?.y]);
-
-  // Handle keyboard input
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      setPressedKeys(prev => new Set(prev).add(e.key.toLowerCase()));
-    };
-
-    const handleKeyUp = (e) => {
-      setPressedKeys(prev => {
-        const newKeys = new Set(prev);
-        newKeys.delete(e.key.toLowerCase());
-        return newKeys;
-      });
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
-
-  // Update paddle positions based on keyboard input
-  useEffect(() => {
-    if (!isStarted || isPaused || countdown) return;
-
-    const updatePaddles = () => {
-      const speed = 5;
-      if (pressedKeys.has('w')) movePaddle(physics.paddles?.left?.y - speed, 'left');
-      if (pressedKeys.has('s')) movePaddle(physics.paddles?.left?.y + speed, 'left');
-      if (pressedKeys.has('arrowup')) movePaddle(physics.paddles?.right?.y - speed, 'right');
-      if (pressedKeys.has('arrowdown')) movePaddle(physics.paddles?.right?.y + speed, 'right');
-    };
-
-    const frameId = requestAnimationFrame(updatePaddles);
-    return () => cancelAnimationFrame(frameId);
-  }, [isStarted, isPaused, countdown, physics.paddles?.left?.y, physics.paddles?.right?.y, movePaddle, pressedKeys]);
+    return () => clearInterval(timer);
+  }, [countdown, isStarted, isPaused, dispatch]);
 
   // Handle pause/resume
   const handlePause = useCallback(() => {
-    if (!isStarted || countdown || winner) return;
-    Logger.info('GameBoard', 'Game paused/resumed');
-    dispatch(gameActions.pauseGame());
+    if (!isStarted || countdown !== null || winner) return;
+    dispatch(gameActions.togglePause());
   }, [isStarted, countdown, winner, dispatch]);
 
-  // Error handlers
-  const handleGameFieldError = useCallback((error) => {
-    Logger.error('GameBoard', 'GameField error', { error });
-    dispatch(gameActions.pauseGame());
-  }, [dispatch]);
+  // Handle game loop
+  useGameLoop({
+    isActive: isStarted && !isPaused && status === 'playing' && countdown === null,
+    onTick: useCallback((deltaTime) => {
+      dispatch(physicsActions.updatePhysics(deltaTime));
+    }, [dispatch])
+  });
 
-  const handleGameFieldReset = useCallback(() => {
-    dispatch(gameActions.resumeGame());
-  }, [dispatch]);
+  // Show loading state if game hasn't started
+  if (!isStarted) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loading}>
+          <div className={styles.loadingText}>Loading Game...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.gameBoard}>
-      <ErrorBoundary componentName="ScoreBoard">
-        <ScoreBoard score={score} playerName={localStorage.getItem('nickname') || 'Player 1'} />
-      </ErrorBoundary>
-
-      <ErrorBoundary
-        componentName="GameField"
-        onError={handleGameFieldError}
-        onReset={handleGameFieldReset}
-        fallback={GameFieldErrorFallback}
-      >
-        <GameField {...gameFieldProps} />
-      </ErrorBoundary>
-
-      <ErrorBoundary componentName="GameControls">
+      <ErrorBoundary FallbackComponent={GameFieldErrorFallback}>
+        <GameField />
+        <ScoreBoard score={score} />
+        {isPaused && <PauseOverlay />}
+        {countdown !== null && <CountdownOverlay countdown={countdown} />}
         <GameControls 
           onPause={handlePause}
-          disabled={!isStarted || !!winner}
           isPaused={isPaused}
+          disabled={!isStarted || countdown !== null || winner !== null}
         />
       </ErrorBoundary>
-
-      {isPaused && (
-        <ErrorBoundary componentName="PauseOverlay">
-          <PauseOverlay onResume={handlePause} />
-        </ErrorBoundary>
-      )}
-      
-      {countdown > 0 && (
-        <ErrorBoundary componentName="CountdownOverlay">
-          <CountdownOverlay count={countdown} />
-        </ErrorBoundary>
-      )}
     </div>
   );
 } 

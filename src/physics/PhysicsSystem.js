@@ -59,6 +59,12 @@ export class PhysicsSystem {
   resetState() {
     const centerY = GAME_HEIGHT / 2;
     
+    // Clear any pending updates
+    if (this._updateLoop) {
+      cancelAnimationFrame(this._updateLoop);
+      this._updateLoop = null;
+    }
+    
     this.state = {
       ball: {
         position: {
@@ -73,9 +79,11 @@ export class PhysicsSystem {
         right: { y: centerY - PADDLE_HEIGHT / 2, velocity: 0 }
       },
       speedMultiplier: 1,
-      lastUpdate: performance.now()
+      lastUpdate: performance.now(),
+      isActive: false
     };
 
+    Logger.debug('PhysicsSystem', 'State reset', this.state);
     this.notifySubscribers();
   }
 

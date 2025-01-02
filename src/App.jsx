@@ -52,27 +52,24 @@ export function App() {
                         <div className={`${styles.app} ${layout.fullScreen}`}>
                           <Routes>
                             <Route path="/" element={<MainMenu />} />
-                            <Route 
-                              path="/game" 
-                              element={
+                            <Route path="/multiplayer" element={<MultiplayerMenu />} />
+                            <Route path="/options" element={<OptionsMenu />} />
+                            <Route path="/game" element={
+                              <GameProviders>
+                                <GameBoard />
+                              </GameProviders>
+                            } />
+                            <Route path="/game/:roomId" element={
+                              <RoomProviders>
                                 <GameProviders>
                                   <GameBoard />
                                 </GameProviders>
-                              } 
-                            />
-                            <Route 
-                              path="/multiplayer" 
-                              element={
-                                <RoomProviders>
-                                  <MultiplayerMenu />
-                                </RoomProviders>
-                              } 
-                            />
-                            <Route path="/options" element={<OptionsMenu />} />
+                              </RoomProviders>
+                            } />
                             <Route path="*" element={<Navigate to="/" />} />
                           </Routes>
                           <ThemeToggle />
-                          {import.meta.env.DEV && <MonitoringOverlay />}
+                          <MonitoringOverlay />
                         </div>
                       </MultiplayerProvider>
                     </PlayerProvider>
