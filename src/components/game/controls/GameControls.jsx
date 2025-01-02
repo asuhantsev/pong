@@ -43,9 +43,4 @@ GameControls.propTypes = {
   onPause: PropTypes.func.isRequired,
   isPaused: PropTypes.bool,
   disabled: PropTypes.bool
-};
-
-GameControls.defaultProps = {
-  isPaused: false,
-  disabled: false
 }; 

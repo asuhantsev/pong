@@ -1,6 +1,6 @@
 import { createContext, useContext, useRef, useCallback } from 'react';
 import { useGame } from './GameContext';
-import { PHYSICS_STEP, BALL_SPEED, SPEED_INCREASE } from '../constants/gameConstants';
+import { PHYSICS_STEP, INITIAL_BALL_SPEED, SPEED_INCREASE } from '../constants/gameConstants';
 
 const PhysicsContext = createContext(null);
 
@@ -39,8 +39,8 @@ export function PhysicsProvider({ children }) {
       ...physicsRef.current,
       ballPosition: { x: 0, y: 0 },
       ballVelocity: {
-        x: BALL_SPEED * (Math.random() > 0.5 ? 1 : -1),
-        y: BALL_SPEED * (Math.random() * 2 - 1)
+        x: INITIAL_BALL_SPEED * (Math.random() > 0.5 ? 1 : -1),
+        y: INITIAL_BALL_SPEED * (Math.random() * 2 - 1)
       },
       speedMultiplier: 1
     };

@@ -1,28 +1,47 @@
 import Logger from '../utils/logger';
 import performanceMonitor from '../utils/performance';
 import { featureFlags, FeatureFlags } from '../utils/featureFlags';
+import {
+  INITIAL_BALL_SPEED,
+  MAX_BALL_SPEED,
+  BALL_SPEED,
+  PADDLE_SPEED,
+  GAME_WIDTH,
+  GAME_HEIGHT,
+  BALL_SIZE,
+  PADDLE_HEIGHT,
+  PADDLE_WIDTH,
+  PADDLE_OFFSET,
+  PHYSICS_STEP,
+  SPEED_MULTIPLIER,
+  MIN_DELTA_TIME,
+  PHYSICS_THRESHOLD
+} from '../constants/gameConstants';
 
-// Constants
-export const PhysicsConstants = {
-  BOARD_WIDTH: 800,
-  BOARD_HEIGHT: 600,
-  PADDLE_HEIGHT: 100,
-  PADDLE_WIDTH: 15,
-  PADDLE_OFFSET: 50,
-  BALL_SIZE: 15,
-  INITIAL_BALL_SPEED: 300,
-  SPEED_MULTIPLIER: 1.2,
-  MAX_BALL_SPEED: 300 * 8,
-  PHYSICS_STEP: 1000 / 60, // 60 FPS
-};
-
-class PhysicsSystem {
+export class PhysicsSystem {
   constructor() {
+    this.constants = {
+      INITIAL_BALL_SPEED,
+      MAX_BALL_SPEED,
+      BALL_SPEED,
+      PADDLE_SPEED,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      BALL_SIZE,
+      PADDLE_HEIGHT,
+      PADDLE_WIDTH,
+      PADDLE_OFFSET,
+      PHYSICS_STEP,
+      SPEED_MULTIPLIER,
+      MIN_DELTA_TIME,
+      PHYSICS_THRESHOLD
+    };
+
     this.state = {
       ball: {
         position: { x: 0, y: 0 },
         velocity: { x: 0, y: 0 },
-        size: PhysicsConstants.BALL_SIZE
+        size: BALL_SIZE
       },
       paddles: {
         left: { y: 0, velocity: 0 },
@@ -38,20 +57,20 @@ class PhysicsSystem {
 
   // State Management
   resetState() {
-    const centerY = PhysicsConstants.BOARD_HEIGHT / 2;
+    const centerY = GAME_HEIGHT / 2;
     
     this.state = {
       ball: {
         position: {
-          x: PhysicsConstants.BOARD_WIDTH / 2 - PhysicsConstants.BALL_SIZE / 2,
-          y: PhysicsConstants.BOARD_HEIGHT / 2 - PhysicsConstants.BALL_SIZE / 2
+          x: GAME_WIDTH / 2 - BALL_SIZE / 2,
+          y: GAME_HEIGHT / 2 - BALL_SIZE / 2
         },
         velocity: this.getInitialBallVelocity(),
-        size: PhysicsConstants.BALL_SIZE
+        size: BALL_SIZE
       },
       paddles: {
-        left: { y: centerY - PhysicsConstants.PADDLE_HEIGHT / 2, velocity: 0 },
-        right: { y: centerY - PhysicsConstants.PADDLE_HEIGHT / 2, velocity: 0 }
+        left: { y: centerY - PADDLE_HEIGHT / 2, velocity: 0 },
+        right: { y: centerY - PADDLE_HEIGHT / 2, velocity: 0 }
       },
       speedMultiplier: 1,
       lastUpdate: performance.now()
@@ -61,7 +80,7 @@ class PhysicsSystem {
   }
 
   // Ball Velocity Initialization
-  getInitialBallVelocity(speed = PhysicsConstants.INITIAL_BALL_SPEED) {
+  getInitialBallVelocity(speed = this.constants.INITIAL_BALL_SPEED) {
     const angle = (Math.random() * Math.PI / 2) - Math.PI / 4; // Random angle between -45 and 45 degrees
     const direction = Math.random() > 0.5 ? 1 : -1;
     return {
@@ -75,7 +94,7 @@ class PhysicsSystem {
     performanceMonitor.startMeasure('physics_update');
 
     const delta = timestamp - this.state.lastUpdate;
-    if (delta < PhysicsConstants.PHYSICS_STEP) {
+    if (delta < PHYSICS_STEP) {
       performanceMonitor.endMeasure('physics_update', 'physics');
       return false;
     }
@@ -104,9 +123,9 @@ class PhysicsSystem {
     ball.position.y += ball.velocity.y * deltaSeconds * speedMultiplier;
 
     // Bounce off top and bottom walls
-    if (ball.position.y <= 0 || ball.position.y >= PhysicsConstants.BOARD_HEIGHT - ball.size) {
+    if (ball.position.y <= 0 || ball.position.y >= GAME_HEIGHT - ball.size) {
       ball.velocity.y = -ball.velocity.y;
-      ball.position.y = Math.max(0, Math.min(ball.position.y, PhysicsConstants.BOARD_HEIGHT - ball.size));
+      ball.position.y = Math.max(0, Math.min(ball.position.y, GAME_HEIGHT - ball.size));
     }
   }
 
@@ -117,12 +136,12 @@ class PhysicsSystem {
     // Update left paddle
     paddles.left.y += paddles.left.velocity * deltaSeconds;
     paddles.left.y = Math.max(0, Math.min(paddles.left.y, 
-      PhysicsConstants.BOARD_HEIGHT - PhysicsConstants.PADDLE_HEIGHT));
+      GAME_HEIGHT - PADDLE_HEIGHT));
 
     // Update right paddle
     paddles.right.y += paddles.right.velocity * deltaSeconds;
     paddles.right.y = Math.max(0, Math.min(paddles.right.y, 
-      PhysicsConstants.BOARD_HEIGHT - PhysicsConstants.PADDLE_HEIGHT));
+      GAME_HEIGHT - PADDLE_HEIGHT));
   }
 
   // Collision Detection
@@ -140,27 +159,27 @@ class PhysicsSystem {
 
   checkPaddleCollision(side, paddleY) {
     const { ball } = this.state;
-    const paddleX = side === 'left' ? PhysicsConstants.PADDLE_OFFSET : 
-      PhysicsConstants.BOARD_WIDTH - PhysicsConstants.PADDLE_OFFSET - PhysicsConstants.PADDLE_WIDTH;
+    const paddleX = side === 'left' ? PADDLE_OFFSET : 
+      GAME_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH;
 
     if (this.detectCollision(
       { x: ball.position.x, y: ball.position.y, width: ball.size, height: ball.size },
-      { x: paddleX, y: paddleY, width: PhysicsConstants.PADDLE_WIDTH, height: PhysicsConstants.PADDLE_HEIGHT }
+      { x: paddleX, y: paddleY, width: PADDLE_WIDTH, height: PADDLE_HEIGHT }
     )) {
       // Calculate reflection angle based on hit position
-      const hitPosition = (ball.position.y - paddleY) / PhysicsConstants.PADDLE_HEIGHT;
+      const hitPosition = (ball.position.y - paddleY) / PADDLE_HEIGHT;
       const angle = (hitPosition - 0.5) * Math.PI / 2;
 
       // Update velocity
       const speed = Math.sqrt(ball.velocity.x * ball.velocity.x + ball.velocity.y * ball.velocity.y);
-      const newSpeed = Math.min(speed * PhysicsConstants.SPEED_MULTIPLIER, PhysicsConstants.MAX_BALL_SPEED);
+      const newSpeed = Math.min(speed * SPEED_MULTIPLIER, MAX_BALL_SPEED);
 
       ball.velocity.x = side === 'left' ? Math.abs(newSpeed * Math.cos(angle)) : -Math.abs(newSpeed * Math.cos(angle));
       ball.velocity.y = newSpeed * Math.sin(angle);
 
       // Adjust position to prevent sticking
       ball.position.x = side === 'left' ? 
-        paddleX + PhysicsConstants.PADDLE_WIDTH : 
+        paddleX + PADDLE_WIDTH : 
         paddleX - ball.size;
     }
   }

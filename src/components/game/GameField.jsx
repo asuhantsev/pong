@@ -10,7 +10,7 @@ const PADDLE_HEIGHT = 100;
 export const GameField = memo(function GameField({ 
   ballPosition, 
   paddlePositions,
-  className 
+  className = '' 
 }) {
   // Early return for loading state with proper type checking
   if (!ballPosition?.x || !ballPosition?.y || !paddlePositions?.left?.y || !paddlePositions?.right?.y) {
@@ -78,9 +78,4 @@ GameField.propTypes = {
     }).isRequired
   }),
   className: PropTypes.string
-};
-
-// Default props
-GameField.defaultProps = {
-  className: ''
 }; 

@@ -3,128 +3,55 @@ import Logger from '../utils/logger';
 
 const GameContext = createContext(null);
 
+// Only UI-specific state
 const initialState = {
-  mode: null,
-  isGameStarted: false,
-  isPaused: false,
-  winner: null,
-  score: { left: 0, right: 0 },
-  countdown: null
+  isMenuOpen: false,
+  activeDialog: null,
+  uiSettings: {
+    showFPS: false,
+    showControls: true
+  }
 };
 
 function gameReducer(state, action) {
-  Logger.debug('GameReducer', `Processing action: ${action.type}`, { 
-    currentState: state,
-    action 
-  });
+  Logger.debug('GameUIReducer', `Processing action: ${action.type}`, action);
 
-  let newState;
   switch (action.type) {
-    case 'START_GAME':
-      newState = {
-        ...initialState,
-        mode: action.payload,
-        isGameStarted: true,
-        isPaused: false,
-        winner: null,
-        score: { left: 0, right: 0 },
-        countdown: 3
-      };
-      break;
-    case 'UPDATE_COUNTDOWN':
-      newState = {
+    case 'TOGGLE_MENU':
+      return {
         ...state,
-        countdown: action.payload
+        isMenuOpen: !state.isMenuOpen
       };
-      break;
-    case 'TOGGLE_PAUSE':
-      newState = {
+    case 'SET_DIALOG':
+      return {
         ...state,
-        isPaused: !state.isPaused
+        activeDialog: action.payload
       };
-      break;
-    case 'END_GAME':
-      newState = {
-        ...initialState
-      };
-      break;
-    case 'SET_MODE':
-      newState = {
+    case 'UPDATE_UI_SETTINGS':
+      return {
         ...state,
-        mode: action.payload
+        uiSettings: {
+          ...state.uiSettings,
+          ...action.payload
+        }
       };
-      break;
-    case 'UPDATE_SCORE':
-      newState = {
-        ...state,
-        score: action.payload
-      };
-      break;
-    case 'SET_WINNER':
-      newState = {
-        ...state,
-        winner: action.payload,
-        isGameStarted: true
-      };
-      break;
     default:
-      Logger.warn('GameReducer', `Unknown action type: ${action.type}`);
       return state;
   }
-
-  Logger.debug('GameReducer', 'State updated', { 
-    previousState: state,
-    action,
-    newState 
-  });
-
-  return newState;
 }
 
 export function GameProvider({ children }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
-  const gameActions = {
-    startGame: useCallback((mode) => {
-      Logger.info('GameActions', 'Starting game', { mode });
-      dispatch({ type: 'START_GAME', payload: mode });
-    }, []),
-
-    endGame: useCallback(() => {
-      Logger.info('GameActions', 'Ending game');
-      dispatch({ type: 'END_GAME' });
-    }, []),
-
-    setMode: useCallback((mode) => {
-      Logger.info('GameActions', 'Setting game mode', { mode });
-      dispatch({ type: 'SET_MODE', payload: mode });
-    }, []),
-
-    updateScore: useCallback((score) => {
-      Logger.info('GameActions', 'Updating score', { score });
-      dispatch({ type: 'UPDATE_SCORE', payload: score });
-    }, []),
-
-    setWinner: useCallback((winner) => {
-      Logger.info('GameActions', 'Setting winner', { winner });
-      dispatch({ type: 'SET_WINNER', payload: winner });
-    }, []),
-
-    updateCountdown: useCallback((count) => {
-      Logger.info('GameActions', 'Updating countdown', { count });
-      dispatch({ type: 'UPDATE_COUNTDOWN', payload: count });
-    }, []),
-
-    togglePause: useCallback(() => {
-      Logger.info('GameActions', 'Toggling pause');
-      dispatch({ type: 'TOGGLE_PAUSE' });
-    }, [])
+  const value = {
+    ...state,
+    toggleMenu: () => dispatch({ type: 'TOGGLE_MENU' }),
+    setDialog: (dialog) => dispatch({ type: 'SET_DIALOG', payload: dialog }),
+    updateUISettings: (settings) => dispatch({ type: 'UPDATE_UI_SETTINGS', payload: settings })
   };
 
-  Logger.debug('GameProvider', 'Current state', { state });
-
   return (
-    <GameContext.Provider value={{ state, actions: gameActions }}>
+    <GameContext.Provider value={value}>
       {children}
     </GameContext.Provider>
   );
@@ -133,7 +60,6 @@ export function GameProvider({ children }) {
 export const useGame = () => {
   const context = useContext(GameContext);
   if (!context) {
-    Logger.error('useGame', 'useGame must be used within a GameProvider');
     throw new Error('useGame must be used within a GameProvider');
   }
   return context;

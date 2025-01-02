@@ -1,49 +1,49 @@
 import styles from '../../../../styles/components/game/ui/overlays/PauseOverlay.module.css';
-import layoutStyles from '../../../../styles/components/shared/Layout.module.css';
-import themeStyles from '../../../../styles/components/shared/Theme.module.css';
-import typographyStyles from '../../../../styles/components/shared/Typography.module.css';
-import buttonStyles from '../../../../styles/components/shared/Button.module.css';
-import spacingStyles from '../../../../styles/components/shared/Spacing.module.css';
-import animationStyles from '../../../../styles/components/shared/Animation.module.css';
+import { layout, theme, typography, buttons, spacing, animations } from '../../../../styles/shared';
 
-export function PauseOverlay({ onResume }) {
+export function PauseOverlay({ onResume, onExit }) {
   return (
     <div className={`
-      ${layoutStyles.fixed}
-      ${layoutStyles.inset0}
-      ${layoutStyles.flexColumn}
-      ${layoutStyles.justifyCenter}
-      ${layoutStyles.itemsCenter}
-      ${themeStyles.glassDark}
-      ${animationStyles.fadeIn}
+      ${layout.fixed}
+      ${layout.inset0}
+      ${layout.flexColumn}
+      ${layout.justifyCenter}
+      ${layout.itemsCenter}
+      ${theme.glassDark}
+      ${animations.fadeIn}
       ${styles.overlay}
     `}>
       <div className={`
         ${styles.content}
-        ${themeStyles.glass}
-        ${spacingStyles.p6}
-        ${layoutStyles.flexColumn}
-        ${layoutStyles.itemsCenter}
-        ${layoutStyles.gap4}
-        ${animationStyles.scaleIn}
+        ${theme.glass}
+        ${spacing.p6}
+        ${layout.flexColumn}
+        ${layout.itemsCenter}
+        ${layout.gap4}
+        ${animations.scaleIn}
       `}>
         <h2 className={`
-          ${typographyStyles.heading2}
-          ${spacingStyles.mb3}
+          ${typography.heading2}
+          ${spacing.mb3}
         `}>
           Game Paused
         </h2>
         
-        <button
-          onClick={onResume}
-          className={`
-            ${buttonStyles.large}
-            ${themeStyles.glass}
-            ${styles.resumeButton}
-          `}
-        >
-          Resume Game
-        </button>
+        <div className={`${layout.flexColumn} ${layout.gap3}`}>
+          <button
+            onClick={onResume}
+            className={`${buttons.primaryLarge} ${theme.glass}`}
+          >
+            Resume Game
+          </button>
+          
+          <button
+            onClick={onExit}
+            className={`${buttons.secondaryLarge} ${theme.glass}`}
+          >
+            Exit to Menu
+          </button>
+        </div>
       </div>
     </div>
   );
