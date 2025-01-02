@@ -1,25 +1,46 @@
 const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioContext = null;
 
 export const SoundEffects = {
+  init: () => {
+    if (!audioContext) {
+      audioContext = new AudioContext();
+    }
+    return audioContext.state === 'running';
+  },
+
+  resume: async () => {
+    if (audioContext && audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+    return audioContext?.state === 'running';
+  },
+
   createMenuSounds: () => {
-    const ctx = new AudioContext();
+    if (!audioContext) {
+      return {
+        success: { play: () => {} },
+        error: { play: () => {} }
+      };
+    }
     
     const createTone = (frequency, duration, type = 'sine') => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
       
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(audioContext.destination);
       
       osc.type = type;
-      osc.frequency.setValueAtTime(frequency, ctx.currentTime);
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
       
       return {
-        play: () => {
+        play: async () => {
+          await SoundEffects.resume();
           osc.start();
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-          osc.stop(ctx.currentTime + duration);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+          osc.stop(audioContext.currentTime + duration);
         }
       };
     };

@@ -1,19 +1,10 @@
+/* Base Theme */
 :root {
-  /* Define transitions for theme changes */
-  --theme-transition-duration: 0.3s;
-  --theme-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* Apply transitions to themed properties */
-  transition: 
-    background-color var(--theme-transition-duration) var(--theme-transition-timing),
-    color var(--theme-transition-duration) var(--theme-transition-timing),
-    border-color var(--theme-transition-duration) var(--theme-transition-timing),
-    box-shadow var(--theme-transition-duration) var(--theme-transition-timing);
+  color-scheme: light dark;
 }
 
-/* Base Theme Variables */
+/* Light Theme */
 :global([data-theme='light']) {
-  /* Colors */
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f5f5f5;
   --color-bg-tertiary: #e9ecef;
@@ -21,43 +12,27 @@
   --color-bg-input: #ffffff;
   --color-bg-disabled: #e0e0e0;
 
-  /* Text Colors */
   --color-text-primary: #1a1a1a;
   --color-text-secondary: #666666;
   --color-text-tertiary: #999999;
   --color-text-disabled: #cccccc;
 
-  /* Border Colors */
   --color-border-primary: #e0e0e0;
   --color-border-secondary: #cccccc;
   --color-border-focus: #4a90e2;
 
-  /* Interactive Colors */
-  --color-primary: #4a90e2;
-  --color-primary-hover: #357abd;
-  --color-primary-active: #2b62a3;
-  --color-secondary: #f5a623;
-  --color-secondary-hover: #f39c12;
-  --color-secondary-active: #d68910;
+  --color-accent: #3d94f6;
+  --color-accent-dark: #1e62d0;
+  --color-secondary: #6c757d;
+  --color-secondary-dark: #495057;
 
-  /* Status Colors */
-  --color-success: #4caf50;
-  --color-success-hover: #43a047;
-  --color-error: #f44336;
-  --color-error-hover: #e53935;
-  --color-warning: #ff9800;
-  --color-warning-hover: #fb8c00;
-  --color-info: #2196f3;
-  --color-info-hover: #1e88e5;
-
-  /* Shadow */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 
+/* Dark Theme */
 :global([data-theme='dark']) {
-  /* Colors */
   --color-bg-primary: #1a1a1a;
   --color-bg-secondary: #2a2a2a;
   --color-bg-tertiary: #333333;
@@ -65,49 +40,55 @@
   --color-bg-input: #2a2a2a;
   --color-bg-disabled: #404040;
 
-  /* Text Colors */
   --color-text-primary: #ffffff;
   --color-text-secondary: #b3b3b3;
   --color-text-tertiary: #808080;
   --color-text-disabled: #666666;
 
-  /* Border Colors */
   --color-border-primary: #404040;
   --color-border-secondary: #333333;
   --color-border-focus: #4a90e2;
 
-  /* Interactive Colors */
-  --color-primary: #4a90e2;
-  --color-primary-hover: #357abd;
-  --color-primary-active: #2b62a3;
-  --color-secondary: #f5a623;
-  --color-secondary-hover: #f39c12;
-  --color-secondary-active: #d68910;
+  --color-accent: #4a90e2;
+  --color-accent-dark: #2171c7;
+  --color-secondary: #6c757d;
+  --color-secondary-dark: #495057;
 
-  /* Status Colors */
-  --color-success: #4caf50;
-  --color-success-hover: #43a047;
-  --color-error: #f44336;
-  --color-error-hover: #e53935;
-  --color-warning: #ff9800;
-  --color-warning-hover: #fb8c00;
-  --color-info: #2196f3;
-  --color-info-hover: #1e88e5;
-
-  /* Shadow */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
 }
 
+/* Theme Transitions */
+.themeTransition {
+  transition: 
+    background-color var(--transition-speed) var(--animation-curve),
+    color var(--transition-speed) var(--animation-curve),
+    border-color var(--transition-speed) var(--animation-curve),
+    box-shadow var(--transition-speed) var(--animation-curve);
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glassDark {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Game Theme */
 .game {
-  --game-paddle-color: var(--color-primary);
-  --game-ball-color: var(--color-secondary);
-  --game-score-color: var(--color-text-primary);
-  --game-board-border: var(--color-border-primary);
-  --game-board-bg: var(--color-bg-secondary);
-  --game-overlay-bg: var(--color-bg-overlay);
+  --game-bg: var(--color-bg-primary);
+  --game-text: var(--color-text-primary);
+  --game-border: var(--color-border-primary);
+  --game-paddle: var(--color-primary);
+  --game-ball: var(--color-secondary);
+  --game-score: var(--color-text-primary);
 }
 
 /* Menu Theme */
@@ -127,24 +108,26 @@
   --button-primary-text: var(--color-text-primary);
   --button-primary-hover: var(--color-primary-hover);
   --button-primary-active: var(--color-primary-active);
+  
   --button-secondary-bg: var(--color-secondary);
   --button-secondary-text: var(--color-text-primary);
   --button-secondary-hover: var(--color-secondary-hover);
   --button-secondary-active: var(--color-secondary-active);
+  
   --button-disabled-bg: var(--color-bg-disabled);
   --button-disabled-text: var(--color-text-disabled);
 
   /* Inputs */
   --input-bg: var(--color-bg-input);
   --input-text: var(--color-text-primary);
-  --input-placeholder: var(--color-text-tertiary);
   --input-border: var(--color-border-primary);
-  --input-focus-border: var(--color-border-focus);
+  --input-focus: var(--color-border-focus);
   --input-disabled-bg: var(--color-bg-disabled);
   --input-disabled-text: var(--color-text-disabled);
 
   /* Overlays */
   --overlay-bg: var(--color-bg-overlay);
   --overlay-text: var(--color-text-primary);
+  --overlay-border: var(--color-border-primary);
   --overlay-shadow: var(--shadow-lg);
 } 

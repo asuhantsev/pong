@@ -87,4 +87,84 @@
 
 .playAgainButton:hover {
   background: #45a049;
+}
+
+/* Game Board */
+.gameBoard {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-bg-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Error Fallback */
+.errorFallback {
+  width: 100%;
+  max-width: 600px;
+  padding: var(--space-6);
+  margin: var(--space-4);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--color-error);
+  background-color: var(--color-bg-overlay);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.errorTitle {
+  color: var(--color-error);
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-xl);
+}
+
+.errorMessage {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-base);
+}
+
+.resetButton {
+  min-width: 200px;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-error);
+  color: var(--color-text-on-error);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.resetButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.resetButton:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .errorFallback {
+    margin: var(--space-2);
+    padding: var(--space-4);
+  }
+
+  .resetButton {
+    min-width: 160px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .errorFallback {
+    max-width: 800px;
+  }
+
+  .resetButton {
+    min-width: 240px;
+  }
 } 

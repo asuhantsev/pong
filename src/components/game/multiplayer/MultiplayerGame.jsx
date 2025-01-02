@@ -5,6 +5,7 @@ import { ReadyState } from './ReadyState';
 import { RoomInfo } from './RoomInfo';
 import styles from '../../../styles/components/game/multiplayer/MultiplayerGame.module.css';
 import layoutStyles from '../../../styles/components/shared/Layout.module.css';
+import themeStyles from '../../../styles/components/shared/Theme.module.css';
 import Logger from '../../../utils/logger';
 
 export const MultiplayerGame = memo(function MultiplayerGame({
@@ -30,18 +31,28 @@ export const MultiplayerGame = memo(function MultiplayerGame({
 
   // Custom error fallbacks
   const readyStateErrorFallback = (error, resetError) => (
-    <div className={styles.errorFallback}>
-      <h3>Ready State Error</h3>
-      <p>Unable to update player ready status.</p>
-      <button onClick={resetError}>Try Again</button>
+    <div className={`${styles.errorFallback} ${themeStyles.glass}`}>
+      <h3 className={styles.errorTitle}>Ready State Error</h3>
+      <p className={styles.errorMessage}>Unable to update player ready status.</p>
+      <button 
+        onClick={resetError}
+        className={styles.resetButton}
+      >
+        Try Again
+      </button>
     </div>
   );
 
   const roomInfoErrorFallback = (error, resetError) => (
-    <div className={styles.errorFallback}>
-      <h3>Room Info Error</h3>
-      <p>Unable to display room information.</p>
-      <button onClick={resetError}>Refresh</button>
+    <div className={`${styles.errorFallback} ${themeStyles.glass}`}>
+      <h3 className={styles.errorTitle}>Room Info Error</h3>
+      <p className={styles.errorMessage}>Unable to display room information.</p>
+      <button 
+        onClick={resetError}
+        className={styles.resetButton}
+      >
+        Refresh
+      </button>
     </div>
   );
 
@@ -79,7 +90,7 @@ export const MultiplayerGame = memo(function MultiplayerGame({
       </ErrorBoundary>
 
       {error && (
-        <div className={styles.error}>
+        <div className={`${styles.error} ${themeStyles.glass}`}>
           {error}
         </div>
       )}

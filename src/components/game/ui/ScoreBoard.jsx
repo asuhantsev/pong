@@ -8,7 +8,7 @@ import animationStyles from '../../../styles/components/shared/Animation.module.
 export const ScoreBoard = memo(function ScoreBoard({ 
   score,
   playerName = 'Player 1',
-  className
+  className = ''
 }) {
   if (!score?.left || !score?.right) {
     return (
@@ -70,9 +70,4 @@ ScoreBoard.propTypes = {
   }).isRequired,
   playerName: PropTypes.string,
   className: PropTypes.string
-};
-
-ScoreBoard.defaultProps = {
-  playerName: 'Player 1',
-  className: ''
 }; 

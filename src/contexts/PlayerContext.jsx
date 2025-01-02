@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useSocket } from './SocketContext';
 import StorageManager from '../utils/StorageManager';
 
@@ -12,26 +12,46 @@ export function PlayerProvider({ children }) {
     paddlePosition: 0
   });
 
-  const { emit } = useSocket();
+  const socket = useSocket();
 
   const updateNickname = useCallback((newNickname) => {
-    StorageManager.setNickname(newNickname);
+    StorageManager.saveNickname(newNickname);
     setPlayerState(prev => ({ ...prev, nickname: newNickname }));
-    emit('nicknameUpdate', { nickname: newNickname });
-  }, [emit]);
+    if (socket) {
+      socket.emit('nicknameUpdate', { nickname: newNickname });
+    }
+  }, [socket]);
 
   const toggleReady = useCallback((roomId) => {
     setPlayerState(prev => {
       const newState = { ...prev, isReady: !prev.isReady };
-      emit('toggleReady', { roomId, isReady: newState.isReady });
+      if (socket) {
+        socket.emit('toggleReady', { roomId, isReady: newState.isReady });
+      }
       return newState;
     });
-  }, [emit]);
+  }, [socket]);
 
   const updatePaddlePosition = useCallback((position) => {
     setPlayerState(prev => ({ ...prev, paddlePosition: position }));
-    emit('paddleMove', { position });
-  }, [emit]);
+    if (socket) {
+      socket.emit('paddleMove', { position });
+    }
+  }, [socket]);
+
+  // Set up socket event listeners
+  useEffect(() => {
+    if (!socket) return;
+
+    // Add any socket event listeners here
+    // Example:
+    // socket.on('playerUpdate', handlePlayerUpdate);
+
+    return () => {
+      // Clean up listeners
+      // socket.off('playerUpdate', handlePlayerUpdate);
+    };
+  }, [socket]);
 
   return (
     <PlayerContext.Provider value={{
@@ -39,11 +59,18 @@ export function PlayerProvider({ children }) {
       updateNickname,
       toggleReady,
       updatePaddlePosition,
-      setPlayerState
+      setPlayerState,
+      isConnected: !!socket
     }}>
       {children}
     </PlayerContext.Provider>
   );
 }
 
-export const usePlayer = () => useContext(PlayerContext); 
+export const usePlayer = () => {
+  const context = useContext(PlayerContext);
+  if (!context) {
+    throw new Error('usePlayer must be used within a PlayerProvider');
+  }
+  return context;
+}; 

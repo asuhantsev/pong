@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import styles from '../../styles/components/shared/ThemeToggle.module.css';
+import { buttons } from '../../styles/shared';
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -8,7 +9,7 @@ export function ThemeToggle() {
 
   return (
     <button
-      className={styles.toggle}
+      className={`${buttons.icon} ${buttons.glass} ${styles.toggle}`}
       onClick={toggleTheme}
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
       title={`Switch to ${isDark ? 'light' : 'dark'} theme`}

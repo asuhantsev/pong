@@ -103,6 +103,19 @@ class PerformanceMonitor {
     this.metrics.clear();
     this.marks.clear();
   }
+
+  // Clear specific measures
+  clearMeasures(name) {
+    if (!featureFlags.isEnabled(FeatureFlags.ENABLE_PERFORMANCE_MONITORING)) return;
+    
+    // Clear marks for the specific measure
+    this.marks.delete(name);
+    
+    // Clear metrics for the measure across all categories
+    for (const categoryMetrics of this.metrics.values()) {
+      categoryMetrics.delete(name);
+    }
+  }
 }
 
 // Create and export singleton instance

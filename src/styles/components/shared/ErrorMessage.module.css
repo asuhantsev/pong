@@ -1,16 +1,35 @@
+/* Inline Error Message */
 .error {
   color: var(--color-error);
-  padding: 8px;
-  background: rgba(255, 0, 0, 0.1);
-  border-radius: 4px;
-  margin-top: 8px;
+  padding: var(--space-2);
+  background: var(--color-bg-error);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-2);
   width: 100%;
   text-align: center;
+  font-size: var(--font-size-sm);
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
 }
 
+/* Error Message with Icon */
 .withIcon {
   composes: error;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.withIcon svg {
+  width: var(--font-size-lg);
+  height: var(--font-size-lg);
+  color: var(--color-error);
+}
+
+/* Animation */
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
 } 

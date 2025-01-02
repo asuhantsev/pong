@@ -6,7 +6,7 @@ import buttonStyles from '../../styles/components/shared/Button.module.css';
 import inputStyles from '../../styles/components/shared/Input.module.css';
 import spacingStyles from '../../styles/components/shared/Spacing.module.css';
 import animationStyles from '../../styles/components/shared/Animation.module.css';
-import errorStyles from '../../styles/components/shared/Error.module.css';
+import { layout, buttons, status } from '../../styles/shared';
 
 export function MultiplayerMenu({
   roomId,
@@ -130,8 +130,8 @@ export function MultiplayerMenu({
 
         {error && (
           <div className={`
-            ${errorStyles.error}
-            ${spacingStyles.mt3}
+            ${status.error}
+            ${layout.mt3}
           `}>
             {error}
           </div>

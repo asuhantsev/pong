@@ -16,11 +16,15 @@
 
 :global(body) {
   margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, 'Open Sans', sans-serif;
+  font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: 100%;
   overflow-x: hidden;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: background-color var(--transition-speed) var(--animation-curve),
+              color var(--transition-speed) var(--animation-curve);
 }
 
 /* Remove default button styles */
@@ -29,11 +33,14 @@
   background: none;
   font: inherit;
   cursor: pointer;
+  color: inherit;
 }
 
 /* Remove default input styles */
 :global(input) {
   font: inherit;
+  color: inherit;
+  background: none;
 }
 
 /* Remove list styles */
@@ -64,6 +71,7 @@
 :global(textarea),
 :global(select) {
   font: inherit;
+  color: inherit;
 }
 
 /* Avoid text overflows */
@@ -81,4 +89,10 @@
 :global(#root) {
   isolation: isolate;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: background-color var(--transition-speed) var(--animation-curve),
+              color var(--transition-speed) var(--animation-curve);
 } 

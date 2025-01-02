@@ -1,45 +1,67 @@
-import styles from '../styles/components/error/Error.module.css';
-import cardStyles from '../styles/components/shared/Card.module.css';
-import typographyStyles from '../styles/components/shared/Typography.module.css';
-import buttonStyles from '../styles/components/shared/Button.module.css';
-import animationStyles from '../styles/components/shared/Animations.module.css';
+import { layout, buttons, status, overlays, typography, animations } from '../styles/shared';
 
 export function ConnectionError({ error, onRetry, onRecovery }) {
   if (!error) return null;
 
   return (
-    <div className={`${styles.container} ${animationStyles.slideIn}`}>
-      <div className={`${cardStyles.glass} ${animationStyles.fadeIn}`}>
-        <div className={styles.message}>
-          <h3 className={typographyStyles.heading3}>{error.message}</h3>
-          {error.description && (
-            <p className={typographyStyles.text}>{error.description}</p>
-          )}
+    <div className={`
+      ${layout.fixed}
+      ${layout.z50}
+      ${layout.flexCenter}
+      ${layout.fullScreen}
+      ${animations.fadeIn}
+    `}>
+      <div className={`
+        ${overlays.dialog}
+        ${animations.scaleIn}
+      `}>
+        <div className={`
+          ${status.error}
+          ${animations.bounce}
+        `}>
+          🔌
         </div>
 
-        {error.type === 'RETRY' ? (
-          <>
-            <p className={styles.retryMessage}>
-              Attempting to reconnect...
-            </p>
-            <div className={styles.actions}>
-              <button 
-                className={buttonStyles.secondary}
-                onClick={onRecovery}
-              >
-                Try Different Server
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className={styles.actions}>
-            <button 
-              className={buttonStyles.button}
-              onClick={onRetry}
-            >
-              Try Again
-            </button>
-          </div>
+        <h2 className={`
+          ${typography.heading2}
+          ${status.error}
+        `}>
+          {error.message || 'Connection Error'}
+        </h2>
+
+        {error.description && (
+          <p className={`
+            ${typography.text}
+            ${status.error}
+          `}>
+            {error.description}
+          </p>
+        )}
+
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className={`
+              ${buttons.button}
+              ${buttons.primary}
+              ${animations.scaleIn}
+            `}
+          >
+            Retry Connection
+          </button>
+        )}
+
+        {onRecovery && (
+          <button
+            onClick={onRecovery}
+            className={`
+              ${buttons.button}
+              ${buttons.secondary}
+              ${animations.scaleIn}
+            `}
+          >
+            Try Recovery Mode
+          </button>
         )}
       </div>
     </div>

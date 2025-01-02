@@ -53,11 +53,30 @@ export const animations = {
 
 // Buttons
 export const buttons = {
-  button: styles.button,
-  large: styles.large,
-  disabled: styles.disabled,
-  primary: styles.primary,
-  secondary: styles.secondary
+  // Base
+  button: styles.buttonBase,
+  
+  // Variants
+  primary: styles.buttonPrimary,
+  secondary: styles.buttonSecondary,
+  success: styles.buttonSuccess,
+  
+  // Sizes
+  large: styles.buttonLarge,
+  small: styles.buttonSmall,
+  
+  // States
+  disabled: styles.buttonDisabled,
+  loading: styles.buttonLoading,
+  
+  // Special
+  glass: styles.buttonGlass,
+  icon: styles.buttonIcon,
+  
+  // Combinations
+  primaryLarge: `${styles.buttonPrimary} ${styles.buttonLarge}`,
+  secondaryLarge: `${styles.buttonSecondary} ${styles.buttonLarge}`,
+  successLarge: `${styles.buttonSuccess} ${styles.buttonLarge}`
 };
 
 // Cards

@@ -1,43 +1,30 @@
 import { Component } from 'react';
 import PropTypes from 'prop-types';
-import styles from '../../styles/components/shared/ErrorBoundary.module.css';
-import typographyStyles from '../../styles/components/shared/Typography.module.css';
-import layoutStyles from '../../styles/components/shared/Layout.module.css';
-import buttonStyles from '../../styles/components/shared/Button.module.css';
-import themeStyles from '../../styles/components/shared/Theme.module.css';
+import { layout, buttons, status, overlays, typography, animations } from '../../styles/shared';
 import Logger from '../../utils/logger';
 
 export class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { 
-      hasError: false,
-      error: null,
-      errorInfo: null
-    };
-  }
+  static propTypes = {
+    children: PropTypes.node.isRequired,
+    fallback: PropTypes.func,
+    showReset: PropTypes.bool,
+    resetButtonText: PropTypes.string,
+    showErrorDetails: PropTypes.bool
+  };
+
+  state = {
+    hasError: false,
+    error: null,
+    errorInfo: null
+  };
 
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log the error
-    Logger.error('ErrorBoundary', 'Component error caught', {
-      error,
-      errorInfo,
-      componentName: this.props.componentName
-    });
-
-    this.setState({
-      error,
-      errorInfo
-    });
-
-    // Call onError callback if provided
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo);
-    }
+    this.setState({ errorInfo });
+    Logger.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
   handleReset = () => {
@@ -46,20 +33,16 @@ export class ErrorBoundary extends Component {
       error: null,
       errorInfo: null
     });
-
-    // Call onReset callback if provided
-    if (this.props.onReset) {
-      this.props.onReset();
-    }
   };
 
   render() {
-    const { hasError, error } = this.state;
+    const { hasError, error, errorInfo } = this.state;
     const { 
       children, 
       fallback,
       showReset = true,
-      resetButtonText = 'Try Again'
+      resetButtonText = 'Try Again',
+      showErrorDetails = false
     } = this.props;
 
     if (hasError) {
@@ -71,29 +54,48 @@ export class ErrorBoundary extends Component {
       // Default error UI
       return (
         <div className={`
-          ${styles.errorContainer}
-          ${layoutStyles.flexColumn}
-          ${layoutStyles.itemsCenter}
-          ${layoutStyles.justifyCenter}
-          ${themeStyles.glass}
+          ${overlays.dialog}
+          ${layout.flexColumn}
+          ${layout.itemsCenter}
+          ${layout.justifyCenter}
+          ${animations.fadeIn}
         `}>
-          <h2 className={typographyStyles.heading2}>
+          <div className={`
+            ${status.error}
+            ${animations.scaleIn}
+          `}>
+            ⚠️
+          </div>
+
+          <h2 className={`
+            ${typography.heading2}
+            ${status.error}
+          `}>
             Oops! Something went wrong
           </h2>
           
           <p className={`
-            ${typographyStyles.body}
-            ${styles.errorMessage}
+            ${typography.text}
+            ${status.error}
           `}>
             {error?.message || 'An unexpected error occurred'}
           </p>
+
+          {showErrorDetails && errorInfo && (
+            <div className={overlays.dialog}>
+              <pre className={typography.mono}>
+                {error?.stack?.split('\n').slice(0, 3).join('\n')}
+              </pre>
+            </div>
+          )}
 
           {showReset && (
             <button
               onClick={this.handleReset}
               className={`
-                ${buttonStyles.button}
-                ${styles.resetButton}
+                ${buttons.button}
+                ${buttons.primary}
+                ${animations.scaleIn}
               `}
             >
               {resetButtonText}
@@ -105,20 +107,4 @@ export class ErrorBoundary extends Component {
 
     return children;
   }
-}
-
-ErrorBoundary.propTypes = {
-  children: PropTypes.node.isRequired,
-  componentName: PropTypes.string,
-  fallback: PropTypes.func,
-  onError: PropTypes.func,
-  onReset: PropTypes.func,
-  showReset: PropTypes.bool,
-  resetButtonText: PropTypes.string
-};
-
-ErrorBoundary.defaultProps = {
-  componentName: 'Unknown',
-  showReset: true,
-  resetButtonText: 'Try Again'
-}; 
+} 
