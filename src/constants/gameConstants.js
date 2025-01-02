@@ -1,36 +1,20 @@
-export const PADDLE_SPEED = 10;
-export const BALL_SIZE = 15;
-export const BOARD_WIDTH = 800;
+// Board dimensions
 export const BOARD_HEIGHT = 600;
-export const PADDLE_WIDTH = 20;
+export const BOARD_WIDTH = 800;
+
+// Paddle properties
 export const PADDLE_HEIGHT = 100;
-export const PADDLE_OFFSET = 20;
-export const WINNING_SCORE = 10;
-export const PHYSICS_STEP = 1000 / 60;
-export const INTERPOLATION_STEP = 1000 / 120;
-export const BALL_SPEED = {
-  initial: {
-    x: 3,
-    y: 3
-  },
-  max: 10
-};
-export const SPEED_INCREASE = 1.5;
+export const PADDLE_WIDTH = 15;
+export const PADDLE_OFFSET = 50;
 
-export const NICKNAME_RULES = {
-  MIN_LENGTH: 3,
-  MAX_LENGTH: 14,
-  PATTERN: /^[a-zA-Z0-9]+$/,
-  DEFAULT: 'Player'
-};
+// Ball properties
+export const BALL_SIZE = 15;
+export const INITIAL_BALL_SPEED = 300;
+export const MAX_BALL_SPEED = INITIAL_BALL_SPEED * 8;
 
-export const NICKNAME_ERRORS = {
-  TOO_SHORT: 'Nickname must be at least 3 characters',
-  TOO_LONG: 'Nickname cannot exceed 14 characters',
-  INVALID_CHARS: 'Only letters and numbers are allowed',
-  REQUIRED: 'Nickname is required'
-};
-
-export const INPUT_BUFFER_SIZE = 5;
-export const JITTER_BUFFER_TIME = 50;
-export const SMOOTHING_FACTOR = 0.5; 
+// Physics constants
+export const SPEED_MULTIPLIER = 1.2;
+export const MAX_SPIN = 1.5;
+export const SPIN_DECAY = 0.98;
+export const MIN_DELTA_TIME = 16; // minimum time step in ms
+export const PHYSICS_THRESHOLD = 0.01; // minimum change threshold for physics updates 

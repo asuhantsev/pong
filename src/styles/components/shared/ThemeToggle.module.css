@@ -1,0 +1,62 @@
+@import '../../base/theme.module.css';
+
+.toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
+  cursor: pointer;
+  transition: all var(--theme-transition-duration) var(--theme-transition-timing);
+  z-index: var(--z-index-overlay);
+}
+
+.toggle:hover {
+  background: var(--color-bg-tertiary);
+  transform: scale(1.1);
+}
+
+.toggle:active {
+  transform: scale(0.95);
+}
+
+.icon {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--theme-transition-duration) var(--theme-transition-timing);
+}
+
+.sun {
+  color: var(--color-warning);
+  transform: rotate(0deg);
+}
+
+.moon {
+  color: var(--color-info);
+  transform: rotate(-45deg);
+}
+
+/* Animation for theme switch */
+.toggle:hover .icon {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+} 

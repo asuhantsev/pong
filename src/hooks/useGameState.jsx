@@ -1,50 +1,42 @@
-import { useState, useCallback } from 'react';
-
-const INITIAL_STATE = {
-  isPaused: false,
-  isGameStarted: false,
-  score: { left: 0, right: 0 },
-  winner: null,
-  countdown: null
-};
+import { useCallback } from 'react';
+import { useDispatch, useSelector } from '../store/store';
+import { gameActions } from '../store/actions';
+import Logger from '../utils/logger';
 
 export function useGameState() {
-  const [gameState, setGameState] = useState(INITIAL_STATE);
+  const dispatch = useDispatch();
+  const gameState = useSelector(state => state.game);
 
   const updateGameState = useCallback((updates) => {
-    console.log('Updating game state:', updates);
-    setGameState(prev => {
-      const newState = {
-        ...prev,
-        ...updates
-      };
-      console.log('New game state will be:', newState);
-      return newState;
-    });
-  }, []);
+    Logger.debug('GameState', 'Updating game state', updates);
+    
+    // Dispatch appropriate actions based on updates
+    if ('isPaused' in updates) {
+      dispatch(gameActions.pauseGame(updates.isPaused));
+    }
+    if ('isGameStarted' in updates) {
+      dispatch(updates.isGameStarted ? gameActions.startGame() : gameActions.endGame());
+    }
+    if ('score' in updates) {
+      dispatch(gameActions.updateScore(updates.score));
+    }
+    if ('winner' in updates) {
+      dispatch(gameActions.setWinner(updates.winner));
+    }
+    if ('countdown' in updates) {
+      dispatch(gameActions.updateCountdown(updates.countdown));
+    }
+  }, [dispatch]);
 
   const resetGame = useCallback(() => {
-    console.log('Resetting game state to:', INITIAL_STATE);
-    setGameState(INITIAL_STATE);
-  }, []);
+    Logger.debug('GameState', 'Resetting game state');
+    dispatch(gameActions.resetState());
+  }, [dispatch]);
 
   const startGame = useCallback(() => {
-    console.log('Starting game, current state:', gameState);
-    setGameState(prev => {
-      const newState = {
-        ...prev,
-        isGameStarted: true,
-        isPaused: false,
-        winner: null,
-        score: { left: 0, right: 0 }
-      };
-      console.log('New game state after start:', newState);
-      return newState;
-    });
-  }, [gameState]);
-
-  // Debug log for state changes
-  console.log('Current game state:', gameState);
+    Logger.debug('GameState', 'Starting game');
+    dispatch(gameActions.startGame());
+  }, [dispatch]);
 
   return {
     ...gameState,

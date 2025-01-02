@@ -1,83 +1,94 @@
-.menuContainer {
-  width: 100%;
-  max-width: 800px;
-  border-radius: var(--radius-lg);
-  margin: 0 auto;
+@import '../../../base/variables.module.css';
+@import '../../../base/theme.module.css';
+
+.container {
+  background: var(--bg-overlay);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  color: var(--text-primary);
+  min-width: var(--min-width-menu);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
 }
 
-.optionsGrid {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-}
-
-.optionCard {
-  border-radius: var(--radius-md);
-  transition: transform 0.2s ease;
-}
-
-.optionCard:hover {
-  transform: translateY(-2px);
-}
-
-.optionHeader {
+.title {
+  font-size: var(--font-size-lg);
   text-align: center;
 }
 
-.optionDescription {
-  color: var(--color-text-secondary);
+.nicknameSection {
+  margin-bottom: var(--spacing-lg);
+  width: 100%;
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+}
+
+.input {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+}
+
+.input:focus {
+  border-color: var(--border-color-focus);
+  outline: none;
+}
+
+.error {
+  color: var(--color-error);
+  margin-top: var(--spacing-sm);
   font-size: var(--font-size-sm);
-  margin-top: var(--space-2);
 }
 
-.optionControls {
-  flex-wrap: wrap;
+.buttonContainer {
+  width: 100%;
+  max-width: var(--max-width-menu);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
-.optionButton {
-  min-width: 80px;
+.saveButton {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  transition: var(--transition-all);
+  background: var(--color-success);
+  color: var(--text-primary);
+}
+
+.saveButton:disabled {
+  background: var(--color-disabled);
+  cursor: not-allowed;
+}
+
+.saveButton.saved {
+  background: var(--color-success-dark);
 }
 
 .backButton {
-  min-width: 200px;
+  padding: var(--spacing-md);
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  transition: var(--transition-all);
+  background: var(--color-neutral);
+  color: var(--text-primary);
+  width: 100%;
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .menuContainer {
-    max-width: 100%;
-    margin: var(--space-2);
-    padding: var(--space-4);
-  }
-
-  .optionsGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .optionCard {
-    padding: var(--space-3);
-  }
-
-  .optionButton {
-    min-width: 60px;
-    font-size: var(--font-size-sm);
-  }
-}
-
-@media (min-width: 1024px) {
-  .menuContainer {
-    max-width: 1000px;
-  }
-
-  .optionsGrid {
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  }
-
-  .optionButton {
-    min-width: 100px;
-  }
-
-  .backButton {
-    min-width: 240px;
-  }
+.backButton:hover {
+  background: var(--color-neutral-dark);
 } 

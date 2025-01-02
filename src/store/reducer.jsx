@@ -1,6 +1,15 @@
 import { ActionTypes } from './types';
-import { BOARD_HEIGHT, BALL_SPEED } from '../constants/gameConstants';
+import { BOARD_HEIGHT, BOARD_WIDTH, BALL_SIZE, PADDLE_HEIGHT, INITIAL_BALL_SPEED } from '../constants/gameConstants';
 import Logger from '../utils/logger';
+
+const getInitialBallVelocity = (speed = INITIAL_BALL_SPEED) => {
+  const angle = (Math.random() * Math.PI / 2) - Math.PI / 4;
+  const direction = Math.random() > 0.5 ? 1 : -1;
+  return {
+    x: speed * Math.cos(angle) * direction,
+    y: speed * Math.sin(angle)
+  };
+};
 
 const initialState = {
   game: {
@@ -13,15 +22,17 @@ const initialState = {
   },
   physics: {
     ball: {
-      position: { x: 0, y: 0 },
-      velocity: { x: 0, y: 0 }
+      position: { x: BOARD_WIDTH / 2 - BALL_SIZE / 2, y: BOARD_HEIGHT / 2 - BALL_SIZE / 2 },
+      velocity: getInitialBallVelocity(),
+      spin: 0
     },
     paddles: {
-      left: { y: BOARD_HEIGHT / 2 },
-      right: { y: BOARD_HEIGHT / 2 }
+      left: { y: BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2, velocity: 0 },
+      right: { y: BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2, velocity: 0 }
     },
     speedMultiplier: 1,
-    lastUpdate: 0
+    currentSpeed: INITIAL_BALL_SPEED,
+    lastUpdate: performance.now()
   }
 };
 
@@ -67,7 +78,7 @@ export function rootReducer(state = initialState, action) {
       };
 
     case ActionTypes.PAUSE_GAME:
-      return updateState(state, 'game.isPaused', true);
+      return updateState(state, 'game.isPaused', action.payload);
 
     case ActionTypes.RESUME_GAME:
       return updateState(state, 'game.isPaused', false);
@@ -76,11 +87,7 @@ export function rootReducer(state = initialState, action) {
       return updateState(state, 'game.countdown', action.payload);
 
     case ActionTypes.UPDATE_SCORE:
-      return updateState(
-        state,
-        `game.score.${action.payload.side}`,
-        action.payload.value
-      );
+      return updateState(state, 'game.score', action.payload);
 
     case ActionTypes.SET_WINNER:
       return updateState(state, 'game.winner', action.payload);
@@ -92,11 +99,18 @@ export function rootReducer(state = initialState, action) {
     case ActionTypes.UPDATE_BALL_VELOCITY:
       return updateState(state, 'physics.ball.velocity', action.payload);
 
+    case ActionTypes.UPDATE_BALL_SPIN:
+      return updateState(state, 'physics.ball.spin', action.payload);
+
     case ActionTypes.UPDATE_PADDLE_POSITION:
       return updateState(
         state,
         `physics.paddles.${action.payload.side}`,
-        { y: action.payload.position }
+        { 
+          ...state.physics.paddles[action.payload.side],
+          y: action.payload.position,
+          velocity: action.payload.velocity || 0
+        }
       );
 
     case ActionTypes.RESET_BALL:
@@ -105,23 +119,25 @@ export function rootReducer(state = initialState, action) {
         physics: {
           ...state.physics,
           ball: {
-            position: { x: 0, y: 0 },
-            velocity: {
-              x: BALL_SPEED * (Math.random() > 0.5 ? 1 : -1),
-              y: BALL_SPEED * (Math.random() * 2 - 1)
-            }
-          },
-          speedMultiplier: 1
+            position: { x: BOARD_WIDTH / 2 - BALL_SIZE / 2, y: BOARD_HEIGHT / 2 - BALL_SIZE / 2 },
+            velocity: getInitialBallVelocity(state.physics.currentSpeed),
+            spin: 0
+          }
         }
       };
 
     case ActionTypes.UPDATE_SPEED_MULTIPLIER:
-      return updateState(state, 'physics.speedMultiplier', action.payload);
+      return {
+        ...state,
+        physics: {
+          ...state.physics,
+          speedMultiplier: action.payload,
+          currentSpeed: Math.min(state.physics.currentSpeed * action.payload, INITIAL_BALL_SPEED * 8)
+        }
+      };
 
     // System Actions
     case ActionTypes.INIT:
-      return { ...initialState };
-
     case ActionTypes.RESET_STATE:
       return { ...initialState };
 

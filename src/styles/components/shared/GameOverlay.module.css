@@ -1,0 +1,75 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+.content {
+  max-width: 600px;
+  width: 100%;
+  padding: 2rem;
+  border-radius: var(--border-radius-lg);
+  background-color: var(--bg-overlay);
+  box-shadow: var(--shadow-lg);
+}
+
+.closeButton {
+  margin-top: 2rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius-md);
+  background-color: var(--bg-button);
+  color: var(--text-on-button);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background-color: var(--bg-button-hover);
+  transform: translateY(-1px);
+}
+
+.closeButton:active {
+  transform: translateY(0);
+}
+
+/* Overlay types */
+.countdown {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.pause {
+  background-color: rgba(0, 0, 0, 0.85);
+}
+
+.winner {
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+.error {
+  background-color: rgba(var(--color-error-rgb), 0.9);
+}
+
+/* Content variations by type */
+.countdown .content {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.winner .content {
+  background-color: var(--bg-winner);
+  border: 2px solid var(--border-winner);
+}
+
+.error .content {
+  background-color: var(--bg-error);
+  border: 2px solid var(--border-error);
+} 

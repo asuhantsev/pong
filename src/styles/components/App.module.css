@@ -1,0 +1,18 @@
+@import '../base/variables.module.css';
+@import '../base/theme.module.css';
+
+.app {
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-speed) var(--animation-curve),
+              color var(--transition-speed) var(--animation-curve);
+}
+
+/* Ensure app takes full viewport height on mobile */
+@media screen and (max-width: 768px) {
+  .app {
+    min-height: -webkit-fill-available;
+  }
+} 

@@ -1,68 +1,67 @@
 import { useState } from 'react';
-import '../../styles/MultiplayerMenu.css';
+import { useNavigate } from 'react-router-dom';
+import { useMultiplayer } from '../../contexts/MultiplayerContext';
+import styles from '../../styles/components/menu/MultiplayerMenu.module.css';
+import { buttonBase, buttonSuccess, buttonDisabled } from '../../styles/shared';
 
-export function MultiplayerMenu({ onBack }) {
-  const [roomCode, setRoomCode] = useState('');
-  const [error, setError] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const [isJoining, setIsJoining] = useState(false);
+export function MultiplayerMenu() {
+  const navigate = useNavigate();
+  const { createRoom, joinRoom, isConnecting, error } = useMultiplayer();
+  const [roomId, setRoomId] = useState('');
 
-  const handleCreateRoom = () => {
-    setIsCreating(true);
-    // TODO: Implement room creation
-    console.log('Creating room...');
+  const handleCreateRoom = async () => {
+    await createRoom();
   };
 
-  const handleJoinRoom = () => {
-    if (!roomCode.trim()) {
-      setError('Room code is required');
-      return;
+  const handleJoinRoom = async () => {
+    if (roomId.trim()) {
+      await joinRoom(roomId);
     }
-    setIsJoining(true);
-    // TODO: Implement room joining
-    console.log('Joining room:', roomCode);
+  };
+
+  const handleBack = () => {
+    navigate('/');
   };
 
   return (
-    <div className="multiplayer-menu">
-      <h2>Multiplayer</h2>
-
-      <div className="room-controls">
+    <div className={styles.container}>
+      <h2 className={styles.title}>Multiplayer</h2>
+      <div className={styles.controls}>
         <button
-          className="create-room-button"
+          className={`${buttonBase} ${buttonSuccess} ${isConnecting ? buttonDisabled : ''}`}
           onClick={handleCreateRoom}
-          disabled={isCreating || isJoining}
+          disabled={isConnecting}
         >
-          {isCreating ? 'Creating Room...' : 'Create Room'}
+          Create Room
         </button>
 
-        <div className="join-room-section">
+        <div className={styles.joinSection}>
           <input
             type="text"
-            value={roomCode}
-            onChange={(e) => {
-              setRoomCode(e.target.value.toUpperCase());
-              setError('');
-            }}
-            placeholder="Enter Room Code"
-            maxLength={6}
-            disabled={isCreating || isJoining}
+            className={styles.input}
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+            placeholder="Enter Room ID"
+            disabled={isConnecting}
           />
           <button
-            className="join-room-button"
+            className={`${buttonBase} ${buttonSuccess} ${(!roomId.trim() || isConnecting) ? buttonDisabled : ''}`}
             onClick={handleJoinRoom}
-            disabled={!roomCode || isCreating || isJoining}
+            disabled={!roomId.trim() || isConnecting}
           >
-            {isJoining ? 'Joining...' : 'Join Room'}
+            Join Room
           </button>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
-      </div>
+        {error && <div className={styles.error}>{error}</div>}
 
-      <button className="back-button" onClick={onBack}>
-        Back
-      </button>
+        <button 
+          className={`${buttonBase} ${styles.backButton}`}
+          onClick={handleBack}
+        >
+          Back to Menu
+        </button>
+      </div>
     </div>
   );
 } 

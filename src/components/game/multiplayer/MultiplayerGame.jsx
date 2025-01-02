@@ -1,84 +1,107 @@
+import { memo, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import { ErrorBoundary } from '../../shared/ErrorBoundary';
+import { ReadyState } from './ReadyState';
+import { RoomInfo } from './RoomInfo';
 import styles from '../../../styles/components/game/multiplayer/MultiplayerGame.module.css';
 import layoutStyles from '../../../styles/components/shared/Layout.module.css';
-import themeStyles from '../../../styles/components/shared/Theme.module.css';
-import typographyStyles from '../../../styles/components/shared/Typography.module.css';
-import buttonStyles from '../../../styles/components/shared/Button.module.css';
-import spacingStyles from '../../../styles/components/shared/Spacing.module.css';
-import animationStyles from '../../../styles/components/shared/Animation.module.css';
-import errorStyles from '../../../styles/components/shared/Error.module.css';
+import Logger from '../../../utils/logger';
 
-export function MultiplayerGame({
+export const MultiplayerGame = memo(function MultiplayerGame({
   roomId,
-  isHost,
+  playersReady,
+  playerNicknames,
+  isReconnecting,
+  nickname,
   isReady,
-  opponentReady,
-  onReady,
-  error,
-  children
+  role,
+  onToggleReady,
+  onLeaveRoom,
+  error
 }) {
-  const showReadyState = isHost || (!isHost && opponentReady);
+  // Error handling callbacks
+  const handleReadyStateError = useCallback((error, errorInfo) => {
+    Logger.error('MultiplayerGame', 'ReadyState error', { error, errorInfo });
+  }, []);
+
+  const handleRoomInfoError = useCallback((error, errorInfo) => {
+    Logger.error('MultiplayerGame', 'RoomInfo error', { error, errorInfo });
+  }, []);
+
+  // Custom error fallbacks
+  const readyStateErrorFallback = (error, resetError) => (
+    <div className={styles.errorFallback}>
+      <h3>Ready State Error</h3>
+      <p>Unable to update player ready status.</p>
+      <button onClick={resetError}>Try Again</button>
+    </div>
+  );
+
+  const roomInfoErrorFallback = (error, resetError) => (
+    <div className={styles.errorFallback}>
+      <h3>Room Info Error</h3>
+      <p>Unable to display room information.</p>
+      <button onClick={resetError}>Refresh</button>
+    </div>
+  );
 
   return (
     <div className={`
       ${layoutStyles.flexColumn}
       ${layoutStyles.itemsCenter}
-      ${spacingStyles.gap4}
-      ${animationStyles.fadeIn}
+      ${styles.container}
     `}>
-      <div className={`
-        ${themeStyles.glass}
-        ${spacingStyles.p4}
-        ${layoutStyles.flexColumn}
-        ${layoutStyles.itemsCenter}
-        ${styles.container}
-      `}>
-        <h3 className={`
-          ${typographyStyles.heading3}
-          ${spacingStyles.mb3}
-        `}>
-          Room Code: {roomId}
-        </h3>
+      <ErrorBoundary
+        componentName="RoomInfo"
+        onError={handleRoomInfoError}
+        fallback={roomInfoErrorFallback}
+      >
+        <RoomInfo
+          roomId={roomId}
+          playerNicknames={playerNicknames}
+          role={role}
+          onLeaveRoom={onLeaveRoom}
+        />
+      </ErrorBoundary>
 
-        <div className={`
-          ${styles.readySection}
-          ${layoutStyles.flexColumn}
-          ${layoutStyles.itemsCenter}
-          ${spacingStyles.gap3}
-        `}>
-          {showReadyState ? (
-            <>
-              <p className={typographyStyles.text}>
-                Both players connected!
-              </p>
-              <button
-                onClick={onReady}
-                className={`
-                  ${buttonStyles.large}
-                  ${isReady ? buttonStyles.secondary : ''}
-                  ${styles.readyButton}
-                `}
-              >
-                {isReady ? 'Not Ready' : 'Ready'}
-              </button>
-            </>
-          ) : (
-            <p className={typographyStyles.text}>
-              Waiting for opponent...
-            </p>
-          )}
+      <ErrorBoundary
+        componentName="ReadyState"
+        onError={handleReadyStateError}
+        fallback={readyStateErrorFallback}
+      >
+        <ReadyState
+          playersReady={playersReady}
+          nickname={nickname}
+          isReady={isReady}
+          isReconnecting={isReconnecting}
+          onToggleReady={onToggleReady}
+        />
+      </ErrorBoundary>
+
+      {error && (
+        <div className={styles.error}>
+          {error}
         </div>
-
-        {error && (
-          <div className={`
-            ${errorStyles.error}
-            ${spacingStyles.mt3}
-          `}>
-            {error}
-          </div>
-        )}
-      </div>
-
-      {children}
+      )}
     </div>
   );
-} 
+});
+
+MultiplayerGame.propTypes = {
+  roomId: PropTypes.string.isRequired,
+  playersReady: PropTypes.instanceOf(Map).isRequired,
+  playerNicknames: PropTypes.instanceOf(Map).isRequired,
+  isReconnecting: PropTypes.bool,
+  nickname: PropTypes.string.isRequired,
+  isReady: PropTypes.bool.isRequired,
+  role: PropTypes.oneOf(['host', 'guest']),
+  onToggleReady: PropTypes.func.isRequired,
+  onLeaveRoom: PropTypes.func.isRequired,
+  error: PropTypes.string
+};
+
+MultiplayerGame.defaultProps = {
+  isReconnecting: false,
+  role: null,
+  error: null
+}; 

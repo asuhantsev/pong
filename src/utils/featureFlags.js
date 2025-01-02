@@ -2,18 +2,12 @@ import Logger from './logger';
 
 // Define feature flag types for TypeScript-like validation
 const FeatureFlags = {
-  USE_NEW_PHYSICS: 'useNewPhysics',
-  USE_NEW_GAME_LOOP: 'useNewGameLoop',
-  USE_NEW_STATE_MANAGEMENT: 'useNewStateManagement',
   ENABLE_DEBUG_OVERLAY: 'enableDebugOverlay',
   ENABLE_PERFORMANCE_MONITORING: 'enablePerformanceMonitoring'
 };
 
 // Default values for features
 const defaultFlags = {
-  [FeatureFlags.USE_NEW_PHYSICS]: false,
-  [FeatureFlags.USE_NEW_GAME_LOOP]: false,
-  [FeatureFlags.USE_NEW_STATE_MANAGEMENT]: false,
   [FeatureFlags.ENABLE_DEBUG_OVERLAY]: import.meta.env.VITE_DEBUG === 'true',
   [FeatureFlags.ENABLE_PERFORMANCE_MONITORING]: import.meta.env.VITE_DEBUG === 'true'
 };

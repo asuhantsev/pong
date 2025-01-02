@@ -1,18 +1,26 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
+import { useDispatch, useSelector } from '../store/store';
+import { physicsActions } from '../store/actions';
 import Logger from '../utils/logger';
-
-const BOARD_HEIGHT = 600;
-const BOARD_WIDTH = 800;
-const PADDLE_HEIGHT = 100;
-const PADDLE_WIDTH = 15;
-const PADDLE_OFFSET = 50;
-const BALL_SIZE = 15;
-const INITIAL_BALL_SPEED = 300;
-const SPEED_MULTIPLIER = 1.2;
-const MAX_BALL_SPEED = INITIAL_BALL_SPEED * 8;
+import performanceMonitor from '../utils/performance';
+import {
+  BOARD_HEIGHT,
+  BOARD_WIDTH,
+  PADDLE_HEIGHT,
+  PADDLE_WIDTH,
+  PADDLE_OFFSET,
+  BALL_SIZE,
+  INITIAL_BALL_SPEED,
+  SPEED_MULTIPLIER,
+  MAX_BALL_SPEED,
+  MAX_SPIN,
+  SPIN_DECAY,
+  MIN_DELTA_TIME,
+  PHYSICS_THRESHOLD
+} from '../constants/gameConstants';
 
 const getInitialBallVelocity = (speed = INITIAL_BALL_SPEED) => {
-  const angle = (Math.random() * Math.PI / 2) - Math.PI / 4; // Random angle between -45 and 45 degrees
+  const angle = (Math.random() * Math.PI / 2) - Math.PI / 4;
   const direction = Math.random() > 0.5 ? 1 : -1;
   return {
     x: speed * Math.cos(angle) * direction,
@@ -20,172 +28,150 @@ const getInitialBallVelocity = (speed = INITIAL_BALL_SPEED) => {
   };
 };
 
-const INITIAL_STATE = {
-  ballPosition: { x: BOARD_WIDTH / 2 - BALL_SIZE / 2, y: BOARD_HEIGHT / 2 - BALL_SIZE / 2 },
-  ballVelocity: getInitialBallVelocity(),
-  leftPaddlePos: BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2,
-  rightPaddlePos: BOARD_HEIGHT / 2 - PADDLE_HEIGHT / 2,
-  currentSpeed: INITIAL_BALL_SPEED
-};
+const handlePaddleCollision = (ball, paddle, isLeft, currentSpin) => {
+  const relativeIntersectY = (paddle.y + (PADDLE_HEIGHT / 2)) - (ball.y + (BALL_SIZE / 2));
+  const normalizedIntersectY = relativeIntersectY / (PADDLE_HEIGHT / 2);
+  const bounceAngle = normalizedIntersectY * Math.PI / 3;
 
-// Helper function for AABB collision detection
-const checkAABBCollision = (rect1, rect2) => {
-  return (
-    rect1.x < rect2.x + rect2.width &&
-    rect1.x + rect1.width > rect2.x &&
-    rect1.y < rect2.y + rect2.height &&
-    rect1.y + rect1.height > rect2.y
-  );
+  const speed = Math.sqrt(ball.velocity.x * ball.velocity.x + ball.velocity.y * ball.velocity.y);
+  const newSpeed = Math.min(speed * SPEED_MULTIPLIER, MAX_BALL_SPEED);
+  
+  const paddleSpeed = paddle.velocity || 0;
+  const newSpin = (currentSpin * SPIN_DECAY) + (paddleSpeed * 0.2);
+  const clampedSpin = Math.max(Math.min(newSpin, MAX_SPIN), -MAX_SPIN);
+
+  return {
+    velocity: {
+      x: isLeft ? Math.abs(newSpeed * Math.cos(bounceAngle)) : -Math.abs(newSpeed * Math.cos(bounceAngle)),
+      y: newSpeed * Math.sin(bounceAngle) + clampedSpin
+    },
+    spin: clampedSpin
+  };
 };
 
 export function usePhysics() {
-  const [physics, setPhysics] = useState(INITIAL_STATE);
-  
-  // Use useRef for values that shouldn't trigger re-renders
-  const physicsRef = useRef(physics);
-  useEffect(() => {
-    physicsRef.current = physics;
-  }, [physics]);
+  const dispatch = useDispatch();
+  const physics = useSelector(state => state.physics);
+
+  const updatePaddleVelocity = useCallback((side, newPosition) => {
+    const now = performance.now();
+    const deltaTime = Math.max(now - physics.time.lastPaddleUpdate, MIN_DELTA_TIME);
+    const oldPosition = side === 'left' ? physics.paddles.left.y : physics.paddles.right.y;
+    const velocity = (newPosition - oldPosition) / deltaTime;
+    
+    dispatch(physicsActions.updatePhysicsTime({
+      lastPaddleUpdate: now,
+      deltaTime
+    }));
+    
+    dispatch(physicsActions.updatePaddlePosition({
+      side,
+      position: newPosition,
+      velocity
+    }));
+  }, [dispatch, physics.paddles.left.y, physics.paddles.right.y, physics.time.lastPaddleUpdate]);
 
   const resetBall = useCallback((speedIncrease = true) => {
-    setPhysics(prev => {
-      const newSpeed = speedIncrease ? 
-        Math.min(prev.currentSpeed * SPEED_MULTIPLIER, MAX_BALL_SPEED) : 
-        INITIAL_BALL_SPEED;
-      
-      const newVelocity = getInitialBallVelocity(newSpeed);
-      
-      Logger.info('Physics', 'Ball reset', { 
-        newSpeed, 
-        velocity: newVelocity,
-        speedIncrease,
-        maxSpeed: MAX_BALL_SPEED
-      });
-      
-      const newState = {
-        ...prev,
-        ballPosition: { x: BOARD_WIDTH / 2 - BALL_SIZE / 2, y: BOARD_HEIGHT / 2 - BALL_SIZE / 2 },
-        ballVelocity: newVelocity,
-        currentSpeed: newSpeed
-      };
+    const newSpeed = speedIncrease ? 
+      Math.min(physics.currentSpeed * SPEED_MULTIPLIER, MAX_BALL_SPEED) : 
+      INITIAL_BALL_SPEED;
 
-      Logger.debug('Physics', 'New physics state after ball reset', {
-        position: newState.ballPosition,
-        velocity: newState.ballVelocity,
-        speed: newState.currentSpeed
-      });
-      return newState;
-    });
-  }, []); // Remove physics.currentSpeed dependency
+    dispatch(physicsActions.resetBall());
+    dispatch(physicsActions.updateSpeedMultiplier(newSpeed));
+  }, [dispatch, physics.currentSpeed]);
 
   const resetGame = useCallback(() => {
-    const initialVelocity = getInitialBallVelocity(INITIAL_BALL_SPEED);
-    Logger.debug('Physics', 'Game reset', { 
-      initialVelocity,
-      initialSpeed: INITIAL_BALL_SPEED
-    });
-    
-    setPhysics({
-      ...INITIAL_STATE,
-      ballVelocity: initialVelocity
-    });
-  }, []);
+    Logger.debug('Physics', 'Game reset');
+    dispatch(physicsActions.resetState());
+  }, [dispatch]);
 
   const movePaddle = useCallback((newPosition, side) => {
-    setPhysics(prev => {
-      const clampedPosition = Math.max(PADDLE_HEIGHT/2, Math.min(newPosition, BOARD_HEIGHT - PADDLE_HEIGHT/2));
-      return {
-        ...prev,
-        [side === 'left' ? 'leftPaddlePos' : 'rightPaddlePos']: clampedPosition
-      };
-    });
-  }, []);
+    const clampedPosition = Math.max(0, Math.min(newPosition, BOARD_HEIGHT - PADDLE_HEIGHT));
+    updatePaddleVelocity(side, clampedPosition);
+  }, [updatePaddleVelocity]);
 
   const updatePhysics = useCallback((deltaTime) => {
-    setPhysics(prev => {
-      // Ensure idempotent updates for Strict Mode
-      const dt = deltaTime / 1000;
+    performanceMonitor.startMeasure('physicsUpdate');
+    
+    const now = performance.now();
+    const dt = Math.max(deltaTime, MIN_DELTA_TIME) / 1000;
+    
+    dispatch(physicsActions.updatePhysicsTime({
+      lastUpdate: now,
+      deltaTime: dt
+    }));
+    
+    // Apply current spin to vertical velocity
+    const spinEffect = physics.ball.spin * 100;
+    let newVelX = physics.ball.velocity.x;
+    let newVelY = physics.ball.velocity.y + spinEffect * dt;
+    
+    // Calculate next position with spin
+    let newX = physics.ball.position.x + newVelX * dt;
+    let newY = physics.ball.position.y + newVelY * dt;
+
+    // Decay spin over time
+    let newSpin = physics.ball.spin * SPIN_DECAY;
+
+    // Wall collisions
+    if (newY <= 0) {
+      newVelY = Math.abs(newVelY);
+      newY = 0;
+      newSpin *= 0.8;
+    } else if (newY + BALL_SIZE >= BOARD_HEIGHT) {
+      newVelY = -Math.abs(newVelY);
+      newY = BOARD_HEIGHT - BALL_SIZE;
+      newSpin *= 0.8;
+    }
+
+    // Paddle collisions
+    const leftPaddleCollision = newX <= PADDLE_OFFSET + PADDLE_WIDTH && 
+      newY + BALL_SIZE >= physics.paddles.left.y - PADDLE_HEIGHT/2 && 
+      newY <= physics.paddles.left.y + PADDLE_HEIGHT/2;
+
+    const rightPaddleCollision = newX + BALL_SIZE >= BOARD_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH &&
+      newY + BALL_SIZE >= physics.paddles.right.y - PADDLE_HEIGHT/2 && 
+      newY <= physics.paddles.right.y + PADDLE_HEIGHT/2;
+
+    if (leftPaddleCollision || rightPaddleCollision) {
+      const paddleSide = leftPaddleCollision ? 'left' : 'right';
+      const paddle = physics.paddles[paddleSide];
       
-      // Calculate next position
-      let newX = prev.ballPosition.x + prev.ballVelocity.x * dt;
-      let newY = prev.ballPosition.y + prev.ballVelocity.y * dt;
-      let newVelX = prev.ballVelocity.x;
-      let newVelY = prev.ballVelocity.y;
+      const { velocity, spin } = handlePaddleCollision(
+        { position: { x: newX, y: newY }, velocity: { x: newVelX, y: newVelY } },
+        paddle,
+        leftPaddleCollision,
+        newSpin
+      );
 
-      // Create ball bounding box
-      const ballBox = {
-        x: newX,
-        y: newY,
-        width: BALL_SIZE,
-        height: BALL_SIZE
-      };
+      newVelX = velocity.x;
+      newVelY = velocity.y;
+      newSpin = spin;
+      newX = leftPaddleCollision ? 
+        PADDLE_OFFSET + PADDLE_WIDTH : 
+        BOARD_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH - BALL_SIZE;
+    }
 
-      // Wall collisions - deterministic behavior
-      if (newY <= 0) {
-        newVelY = Math.abs(prev.ballVelocity.y); // Use prev state for deterministic behavior
-        newY = 0;
-      } else if (newY + BALL_SIZE >= BOARD_HEIGHT) {
-        newVelY = -Math.abs(prev.ballVelocity.y); // Use prev state for deterministic behavior
-        newY = BOARD_HEIGHT - BALL_SIZE;
-      }
+    // Ensure ball stays within bounds
+    newX = Math.max(0, Math.min(newX, BOARD_WIDTH - BALL_SIZE));
+    newY = Math.max(0, Math.min(newY, BOARD_HEIGHT - BALL_SIZE));
 
-      // Create paddle bounding boxes - use prev state
-      const leftPaddleBox = {
-        x: PADDLE_OFFSET,
-        y: prev.leftPaddlePos - PADDLE_HEIGHT/2,
-        width: PADDLE_WIDTH,
-        height: PADDLE_HEIGHT
-      };
+    // Only dispatch if significant changes occurred
+    const hasChanged = 
+      Math.abs(newX - physics.ball.position.x) > PHYSICS_THRESHOLD || 
+      Math.abs(newY - physics.ball.position.y) > PHYSICS_THRESHOLD || 
+      Math.abs(newVelX - physics.ball.velocity.x) > PHYSICS_THRESHOLD || 
+      Math.abs(newVelY - physics.ball.velocity.y) > PHYSICS_THRESHOLD ||
+      Math.abs(newSpin - physics.ball.spin) > PHYSICS_THRESHOLD;
 
-      const rightPaddleBox = {
-        x: BOARD_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH,
-        y: prev.rightPaddlePos - PADDLE_HEIGHT/2,
-        width: PADDLE_WIDTH,
-        height: PADDLE_HEIGHT
-      };
+    if (hasChanged) {
+      dispatch(physicsActions.updateBallPosition({ x: newX, y: newY }));
+      dispatch(physicsActions.updateBallVelocity({ x: newVelX, y: newVelY }));
+      dispatch(physicsActions.updateBallSpin(newSpin));
+    }
 
-      // Check paddle collisions using AABB
-      const leftPaddleCollision = checkAABBCollision(ballBox, leftPaddleBox);
-      const rightPaddleCollision = checkAABBCollision(ballBox, rightPaddleBox);
-
-      if (leftPaddleCollision || rightPaddleCollision) {
-        // Use prev state for deterministic behavior
-        newVelX = -prev.ballVelocity.x;
-        
-        const paddle = leftPaddleCollision ? prev.leftPaddlePos : prev.rightPaddlePos;
-        const relativeIntersectY = (newY + BALL_SIZE/2 - paddle) / (PADDLE_HEIGHT/2);
-        
-        const maxVerticalSpeed = prev.currentSpeed * 0.75;
-        newVelY = relativeIntersectY * maxVerticalSpeed;
-
-        if (leftPaddleCollision) {
-          newX = PADDLE_OFFSET + PADDLE_WIDTH;
-        } else {
-          newX = BOARD_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH - BALL_SIZE;
-        }
-      }
-
-      // Ensure ball stays within bounds
-      newX = Math.max(0, Math.min(newX, BOARD_WIDTH - BALL_SIZE));
-      newY = Math.max(0, Math.min(newY, BOARD_HEIGHT - BALL_SIZE));
-
-      // Only update if position or velocity changed
-      const hasChanged = 
-        Math.abs(newX - prev.ballPosition.x) > 0.01 || 
-        Math.abs(newY - prev.ballPosition.y) > 0.01 || 
-        newVelX !== prev.ballVelocity.x || 
-        newVelY !== prev.ballVelocity.y;
-
-      if (hasChanged) {
-        return {
-          ...prev,
-          ballPosition: { x: newX, y: newY },
-          ballVelocity: { x: newVelX, y: newVelY }
-        };
-      }
-      return prev;
-    });
-  }, []); // No dependencies needed since we use prev state
+    performanceMonitor.endMeasure('physicsUpdate', 'physics');
+  }, [dispatch, physics]);
 
   return {
     physics,

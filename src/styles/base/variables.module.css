@@ -1,0 +1,41 @@
+:root {
+  /* Colors */
+  --primary-color: #4a90e2;
+  --secondary-color: #f5a623;
+  --background-color: #1a1a1a;
+  --text-color: #ffffff;
+  --error-color: #ff4d4d;
+  --success-color: #4caf50;
+  --warning-color: #ff9800;
+  
+  /* Dimensions */
+  --board-width: 800px;
+  --board-height: 600px;
+  --paddle-width: 15px;
+  --paddle-height: 100px;
+  --ball-size: 15px;
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Typography */
+  --font-family: 'Arial', sans-serif;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 24px;
+  
+  /* Animations */
+  --transition-speed: 0.3s;
+  --animation-curve: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Z-indices */
+  --z-index-base: 1;
+  --z-index-overlay: 10;
+  --z-index-modal: 100;
+  --z-index-tooltip: 1000;
+} 

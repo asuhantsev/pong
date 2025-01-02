@@ -1,38 +1,29 @@
-import React from 'react';
-import './styles/App.css';
-import { ErrorProvider } from './contexts/ErrorContext';
-import { GameProvider } from './contexts/GameContext';
-import { NetworkProvider } from './contexts/NetworkContext';
-import { SocketProvider } from './contexts/SocketContext';
+import { useEffect } from 'react';
 import { MainMenu } from './components/menu/MainMenu';
-import { ErrorBoundary } from './components/error/ErrorBoundary';
+import { GameBoard } from './components/game/GameBoard';
+import { useGame } from './contexts/GameContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext';
-import { FeatureFlagPanel } from './components/dev/FeatureFlagPanel';
+import { MultiplayerProvider } from './contexts/MultiplayerContext';
 import { MonitoringOverlay } from './components/dev/MonitoringOverlay';
-import { StoreProvider } from './store/store.jsx';
+import { ThemeToggle } from './components/shared/ThemeToggle';
+import styles from './styles/components/App.module.css';
+import { layout } from './styles/shared';
 
-export default function App() {
+export function App() {
+  const { state } = useGame();
+
   return (
-    <StoreProvider>
+    <ThemeProvider>
       <FeatureFlagProvider>
-        <ErrorBoundary>
-          <ErrorProvider>
-            <NetworkProvider>
-              <SocketProvider>
-                <GameProvider>
-                  <MainMenu />
-                  {import.meta.env.VITE_ENV === 'development' && (
-                    <>
-                      <FeatureFlagPanel />
-                      <MonitoringOverlay />
-                    </>
-                  )}
-                </GameProvider>
-              </SocketProvider>
-            </NetworkProvider>
-          </ErrorProvider>
-        </ErrorBoundary>
+        <MultiplayerProvider>
+          <div className={`${styles.app} ${layout.flexColumn}`}>
+            <ThemeToggle />
+            {state.isGameStarted ? <GameBoard /> : <MainMenu />}
+            <MonitoringOverlay />
+          </div>
+        </MultiplayerProvider>
       </FeatureFlagProvider>
-    </StoreProvider>
+    </ThemeProvider>
   );
 }

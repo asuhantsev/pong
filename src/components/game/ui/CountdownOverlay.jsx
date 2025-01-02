@@ -1,12 +1,28 @@
-import styles from '../../../styles/components/game/CountdownOverlay.module.css';
+import PropTypes from 'prop-types';
+import { GameOverlay } from '../../shared/GameOverlay';
+import styles from '../../../styles/components/game/ui/CountdownOverlay.module.css';
+import typographyStyles from '../../../styles/components/shared/Typography.module.css';
+import animationStyles from '../../../styles/components/shared/Animation.module.css';
 
 export function CountdownOverlay({ count }) {
+  if (count === null || count === undefined) return null;
+
   return (
-    <div className={styles.overlay}>
-      <div className={styles.content}>
-        <div className={styles.number}>{count}</div>
-        <div className={styles.text}>Game starting in...</div>
+    <GameOverlay 
+      type="countdown"
+      animation="scaleIn"
+    >
+      <div className={`
+        ${styles.countdown}
+        ${typographyStyles.heading1}
+        ${animationStyles.bounce}
+      `}>
+        {count}
       </div>
-    </div>
+    </GameOverlay>
   );
-} 
+}
+
+CountdownOverlay.propTypes = {
+  count: PropTypes.number
+}; 
