@@ -22,13 +22,11 @@ export const gameActions = {
 
 // Physics Actions
 export const physicsActions = {
-  updateBallPosition: (position) => createAction(ActionTypes.UPDATE_BALL_POSITION, position),
-  updateBallVelocity: (velocity) => createAction(ActionTypes.UPDATE_BALL_VELOCITY, velocity),
-  updatePaddlePosition: (side, position) => 
-    createAction(ActionTypes.UPDATE_PADDLE_POSITION, { side, position }),
+  batchUpdate: (updates) => createAction(ActionTypes.BATCH_PHYSICS_UPDATE, updates),
+  updatePaddlePosition: ({ side, position, velocity, time }) => 
+    createAction(ActionTypes.UPDATE_PADDLE_POSITION, { side, position, velocity, time }),
   resetBall: () => createAction(ActionTypes.RESET_BALL),
-  updateSpeedMultiplier: (multiplier) => 
-    createAction(ActionTypes.UPDATE_SPEED_MULTIPLIER, multiplier)
+  resetState: () => createAction(ActionTypes.RESET_PHYSICS_STATE)
 };
 
 // System Actions

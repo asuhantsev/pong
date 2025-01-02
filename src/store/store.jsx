@@ -1,8 +1,9 @@
-import { createContext, useContext, useReducer, useCallback } from 'react';
+import { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import { rootReducer } from './reducer.jsx';
 import { createActionMiddleware } from './actions.jsx';
 import Logger from '../utils/logger';
 import performanceMonitor from '../utils/performance';
+import { systemActions } from './actions.jsx';
 
 const StoreContext = createContext(null);
 
@@ -13,7 +14,18 @@ const applyMiddleware = (...middlewares) => (store) => {
 };
 
 export function StoreProvider({ children }) {
-  const [state, dispatch] = useReducer(rootReducer, rootReducer(undefined, { type: '@INIT' }));
+  const [state, dispatch] = useReducer(rootReducer, undefined, () => {
+    // Initialize with a clean state
+    const initialState = rootReducer(undefined, { type: '@INIT' });
+    Logger.info('Store', 'Initializing with clean state', initialState);
+    return initialState;
+  });
+
+  // Initialize store on mount
+  useEffect(() => {
+    Logger.info('Store', 'Initializing store');
+    dispatch(systemActions.init());
+  }, []);
 
   // Create store object
   const store = {
@@ -60,8 +72,5 @@ export function useSelector(selector) {
 // Action dispatcher hook
 export function useDispatch() {
   const { dispatch } = useStore();
-  return useCallback((action) => {
-    Logger.debug('Dispatch', `Dispatching action: ${action.type}`, action);
-    return dispatch(action);
-  }, [dispatch]);
+  return dispatch;
 } 

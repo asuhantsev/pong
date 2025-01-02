@@ -10,6 +10,7 @@ export const ActionTypes = {
   SET_WINNER: 'game/setWinner',
   
   // Physics Actions
+  BATCH_PHYSICS_UPDATE: 'physics/batchUpdate',
   UPDATE_BALL_POSITION: 'physics/updateBallPosition',
   UPDATE_BALL_VELOCITY: 'physics/updateBallVelocity',
   UPDATE_BALL_SPIN: 'physics/updateBallSpin',
@@ -17,13 +18,14 @@ export const ActionTypes = {
   RESET_BALL: 'physics/resetBall',
   UPDATE_SPEED_MULTIPLIER: 'physics/updateSpeedMultiplier',
   UPDATE_PHYSICS_TIME: 'physics/updateTime',
+  RESET_PHYSICS_STATE: 'physics/resetState',
   
   // System Actions
   INIT: 'system/init',
   RESET_STATE: 'system/resetState'
 };
 
-// State shape definition (for documentation)
+// State shape definition
 export const StateShape = {
   game: {
     mode: 'singleplayer | multiplayer | null',
@@ -34,7 +36,8 @@ export const StateShape = {
       left: 'number',
       right: 'number'
     },
-    countdown: 'number | null'
+    countdown: 'number | null',
+    status: 'idle | starting | playing | paused | ended'
   },
   physics: {
     ball: {
@@ -43,21 +46,16 @@ export const StateShape = {
       spin: 'number'
     },
     paddles: {
-      left: { 
-        y: 'number',
-        velocity: 'number'
-      },
-      right: { 
-        y: 'number',
-        velocity: 'number'
-      }
+      left: { y: 'number', velocity: 'number' },
+      right: { y: 'number', velocity: 'number' }
     },
+    speedMultiplier: 'number',
+    currentSpeed: 'number',
     time: {
       lastUpdate: 'number',
       lastPaddleUpdate: 'number',
       deltaTime: 'number'
     },
-    speedMultiplier: 'number',
-    currentSpeed: 'number'
+    isActive: 'boolean'
   }
 }; 
