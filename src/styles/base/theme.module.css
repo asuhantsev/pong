@@ -1,7 +1,4 @@
-@import './variables.module.css';
-
-/* Theme Transitions */
-:global(:root) {
+:root {
   /* Define transitions for theme changes */
   --theme-transition-duration: 0.3s;
   --theme-transition-timing: cubic-bezier(0.4, 0, 0.2, 1);

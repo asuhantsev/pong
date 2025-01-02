@@ -1,5 +1,5 @@
-@import '../base/variables.module.css';
-@import '../base/theme.module.css';
+@import '/src/styles/base/variables.module.css';
+@import '/src/styles/base/theme.module.css';
 
 .app {
   min-height: 100vh;

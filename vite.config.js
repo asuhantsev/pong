@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -9,6 +10,27 @@ export default defineConfig(({ command, mode }) => {
   return {
     plugins: [react()],
     base: mode === 'production' ? '/pong/' : '/',
+    
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
+    
+    css: {
+      modules: {
+        localsConvention: 'camelCase',
+        generateScopedName: mode === 'production' 
+          ? '[hash:base64:8]' 
+          : '[name]__[local]__[hash:base64:5]',
+      },
+      preprocessorOptions: {
+        css: {
+          charset: false,
+          additionalData: `@import "/src/styles/base/variables.module.css";`
+        }
+      }
+    },
     
     build: {
       rollupOptions: {
@@ -23,29 +45,9 @@ export default defineConfig(({ command, mode }) => {
       cssMinify: mode === 'production',
       // Minification options
       minify: mode === 'production' ? 'esbuild' : false,
-      // Only generate source maps in development
-      sourcemap: mode === 'development'
     },
     
     envPrefix: 'VITE_',
-    
-    css: {
-      modules: {
-        localsConvention: 'camelCase',
-        generateScopedName: mode === 'production' 
-          ? '[hash:base64:8]' 
-          : '[name]__[local]__[hash:base64:5]',
-        test: /\.module\.css$/,
-        preprocessorOptions: {
-          css: {
-            charset: false
-          }
-        }
-      },
-      devSourcemap: mode === 'development'
-    },
-    
-    assetsInclude: ['**/*.{png,jpg,gif,svg,webp,woff,woff2,eot,ttf,otf}'],
     
     server: {
       port: parseInt(env.VITE_BASE_URL?.split(':')[2] || '5173'),

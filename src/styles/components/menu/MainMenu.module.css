@@ -1,6 +1,3 @@
-@import '../../../base/variables.module.css';
-@import '../../../base/theme.module.css';
-
 .container {
   background: var(--bg-overlay);
   padding: var(--spacing-lg);
