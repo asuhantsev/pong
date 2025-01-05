@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMultiplayerContext } from '../../contexts/MultiplayerContext';
+import { PlayerContext } from '../../contexts/PlayerContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import styles from '../../styles/components/menu/OptionsMenu.module.css';
 import Logger from '../../utils/logger';
+import StorageManager from '../../utils/StorageManager';
 
 export function OptionsMenu() {
   const navigate = useNavigate();
-  const { nickname: currentNickname, updateNickname } = useMultiplayerContext();
+  const { updateNickname } = useContext(PlayerContext);
   const { theme } = useTheme();
-  const [nickname, setNickname] = useState(currentNickname || '');
+  const [nickname, setNickname] = useState(StorageManager.getNickname() || '');
   const [error, setError] = useState('');
 
   const handleSave = () => {
@@ -17,9 +18,20 @@ export function OptionsMenu() {
       setError('Nickname cannot be empty');
       return;
     }
-    Logger.info('OptionsMenu', 'Saving nickname', { nickname });
-    updateNickname(nickname.trim());
-    navigate('/');
+
+    try {
+      StorageManager.saveNickname(nickname.trim());
+      
+      if (updateNickname) {
+        updateNickname(nickname.trim());
+      }
+
+      Logger.info('OptionsMenu', 'Saving nickname', { nickname });
+      navigate('/');
+    } catch (error) {
+      Logger.error('OptionsMenu', 'Failed to save nickname', { error });
+      setError('Failed to save nickname');
+    }
   };
 
   const handleBack = () => {

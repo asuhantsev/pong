@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from '../../store/store';
 import { gameActions, systemActions } from '../../store/actions';
@@ -6,10 +6,12 @@ import { useMultiplayerContext } from '../../contexts/MultiplayerContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import styles from '../../styles/components/menu/MainMenu.module.css';
 import Logger from '../../utils/logger';
+import { OptionsMenu } from './OptionsMenu';
+import { PlayerContext } from '../../contexts/PlayerContext';
 
 export function MainMenu() {
   const navigate = useNavigate();
-  const { nickname } = useMultiplayerContext();
+  const { nickname } = useContext(PlayerContext);
   const { theme } = useTheme();
   const dispatch = useDispatch();
 
