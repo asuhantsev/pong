@@ -23,10 +23,12 @@ import { ConnectionError } from './error/ConnectionError'
 import NetworkStatus from './NetworkStatus'
 
 // Hooks and utils
-import { useGameState } from '../hooks/useGameState'
-import { useMultiplayer } from '../hooks/useMultiplayer'
-import StorageManager from '../utils/StorageManager'
-import { isValidNickname, getNicknameError } from '../utils/validation'
+import { useGame } from '../hooks/useGame.jsx'
+import { usePlayer } from '../hooks/usePlayer'
+import { useRoom } from '../hooks/useRoom'
+import { usePhysics } from '../hooks/usePhysics'
+import { useSocket } from '../hooks/useSocket'
+import { useError } from '../hooks/useError'
 
 // Constants last
 import { 
@@ -58,7 +60,6 @@ import { ScoreBoard } from './game/ui/ScoreBoard';
 import { GameControls } from './game/controls/GameControls';
 
 export function GameBoard() {
-  // Replace individual state with context hooks
   const { state: gameState, actions: gameActions } = useGame();
   const { 
     nickname, 
@@ -76,8 +77,121 @@ export function GameBoard() {
     joinRoom
   } = useRoom();
   const { physics, updatePhysics, resetBall } = usePhysics();
-  const { socket, isConnected } = useSocket();
   const { errors, setError } = useError();
+
+  // Add loading state
+  const [isLoading, setIsLoading] = useState(true);
+  const [initError, setInitError] = useState(null);
+  const [gameMode, setGameMode] = useState(null);
+
+  // Use only one socket connection handler
+  const {
+    socket,
+    isConnected,
+    error: socketError
+  } = useMultiplayer({
+    enabled: gameMode === 'multiplayer',
+    mode: gameMode,
+    nickname
+  });
+
+  // Add debug logging
+  useEffect(() => {
+    console.log('Game State:', gameState);
+    console.log('Game Mode:', gameMode);
+    console.log('Physics State:', physics);
+  }, [gameState, gameMode, physics]);
+
+  // Add state validation
+  if (!gameState) {
+    console.error('Game state is undefined');
+    return (
+      <div className={`${containerStyles.container} ${containerStyles.game}`}>
+        <div className={`${cardStyles.card} ${errorStyles.error}`}>
+          <h2 className={typographyStyles.h2}>Error</h2>
+          <p>Failed to initialize game state</p>
+          <button 
+            className={buttonStyles.button}
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Modify initialization effect
+  useEffect(() => {
+    const initializeGame = async () => {
+      try {
+        setIsLoading(true);
+        setInitError(null);
+
+        // Different initialization based on game mode
+        if (gameMode === 'multiplayer' && (!socket || !isConnected)) {
+          return; // Only wait for connection in multiplayer mode
+        }
+
+        // Initialize game state
+        await gameActions.initialize(gameMode);
+        
+        // Start game immediately for single player
+        if (gameMode === 'single') {
+          await gameActions.startGame();
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Game initialization failed:', error);
+        setInitError('Failed to initialize game. Please try refreshing the page.');
+        setIsLoading(false);
+      }
+    };
+
+    if (gameMode) {
+      console.log('Initializing game with mode:', gameMode);
+      initializeGame();
+    }
+  }, [gameMode, socket, isConnected, gameActions]);
+
+  // Handle socket errors
+  useEffect(() => {
+    if (socketError && gameMode === 'multiplayer') {
+      setError('socket', socketError);
+    }
+  }, [socketError, gameMode, setError]);
+
+  // Modify the game mode selection to initialize game state
+  const handleModeSelect = (mode) => {
+    setGameMode(mode);
+    gameActions.setMode(mode);
+  };
+
+  // Update mode selection render
+  if (!gameMode) {
+    return (
+      <div className={`${containerStyles.container} ${containerStyles.game}`}>
+        <div className={`${cardStyles.card}`}>
+          <h2 className={typographyStyles.h2}>Select Game Mode</h2>
+          <div className={`${gridStyles.grid} ${gridStyles.gap2}`}>
+            <button 
+              className={buttonStyles.button}
+              onClick={() => handleModeSelect('single')}
+            >
+              Single Player
+            </button>
+            <button 
+              className={buttonStyles.button}
+              onClick={() => handleModeSelect('multiplayer')}
+            >
+              Multiplayer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Game loop using physics context
   useEffect(() => {
@@ -111,9 +225,39 @@ export function GameBoard() {
     gameActions.startGame();
   }, [resetBall, gameActions]);
 
+  // Add loading state check in render
+  if (isLoading) {
+    return (
+      <div className={`${containerStyles.container} ${containerStyles.game}`}>
+        <div className={`${cardStyles.card} ${animationStyles.pulse}`}>
+          <h2 className={typographyStyles.h2}>Loading Game...</h2>
+          <NetworkStatus />
+        </div>
+      </div>
+    );
+  }
+
+  // Add error state check in render
+  if (initError) {
+    return (
+      <div className={`${containerStyles.container} ${containerStyles.game}`}>
+        <div className={`${cardStyles.card} ${errorStyles.error}`}>
+          <h2 className={typographyStyles.h2}>Error</h2>
+          <p>{initError}</p>
+          <button 
+            className={buttonStyles.button}
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`${containerStyles.container} ${containerStyles.game} ${animationStyles.fadeIn}`}>
-      {gameState.isGameStarted ? (
+      {(gameState.isGameStarted || gameMode === 'single') ? (
         <>
           <div className={styles.gameField}>
             <div className={styles.centerLine} />
@@ -123,12 +267,12 @@ export function GameBoard() {
             />
             <Paddle 
               position="left" 
-              top={role === 'left' ? paddlePosition : physics.leftPaddlePos}
+              top={gameMode === 'single' ? paddlePosition : (role === 'left' ? paddlePosition : physics.leftPaddlePos)}
               className={gameAnimations.slide}
             />
             <Paddle 
               position="right" 
-              top={role === 'right' ? paddlePosition : physics.rightPaddlePos} 
+              top={gameMode === 'single' ? physics.rightPaddlePos : (role === 'right' ? paddlePosition : physics.rightPaddlePos)}
               className={gameAnimations.slide}
             />
           </div>
