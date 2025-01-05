@@ -16,19 +16,19 @@ import Paddle from './Paddle'
 // Menu components
 import { MainMenu } from './menu/MainMenu'
 import { OptionsMenu } from './menu/OptionsMenu'
-import { MultiplayerMenu } from './multiplayer/MultiplayerMenu'
+import { MultiplayerMenu } from './menu/MultiplayerMenu'
 
 // Utility components
-import { ConnectionError } from './error/ConnectionError'
-import NetworkStatus from './NetworkStatus'
+import { ConnectionError } from './ConnectionError'
+import { NetworkStatus } from './game/ui/NetworkStatus'
 
 // Hooks and utils
 import { useGame } from '../hooks/useGame.jsx'
 import { usePlayer } from '../hooks/usePlayer'
 import { useRoom } from '../hooks/useRoom'
 import { usePhysics } from '../hooks/usePhysics'
-import { useSocket } from '../hooks/useSocket'
 import { useError } from '../hooks/useError'
+import { useNetworking } from '../hooks/useNetworking'
 
 // Constants last
 import { 
@@ -58,6 +58,7 @@ import { PauseOverlay } from './game/ui/overlays/PauseOverlay';
 import { CountdownOverlay } from './game/ui/overlays/CountdownOverlay';
 import { ScoreBoard } from './game/ui/ScoreBoard';
 import { GameControls } from './game/controls/GameControls';
+import { MultiplayerGame } from './game/multiplayer/MultiplayerGame';
 
 export function GameBoard() {
   const { state: gameState, actions: gameActions } = useGame();
@@ -78,22 +79,17 @@ export function GameBoard() {
   } = useRoom();
   const { physics, updatePhysics, resetBall } = usePhysics();
   const { errors, setError } = useError();
+  const { 
+    isConnected, 
+    socket, 
+    currentRoom,
+    actions: networkActions 
+  } = useNetworking();
 
   // Add loading state
   const [isLoading, setIsLoading] = useState(true);
   const [initError, setInitError] = useState(null);
   const [gameMode, setGameMode] = useState(null);
-
-  // Use only one socket connection handler
-  const {
-    socket,
-    isConnected,
-    error: socketError
-  } = useMultiplayer({
-    enabled: gameMode === 'multiplayer',
-    mode: gameMode,
-    nickname
-  });
 
   // Add debug logging
   useEffect(() => {
