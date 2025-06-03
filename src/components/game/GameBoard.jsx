@@ -7,6 +7,7 @@ import { GameControls } from './controls/GameControls';
 import { PauseOverlay } from './controls/PauseOverlay';
 import { ScoreBoard } from './ui/ScoreBoard';
 import { CountdownOverlay } from './ui/CountdownOverlay';
+import { WINNING_SCORE } from '../../constants/gameConstants';
 import styles from '../../styles/components/game/GameBoard.module.css';
 import Logger from '../../utils/logger';
 
@@ -98,7 +99,7 @@ export function GameBoard() {
       actions.updateScore(newScore);
       
       // Check for winner after score update
-      if (newScore.right === 11) {
+      if (newScore.right === WINNING_SCORE) {
         actions.setWinner('right');
       } else {
         setTimeout(() => resetBall(true), 1000);
@@ -111,7 +112,7 @@ export function GameBoard() {
       actions.updateScore(newScore);
       
       // Check for winner after score update
-      if (newScore.left === 11) {
+      if (newScore.left === WINNING_SCORE) {
         actions.setWinner('left');
       } else {
         setTimeout(() => resetBall(true), 1000);
