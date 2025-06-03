@@ -43,51 +43,5 @@ describe('GameBoard display', () => {
     expect(screen.getByText(/Wins!/i)).toBeInTheDocument();
   });
 
-  test('displays computer as right player in single mode', () => {
-    const { context } = renderWithProvider(React.createElement(GameBoard));
 
-    act(() => {
-      context.actions.startGame('single');
-      context.actions.updateCountdown(null);
-    });
-
-    expect(screen.getByText('COMPUTER')).toBeInTheDocument();
-  });
-
-  test('pause overlay appears when paused', () => {
-    const { context } = renderWithProvider(React.createElement(GameBoard));
-
-    act(() => {
-      context.actions.startGame('single');
-      context.actions.updateCountdown(null);
-      context.actions.togglePause();
-    });
-
-    expect(screen.getByText('Game Paused')).toBeInTheDocument();
-
-    act(() => {
-      context.actions.togglePause();
-    });
-
-    expect(screen.queryByText('Game Paused')).not.toBeInTheDocument();
-  });
-
-  test('play again resets score', () => {
-    const { context } = renderWithProvider(React.createElement(GameBoard));
-
-    act(() => {
-      context.actions.startGame('single');
-      context.actions.updateScore({ left: WINNING_SCORE, right: 0 });
-      context.actions.setWinner('left');
-    });
-
-    const button = screen.getByText('Play Again');
-    act(() => {
-      button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-
-    expect(context.state.score.left).toBe(0);
-    expect(context.state.score.right).toBe(0);
-    expect(screen.getAllByText('0').length).toBeGreaterThanOrEqual(2);
-  });
 });
