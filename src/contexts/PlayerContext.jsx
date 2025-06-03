@@ -15,7 +15,7 @@ export function PlayerProvider({ children }) {
   const { emit } = useSocket();
 
   const updateNickname = useCallback((newNickname) => {
-    StorageManager.setNickname(newNickname);
+    StorageManager.saveNickname(newNickname);
     setPlayerState(prev => ({ ...prev, nickname: newNickname }));
     emit('nicknameUpdate', { nickname: newNickname });
   }, [emit]);
