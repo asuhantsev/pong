@@ -1,3 +1,10 @@
 export default {
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
+  transform: {
+    '^.+\\.[jt]sx?$': 'babel-jest'
+  },
+  moduleNameMapper: {
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
+  },
+  extensionsToTreatAsEsm: ['.jsx']
 };
