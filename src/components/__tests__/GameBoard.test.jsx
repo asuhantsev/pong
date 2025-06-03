@@ -42,4 +42,5 @@ describe('GameBoard display', () => {
     expect(screen.getByText(String(WINNING_SCORE))).toBeInTheDocument();
     expect(screen.getByText(/Wins!/i)).toBeInTheDocument();
   });
+
 });
